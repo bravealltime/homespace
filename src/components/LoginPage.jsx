@@ -131,6 +131,10 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
+      if (err.status === 403 || err.data?.status === 'pending' || err.message?.includes('รอคุณ Fluke')) {
+        setMode('pending');
+        return;
+      }
       setGeneralError(err.message || 'รหัส PIN หรือเบอร์โทรศัพท์ไม่ถูกต้อง');
     } finally {
       setIsLoading(false);
@@ -307,8 +311,21 @@ export default function LoginPage() {
               </div>
 
               {generalError && (
-                <div className="p-2.5 bg-red-50 rounded-2xl border border-red-200 text-center animate-enter-rise">
+                <div className="p-3 bg-red-50 rounded-2xl border border-red-200 text-center animate-enter-rise space-y-2">
                   <p className="text-xs text-red-600 font-bold">{generalError}</p>
+                  {(generalError.includes('ยังไม่มีเบอร์') || generalError.includes('เชิญ')) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGeneralError('');
+                        setMode('register');
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-[#5F8D75] hover:bg-[#476E5B] px-3.5 py-1.5 rounded-xl cursor-pointer shadow-xs transition-all active:scale-95"
+                    >
+                      <Sparkle size={14} weight="fill" />
+                      <span>สมัครเข้าร่วมครอบครัวทันที</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -503,8 +520,21 @@ export default function LoginPage() {
               </div>
 
               {generalError && (
-                <div className="p-2.5 bg-red-50 rounded-2xl border border-red-200 text-center animate-enter-rise">
+                <div className="p-3 bg-red-50 rounded-2xl border border-red-200 text-center animate-enter-rise space-y-2">
                   <p className="text-xs text-red-600 font-bold">{generalError}</p>
+                  {(generalError.includes('ยังไม่มีเบอร์') || generalError.includes('เชิญ')) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGeneralError('');
+                        setMode('register');
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-[#5F8D75] hover:bg-[#476E5B] px-3.5 py-1.5 rounded-xl cursor-pointer shadow-xs transition-all active:scale-95"
+                    >
+                      <Sparkle size={14} weight="fill" />
+                      <span>สมัครเข้าร่วมครอบครัวทันที</span>
+                    </button>
+                  )}
                 </div>
               )}
 

@@ -12,8 +12,20 @@ async function request(endpoint, options = {}) {
     const res = await fetch(url, { ...options, headers });
     if (!res.ok) {
       const errorText = await res.text();
-      console.warn(`[API] ${endpoint} returned ${res.status}:`, errorText);
-      throw new Error(`API Error ${res.status}: ${errorText}`);
+      let errorMessage = `API Error ${res.status}`;
+      let errorData = null;
+      try {
+        errorData = JSON.parse(errorText);
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = res.status;
+      err.data = errorData;
+      throw err;
     }
     return await res.json();
   } catch (err) {

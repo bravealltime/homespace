@@ -236,7 +236,11 @@ function getInitialState() {
     if (saved) {
       const parsed = JSON.parse(saved);
       // Clean out lingering post-1, story-welcome-fluke, or mock generator items from cache
-      const cleanedFeed = (parsed.feedPosts || []).filter((p) => p.id !== 'post-1');
+      const cleanedFeed = (parsed.feedPosts || []).filter((p) => {
+        if (p.id === 'post-1') return false;
+        if (p.beforeImage?.includes('photo-1585837575652') || p.afterImage?.includes('photo-1556911220')) return false;
+        return true;
+      });
       const cleanedStories = (parsed.stories || []).filter((s) => s.id !== 'story-welcome-fluke');
       const cleanedHistory = (parsed.history || []).filter(
         (h) => !h.id.startsWith('hist-2026') && !h.id.startsWith('hist-2025')

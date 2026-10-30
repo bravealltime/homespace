@@ -7,12 +7,16 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 import db, { initDb } from './db.js';
 import { isSupabaseConfigured, uploadBufferToSupabase, uploadBase64ToSupabase } from './supabase.js';
+import { pullFromCloud, pushToCloud } from './cloudSync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Initialize DB schema & seed
 initDb();
+
+// Initial cloud sync to restore persistent state from Supabase
+pullFromCloud().catch((err) => console.warn('[CloudSync] Boot pull warning:', err.message));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -193,17 +197,33 @@ app.post('/api/auth/verify-otp', (req, res) => {
   }
 });
 
+// Helper to normalize Thai mobile phone numbers
+function normalizePhone(phone) {
+  if (!phone) return '';
+  let digits = String(phone).replace(/\D/g, '');
+  if (digits.startsWith('66') && digits.length === 11) {
+    digits = '0' + digits.slice(2);
+  }
+  return digits;
+}
+
 // Login with Phone + 4-digit PIN (Free, Secure, Instant)
-app.post('/api/auth/login-pin', (req, res) => {
+app.post('/api/auth/login-pin', async (req, res) => {
   try {
     const { phone, pin } = req.body;
     if (!phone || !pin) {
       return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและรหัส PIN 4 หลัก' });
     }
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(phone);
     const cleanPin = String(pin).replace(/\D/g, '').slice(0, 4);
 
-    const member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    let member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    if (!member) {
+      // Pull latest database from Supabase cloud storage in case member registered on another instance
+      await pullFromCloud();
+      member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    }
+
     if (!member) {
       return res.status(404).json({
         error: 'ยังไม่มีเบอร์นี้ในระบบ กรุณาใช้ลิงก์เชิญเพื่อขอเข้าร่วมครอบครัว',
@@ -224,10 +244,11 @@ app.post('/api/auth/login-pin', (req, res) => {
       return res.status(401).json({ error: 'รหัส PIN 4 หลักไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' });
     }
 
-    // If member has no PIN set yet, set it now
+    // If member has no PIN set yet, set it now and sync
     if (!member.pin) {
       db.prepare('UPDATE members SET pin = ? WHERE id = ?').run(cleanPin, member.id);
       member.pin = cleanPin;
+      pushToCloud().catch(() => {});
     }
 
     const family = db.prepare('SELECT * FROM families WHERE id = ?').get(member.familyId || 'family-main');
@@ -247,14 +268,22 @@ app.post('/api/auth/login-pin', (req, res) => {
 });
 
 // Register new member with pending approval request
-app.post('/api/auth/register-request', (req, res) => {
+app.post('/api/auth/register-request', async (req, res) => {
   try {
     const { phone, pin, name, role, avatar, avatarType, avatarImage, familyCode, familyId } = req.body;
     if (!phone || !name) {
       return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและชื่อเล่น' });
     }
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(phone);
     const cleanPin = pin ? String(pin).replace(/\D/g, '').slice(0, 4) : '1234';
+
+    // Pull from cloud so we have current state
+    await pullFromCloud();
+
+    let finalAvatarImage = avatarImage || null;
+    if (finalAvatarImage && finalAvatarImage.startsWith('data:image/')) {
+      finalAvatarImage = await uploadBase64ToSupabase(finalAvatarImage, 'avatar');
+    }
 
     // Find target family
     let family = null;
@@ -285,11 +314,12 @@ app.post('/api/auth/register-request', (req, res) => {
         role ? role.trim() : 'สมาชิกในบ้าน',
         avatar || '😊',
         avatarType || 'emoji',
-        avatarImage || null,
+        finalAvatarImage,
         targetFamilyId,
         cleanPin,
         cleanPhone
       );
+      await pushToCloud();
       const updated = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
       return res.json({ success: true, member: updated, status: 'pending', family, message: 'คำขอของคุณส่งไปยัง Admin เรียบร้อยแล้ว' });
     }
@@ -309,7 +339,7 @@ app.post('/api/auth/register-request', (req, res) => {
       role ? role.trim() : 'สมาชิกในบ้าน',
       avatar || '😊',
       avatarType || 'emoji',
-      avatarImage || null,
+      finalAvatarImage,
       color,
       targetFamilyId,
       cleanPin,
@@ -330,6 +360,9 @@ app.post('/api/auth/register-request', (req, res) => {
         Date.now()
       );
     }
+
+    // Immediately push new pending member to Supabase cloud storage
+    await pushToCloud();
 
     const created = db.prepare('SELECT * FROM members WHERE id = ?').get(newId);
     res.json({
@@ -393,7 +426,7 @@ app.get('/api/families/:familyId/requests', (req, res) => {
 });
 
 // Approve pending member
-app.post('/api/families/:familyId/approve', (req, res) => {
+app.post('/api/families/:familyId/approve', async (req, res) => {
   try {
     const { familyId } = req.params;
     const { memberId, adminPhone } = req.body;
@@ -428,6 +461,9 @@ app.post('/api/families/:familyId/approve', (req, res) => {
       Date.now()
     );
 
+    // Sync approved member to Supabase Cloud Storage
+    await pushToCloud();
+
     res.json({ success: true, member: approvedMember, message: 'อนุมัติสมาชิกสำเร็จ' });
   } catch (err) {
     console.error('Approve member error:', err);
@@ -436,7 +472,7 @@ app.post('/api/families/:familyId/approve', (req, res) => {
 });
 
 // Reject pending member
-app.post('/api/families/:familyId/reject', (req, res) => {
+app.post('/api/families/:familyId/reject', async (req, res) => {
   try {
     const { memberId } = req.body;
     if (!memberId) {
@@ -444,6 +480,7 @@ app.post('/api/families/:familyId/reject', (req, res) => {
     }
 
     db.prepare("UPDATE members SET status = 'rejected' WHERE id = ?").run(memberId);
+    await pushToCloud();
     res.json({ success: true, message: 'ปฏิเสธคำขอเรียบร้อยแล้ว' });
   } catch (err) {
     console.error('Reject member error:', err);
@@ -454,8 +491,10 @@ app.post('/api/families/:familyId/reject', (req, res) => {
 // ==========================================
 // 2. MEMBERS & AUTH
 // ==========================================
-app.get('/api/members', (req, res) => {
+app.get('/api/members', async (req, res) => {
   try {
+    // Pull from cloud so fresh instances have up-to-date member lists
+    await pullFromCloud();
     const members = db.prepare('SELECT * FROM members ORDER BY createdAt ASC').all();
     
     // Compute total score for each member from chore_history & posts
@@ -475,14 +514,19 @@ app.get('/api/members', (req, res) => {
   }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     const { phone } = req.body;
     if (!phone) {
       return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรศัพท์' });
     }
-    const cleanPhone = phone.replace(/\D/g, '');
-    const member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    const cleanPhone = normalizePhone(phone);
+    let member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+
+    if (!member) {
+      await pullFromCloud();
+      member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    }
 
     if (member) {
       res.json({ success: true, member });
@@ -581,6 +625,7 @@ app.put('/api/members/:id', async (req, res) => {
       id
     );
 
+    await pushToCloud().catch(err => console.warn('Push cloud after update member:', err.message));
     const updated = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
     res.json({ success: true, member: updated });
   } catch (err) {
@@ -589,8 +634,7 @@ app.put('/api/members/:id', async (req, res) => {
   }
 });
 
-
-app.delete('/api/members/:id', (req, res) => {
+app.delete('/api/members/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const existing = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
@@ -612,6 +656,7 @@ app.delete('/api/members/:id', (req, res) => {
     });
     tx();
 
+    await pushToCloud().catch(err => console.warn('Push cloud after delete member:', err.message));
     console.log(`[Delete Member] Removed ${existing.name} (${id})`);
     res.json({ success: true, message: `ลบ ${existing.name} ออกจากครอบครัวเรียบร้อยแล้ว` });
   } catch (err) {
@@ -623,8 +668,9 @@ app.delete('/api/members/:id', (req, res) => {
 // ==========================================
 // 3. POSTS, LIKES & COMMENTS
 // ==========================================
-app.get('/api/posts', (req, res) => {
+app.get('/api/posts', async (req, res) => {
   try {
+    await pullFromCloud().catch(() => {});
     const { currentMemberId } = req.query;
     const posts = db.prepare('SELECT * FROM posts ORDER BY timestamp DESC').all();
     const comments = db.prepare('SELECT * FROM comments ORDER BY timestamp ASC').all();
@@ -736,6 +782,7 @@ app.post('/api/posts/chore', async (req, res) => {
     });
 
     tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after chore post:', err.message));
 
     const created = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     res.json({
@@ -799,6 +846,7 @@ app.post('/api/posts/routine', async (req, res) => {
     });
 
     tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after chore post:', err.message));
 
     const created = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     res.json({
@@ -860,6 +908,7 @@ app.post('/api/posts/:id/like', (req, res) => {
     });
 
     tx();
+    pushToCloud().catch(() => {});
 
     const updatedLikesCount = db.prepare('SELECT COUNT(*) as count FROM post_likes WHERE postId = ?').get(id).count;
     res.json({ success: true, isLiked, likes: updatedLikesCount });
@@ -911,6 +960,7 @@ app.post('/api/posts/:id/comment', (req, res) => {
     });
 
     tx();
+    pushToCloud().catch(() => {});
 
     const createdComment = db.prepare('SELECT * FROM comments WHERE id = ?').get(commentId);
     res.json({ success: true, comment: createdComment });
@@ -920,7 +970,7 @@ app.post('/api/posts/:id/comment', (req, res) => {
   }
 });
 
-app.delete('/api/posts/:id', (req, res) => {
+app.delete('/api/posts/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const tx = db.transaction(() => {
@@ -930,6 +980,7 @@ app.delete('/api/posts/:id', (req, res) => {
       db.prepare('DELETE FROM posts WHERE id = ?').run(id);
     });
     tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after delete post:', err.message));
     res.json({ success: true, message: 'Post deleted successfully' });
   } catch (err) {
     console.error('Error deleting post:', err);
@@ -937,10 +988,11 @@ app.delete('/api/posts/:id', (req, res) => {
   }
 });
 
-app.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
+app.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
   try {
     const { commentId } = req.params;
     db.prepare('DELETE FROM comments WHERE id = ?').run(commentId);
+    pushToCloud().catch(() => {});
     res.json({ success: true, message: 'Comment deleted successfully' });
   } catch (err) {
     console.error('Error deleting comment:', err);
@@ -951,8 +1003,9 @@ app.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
 // ==========================================
 // 3.1 STORIES / HIGHLIGHTS (แยกกับโพสต์ฟีด)
 // ==========================================
-app.get('/api/stories', (req, res) => {
+app.get('/api/stories', async (req, res) => {
   try {
+    await pullFromCloud().catch(() => {});
     const stories = db.prepare(`
       SELECT s.*, m.name as memberName, m.avatar as memberAvatar, m.avatarType as memberAvatarType, m.avatarImage as memberAvatarImage, m.role as memberRole, m.color as memberColor
       FROM stories s
@@ -1047,6 +1100,7 @@ app.post('/api/stories', async (req, res) => {
       member,
     };
 
+    await pushToCloud().catch(err => console.warn('Push cloud after create story:', err.message));
     res.json({ success: true, story: created });
   } catch (err) {
     console.error('Create story error:', err);
@@ -1054,10 +1108,11 @@ app.post('/api/stories', async (req, res) => {
   }
 });
 
-app.delete('/api/stories/:id', (req, res) => {
+app.delete('/api/stories/:id', async (req, res) => {
   try {
     const { id } = req.params;
     db.prepare('DELETE FROM stories WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete story:', err.message));
     res.json({ success: true, message: 'Story deleted successfully' });
   } catch (err) {
     console.error('Delete story error:', err);

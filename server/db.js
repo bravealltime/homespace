@@ -176,8 +176,8 @@ export function initDb() {
     const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();
     if (!fluke) {
       db.prepare(`
-        INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId)
-        VALUES ('member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', ?, 1, 'active', 'family-main')
+        INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId, pin)
+        VALUES ('member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', ?, 1, 'active', 'family-main', '1234')
       `).run(Date.now() - 30 * 86400000);
     } else {
       db.prepare(`
@@ -185,6 +185,17 @@ export function initDb() {
         SET phone = '0615678160', name = 'Fluke', role = 'เจ้าบ้าน', isAdmin = 1, status = 'active'
         WHERE id = ?
       `).run(fluke.id);
+    }
+
+    // Ensure Ziesie exists and is active (phone 0615213018, pin 2010)
+    const ziesie = db.prepare("SELECT * FROM members WHERE phone = '0615213018' OR id = 'member-1793392592391'").get();
+    if (!ziesie) {
+      db.prepare(`
+        INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId, pin)
+        VALUES ('member-1793392592391', '0615213018', 'Ziesie', 'สมาชิกในบ้าน', '😊', 'emoji', null, '#9381FF', 1793392592391, 0, 'active', 'family-main', '2010')
+      `).run();
+    } else {
+      db.prepare("UPDATE members SET phone = '0615213018', status = 'active', pin = '2010', name = 'Ziesie' WHERE id = ?").run(ziesie.id);
     }
 
     // Remove old mock members and posts

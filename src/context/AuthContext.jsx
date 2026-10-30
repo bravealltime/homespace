@@ -314,10 +314,15 @@ export function AuthProvider({ children }) {
         return res;
       }
     } catch (err) {
+      if (err.status === 403 || err.data?.status === 'pending') {
+        setCurrentPhone(cleanPhone);
+        return { status: 'pending', member: err.data?.member };
+      }
       console.warn('Login via API warning, trying local:', err.message);
-      const member = members.find(m => m.phone.replace(/\D/g, '') === cleanPhone);
+      const member = members.find(m => (m.phone || '').replace(/\D/g, '') === cleanPhone);
       if (member) {
         if (member.status === 'pending') {
+          setCurrentPhone(cleanPhone);
           return { status: 'pending', member };
         }
         if (member.pin && member.pin !== cleanPin) {

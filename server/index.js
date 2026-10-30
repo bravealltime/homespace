@@ -6,6 +6,7 @@ import fs from 'fs';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import db, { initDb } from './db.js';
+import { isSupabaseConfigured, uploadBufferToSupabase, uploadBase64ToSupabase } from './supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,16 +54,52 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     service: 'HomeSpace Family Backend',
     database: 'SQLite (WAL mode)',
+    supabaseStorage: isSupabaseConfigured() ? 'active' : 'not configured (using local fallback)',
     timestamp: Date.now(),
   });
 });
 
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'ไม่พบไฟล์รูปภาพที่อัปโหลด' });
   }
+
+  // 1. Try uploading to Supabase Storage if configured
+  if (isSupabaseConfigured()) {
+    try {
+      const buffer = fs.readFileSync(req.file.path);
+      const sbRes = await uploadBufferToSupabase(buffer, req.file.originalname, req.file.mimetype);
+      if (sbRes && sbRes.url) {
+        // Clean up temporary local file
+        try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
+        return res.json({ success: true, url: sbRes.url, provider: 'supabase' });
+      }
+    } catch (err) {
+      console.warn('Supabase direct upload warning, falling back to disk:', err.message);
+    }
+  }
+
+  // 2. Fallback to local server static URL
   const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ success: true, url: fileUrl, filename: req.file.filename });
+  res.json({ success: true, url: fileUrl, filename: req.file.filename, provider: 'local' });
+});
+
+app.post('/api/upload-base64', async (req, res) => {
+  try {
+    const { base64, prefix = 'image' } = req.body;
+    if (!base64) {
+      return res.status(400).json({ error: 'base64 data is required' });
+    }
+    const uploadedUrl = await uploadBase64ToSupabase(base64, prefix);
+    res.json({
+      success: true,
+      url: uploadedUrl,
+      provider: uploadedUrl.startsWith('http') ? 'supabase' : 'base64',
+    });
+  } catch (err) {
+    console.error('Upload base64 error:', err);
+    res.status(500).json({ error: 'Upload base64 failed' });
+  }
 });
 
 
@@ -511,7 +548,7 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
-app.put('/api/members/:id', (req, res) => {
+app.put('/api/members/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, role, avatar, avatarType, avatarImage, pin } = req.body;
@@ -523,6 +560,11 @@ app.put('/api/members/:id', (req, res) => {
 
     const cleanPin = pin ? String(pin).replace(/\D/g, '').slice(0, 4) : existing.pin || '1234';
 
+    let finalAvatarImage = avatarImage !== undefined ? avatarImage : existing.avatarImage;
+    if (finalAvatarImage && finalAvatarImage.startsWith('data:image/')) {
+      finalAvatarImage = await uploadBase64ToSupabase(finalAvatarImage, 'avatar');
+    }
+
     db.prepare(`
       UPDATE members 
       SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?, pin = ?
@@ -532,7 +574,7 @@ app.put('/api/members/:id', (req, res) => {
       role !== undefined ? role.trim() : existing.role,
       avatar !== undefined ? avatar : existing.avatar,
       avatarType !== undefined ? avatarType : existing.avatarType,
-      avatarImage !== undefined ? avatarImage : existing.avatarImage,
+      finalAvatarImage,
       cleanPin,
       id
     );
@@ -618,7 +660,7 @@ app.get('/api/posts', (req, res) => {
   }
 });
 
-app.post('/api/posts/chore', (req, res) => {
+app.post('/api/posts/chore', async (req, res) => {
   try {
     const {
       memberId,
@@ -637,9 +679,19 @@ app.post('/api/posts/chore', (req, res) => {
       return res.status(400).json({ error: 'memberId is required' });
     }
 
+    let finalBefore = beforeImage || null;
+    let finalAfter = afterImage || imageUrl || null;
+
+    if (finalBefore && finalBefore.startsWith('data:image/')) {
+      finalBefore = await uploadBase64ToSupabase(finalBefore, 'chore-before');
+    }
+    if (finalAfter && finalAfter.startsWith('data:image/')) {
+      finalAfter = await uploadBase64ToSupabase(finalAfter, 'chore-after');
+    }
+
     const postId = `chore-${Date.now()}`;
     const timestamp = Date.now();
-    const finalImage = afterImage || imageUrl || null;
+    const finalImage = finalAfter || null;
 
     const tx = db.transaction(() => {
       // Insert post
@@ -655,8 +707,8 @@ app.post('/api/posts/chore', (req, res) => {
         points,
         praise,
         praiseEmoji,
-        beforeImage || null,
-        afterImage || null,
+        finalBefore,
+        finalAfter,
         finalImage,
         timestamp
       );
@@ -694,7 +746,7 @@ app.post('/api/posts/chore', (req, res) => {
   }
 });
 
-app.post('/api/posts/routine', (req, res) => {
+app.post('/api/posts/routine', async (req, res) => {
   try {
     const {
       memberId,
@@ -705,6 +757,11 @@ app.post('/api/posts/routine', (req, res) => {
 
     if (!memberId) {
       return res.status(400).json({ error: 'memberId is required' });
+    }
+
+    let finalPhoto = photo || null;
+    if (finalPhoto && finalPhoto.startsWith('data:image/')) {
+      finalPhoto = await uploadBase64ToSupabase(finalPhoto, 'routine');
     }
 
     const postId = `routine-${Date.now()}`;
@@ -718,7 +775,7 @@ app.post('/api/posts/routine', (req, res) => {
         postId,
         memberId,
         caption || 'แชร์เรื่องราวดี ๆ ร่วมกับทุกคนในบ้าน 💖',
-        photo || null,
+        finalPhoto,
         points,
         timestamp
       );
@@ -927,7 +984,7 @@ app.get('/api/stories', (req, res) => {
   }
 });
 
-app.post('/api/stories', (req, res) => {
+app.post('/api/stories', async (req, res) => {
   try {
     const { memberId, photo, caption, bgGradient, textColor, stickers } = req.body;
     if (!memberId) {
@@ -938,6 +995,11 @@ app.post('/api/stories', (req, res) => {
       return res.status(404).json({ error: 'Member not found' });
     }
 
+    let finalPhoto = photo || null;
+    if (finalPhoto && finalPhoto.startsWith('data:image/')) {
+      finalPhoto = await uploadBase64ToSupabase(finalPhoto, 'story');
+    }
+
     const id = `story-${Date.now()}`;
     const now = Date.now();
     db.prepare(`
@@ -946,7 +1008,7 @@ app.post('/api/stories', (req, res) => {
     `).run(
       id,
       memberId,
-      photo || null,
+      finalPhoto,
       caption ? caption.trim() : '',
       bgGradient || 'from-rose-500 to-amber-500',
       textColor || '#ffffff',
@@ -974,7 +1036,7 @@ app.post('/api/stories', (req, res) => {
     const created = {
       id,
       memberId,
-      photo: photo || null,
+      photo: finalPhoto,
       caption: caption ? caption.trim() : '',
       bgGradient: bgGradient || 'from-rose-500 to-amber-500',
       textColor: textColor || '#ffffff',

@@ -210,6 +210,13 @@ export async function uploadImageFile(file) {
   return await res.json();
 }
 
+export async function uploadBase64Image(base64, prefix = 'image') {
+  return request('/upload-base64', {
+    method: 'POST',
+    body: JSON.stringify({ base64, prefix }),
+  });
+}
+
 // 7. Stories / Highlights (แยกกับโพสต์ฟีด)
 export async function fetchStories() {
   return request('/stories');

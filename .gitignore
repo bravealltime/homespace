@@ -31,4 +31,9 @@ server/*.db-shm
 server/uploads/*
 !server/uploads/.gitkeep
 
+# Environment files
+.env
+.env.*
+!.env.example
+
 .vercel

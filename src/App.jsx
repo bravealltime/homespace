@@ -27,7 +27,6 @@ import SearchModal from './components/SearchModal';
 import FamilySummary from './components/FamilySummary';
 import MonthlyRewards from './components/MonthlyRewards';
 import FamilyAdminModal from './components/FamilyAdminModal';
-import PhoneMockup from './components/PhoneMockup';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -62,7 +61,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
   );
 }
 
-function AppContent({ displayMode, onToggleMode }) {
+function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
   const { notifications } = useApp();
   const [activeTab, setActiveTab] = useState('home');
@@ -633,8 +632,6 @@ function AppContent({ displayMode, onToggleMode }) {
 
 function AppRouter() {
   const { isLoggedIn, isPending } = useAuth();
-  // Default to 'phone' mode on PC so it renders as a phone app mockup
-  const [displayMode, setDisplayMode] = useState('phone');
 
   // If opening via invite link (e.g. ?invite=HOME-2026), always show LoginPage so the invited person can enter their phone and register!
   const hasInviteLink = typeof window !== 'undefined' && (
@@ -644,9 +641,11 @@ function AppRouter() {
   );
 
   return (
-    <PhoneMockup displayMode={displayMode} onToggleMode={setDisplayMode}>
-      {!isLoggedIn || isPending || hasInviteLink ? <LoginPage /> : <AppContent displayMode={displayMode} onToggleMode={setDisplayMode} />}
-    </PhoneMockup>
+    <div className="min-h-[100dvh] w-full bg-[#EDE7DF] flex justify-center">
+      <div className="w-full max-w-md min-h-[100dvh] bg-[#FAF8F5] flex flex-col relative sm:border-x sm:border-[#ECE7DF] sm:shadow-xl overflow-hidden">
+        {!isLoggedIn || isPending || hasInviteLink ? <LoginPage /> : <AppContent />}
+      </div>
+    </div>
   );
 }
 

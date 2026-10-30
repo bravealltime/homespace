@@ -209,3 +209,28 @@ export async function uploadImageFile(file) {
   }
   return await res.json();
 }
+
+// 7. Stories / Highlights (แยกกับโพสต์ฟีด)
+export async function fetchStories() {
+  return request('/stories');
+}
+
+export async function createStory(storyData) {
+  return request('/stories', {
+    method: 'POST',
+    body: JSON.stringify(storyData),
+  });
+}
+
+export async function deleteStory(storyId) {
+  return request(`/stories/${storyId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function replyStory(storyId, { senderId, text, emoji }) {
+  return request(`/stories/${storyId}/reply`, {
+    method: 'POST',
+    body: JSON.stringify({ senderId, text, emoji }),
+  });
+}

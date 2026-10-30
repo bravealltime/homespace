@@ -142,6 +142,18 @@ export function initDb() {
       imageUrl TEXT,
       FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS stories (
+      id TEXT PRIMARY KEY,
+      memberId TEXT NOT NULL,
+      photo TEXT,
+      caption TEXT,
+      bgGradient TEXT,
+      textColor TEXT,
+      stickers TEXT,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
   `);
 
   
@@ -366,6 +378,24 @@ function seedInitialData() {
   if (voteCount === 0) {
     db.prepare('INSERT INTO reward_votes (memberId, rewardId, timestamp) VALUES (?, ?, ?)')
       .run('member-fluke', 'reward-1', Date.now());
+  }
+
+  // Seed initial story
+  const storyCount = db.prepare('SELECT COUNT(*) as count FROM stories').get().count;
+  if (storyCount === 0) {
+    db.prepare(`
+      INSERT INTO stories (id, memberId, photo, caption, bgGradient, textColor, stickers, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'story-welcome-fluke',
+      'member-fluke',
+      'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80',
+      'ยินดีต้อนรับสู่ไฮไลท์สตอรี่ของครอบครัวเราครับ 🏡✨',
+      'from-rose-500 to-amber-500',
+      '#ffffff',
+      '✨,🏡',
+      Date.now() - 3600000
+    );
   }
 }
 

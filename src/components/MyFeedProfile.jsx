@@ -16,6 +16,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
+import CreateStoryModal from './CreateStoryModal';
 import ProfileModal from './ProfileModal';
 
 function timeAgo(timestamp) {
@@ -60,11 +61,13 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, likePost, addComment, deletePost, deleteComment } = useApp();
+  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [createStoryOpen, setCreateStoryOpen] = useState(false);
+  const [viewingStoryItem, setViewingStoryItem] = useState(null);
   const [commentText, setCommentText] = useState({});
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedGridPost, setSelectedGridPost] = useState(null);
@@ -78,6 +81,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
   // Determine which profile is being viewed: currentUser or another member
   const activeMember = viewingMember || currentUser;
   const isMe = activeMember?.id === currentUser?.id;
+  const memberStories = (stories || []).filter((s) => s.memberId === activeMember?.id);
 
   // Filter posts that belong to this member
   // (Matches memberId, and also pairs member-big with the older sibling/Fluke)
@@ -205,6 +209,77 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
           <div className="bg-[#FAF8F5] p-2 rounded-2xl">
             <p className="text-sm font-black text-[#5F8D75]">{totalComments}</p>
             <p className="text-[10px] text-[#746C65] font-semibold">คอมเมนต์ 💬</p>
+          </div>
+        </div>
+
+        {/* Instagram-Style Highlights Bar */}
+        <div className="pt-2.5 border-t border-[#ECE7DF]/70">
+          <div className="flex items-center justify-between mb-2 px-0.5">
+            <span className="text-[11px] font-black text-[#2D2825] flex items-center gap-1.5">
+              <span>ไฮไลท์สตอรี่</span>
+              <span className="text-[9px] bg-[#EEF4F0] text-[#5F8D75] px-1.5 py-0.2 rounded font-bold">
+                {memberStories.length}
+              </span>
+            </span>
+            {isMe && (
+              <button
+                type="button"
+                onClick={() => setCreateStoryOpen(true)}
+                className="text-[10px] font-bold text-[#E88D67] hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <Plus size={12} weight="bold" />
+                <span>+ ลงไฮไลท์ใหม่</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+            {/* If isMe, show Add Highlight circle */}
+            {isMe && (
+              <button
+                type="button"
+                onClick={() => setCreateStoryOpen(true)}
+                className="flex flex-col items-center gap-1 group text-center cursor-pointer shrink-0"
+              >
+                <div className="w-13 h-13 rounded-full border-2 border-dashed border-[#ECE7DF] hover:border-[#5F8D75] bg-[#FAF8F5] flex items-center justify-center text-[#746C65] group-hover:text-[#5F8D75] transition-all">
+                  <Plus size={18} weight="bold" />
+                </div>
+                <span className="text-[10px] font-bold text-[#746C65]">ใหม่</span>
+              </button>
+            )}
+
+            {/* Member Stories Circles */}
+            {memberStories.map((st, idx) => (
+              <button
+                key={st.id || idx}
+                type="button"
+                onClick={() => setViewingStoryItem(st)}
+                className="flex flex-col items-center gap-1 group text-center cursor-pointer shrink-0"
+              >
+                <div className="w-13 h-13 rounded-full p-[2px] bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] shadow-2xs group-hover:scale-105 transition-transform">
+                  <div className="w-full h-full rounded-full bg-white p-[1.5px]">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF8F5] flex items-center justify-center">
+                      {st.photo ? (
+                        <img src={st.photo} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className={`w-full h-full bg-gradient-to-br ${st.bgGradient || 'from-rose-500 to-amber-500'} flex items-center justify-center text-xs text-white font-bold`}>
+                          ✨
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#2D2825] truncate max-w-[54px]">
+                  {st.caption ? st.caption.slice(0, 6) + '...' : `สตอรี่ ${idx + 1}`}
+                </span>
+              </button>
+            ))}
+
+            {!isMe && memberStories.length === 0 && (
+              <p className="text-[10px] text-[#9E958D] italic py-2">
+                ยังไม่มีไฮไลท์สตอรี่ที่บันทึกไว้
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -618,6 +693,94 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
         onClose={() => setCreatePostOpen(false)}
         initialMode="routine"
       />
+
+      {/* Create Story Modal */}
+      <CreateStoryModal
+        isOpen={createStoryOpen}
+        onClose={() => setCreateStoryOpen(false)}
+      />
+
+      {/* Story Quick Preview Modal from Profile */}
+      {viewingStoryItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-enter-rise text-white"
+          onClick={() => setViewingStoryItem(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl bg-[#23201D] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar */}
+            <div className="p-3.5 flex items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <MemberAvatar member={activeMember} size="sm" />
+                <div>
+                  <p className="text-xs font-bold leading-none">{activeMember?.name}</p>
+                  <p className="text-[10px] text-white/70 leading-none mt-1">{timeAgo(viewingStoryItem.timestamp)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isMe && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('คุณต้องการลบไฮไลท์สตอรี่นี้ใช่หรือไม่?')) {
+                        deleteStory(viewingStoryItem.id);
+                        setViewingStoryItem(null);
+                      }
+                    }}
+                    className="w-7 h-7 rounded-full bg-red-500/30 hover:bg-red-500/50 text-red-200 flex items-center justify-center transition-colors cursor-pointer"
+                    title="ลบสตอรี่นี้"
+                  >
+                    <Trash size={15} weight="bold" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setViewingStoryItem(null)}
+                  className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+                >
+                  <X size={15} weight="bold" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="relative h-[380px] flex items-center justify-center overflow-hidden">
+              {viewingStoryItem.photo ? (
+                <img
+                  src={viewingStoryItem.photo}
+                  alt="Story"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${viewingStoryItem.bgGradient || 'from-rose-500 to-amber-500'}`} />
+              )}
+
+              {/* Overlay Caption */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-4 text-center">
+                {viewingStoryItem.caption && (
+                  <div className="inline-block mx-auto bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/10 text-xs font-bold text-white leading-relaxed max-w-[260px]">
+                    {viewingStoryItem.caption}
+                  </div>
+                )}
+                {viewingStoryItem.stickers && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    {viewingStoryItem.stickers.split(',').filter(Boolean).map((stk, i) => (
+                      <span key={i} className="text-2xl drop-shadow-md">
+                        {stk}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );

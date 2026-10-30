@@ -35,10 +35,38 @@ const DEFAULT_FEED_POSTS = [
 
 const DEFAULT_NOTIFICATIONS = [];
 
+const DEFAULT_STORIES = [
+  {
+    id: 'story-welcome-fluke',
+    memberId: 'member-fluke',
+    photo: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80',
+    caption: 'ยินดีต้อนรับสู่ไฮไลท์สตอรี่ของครอบครัวเราครับ 🏡✨',
+    bgGradient: 'from-rose-500 to-amber-500',
+    textColor: '#ffffff',
+    stickers: '✨,🏡',
+    timestamp: Date.now() - 3600000,
+  },
+];
+
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_POSTS':
       return { ...state, feedPosts: action.payload };
+
+    case 'SET_STORIES':
+      return { ...state, stories: action.payload };
+
+    case 'ADD_STORY':
+      return {
+        ...state,
+        stories: [action.payload, ...(state.stories || []).filter((s) => s.id !== action.payload.id)],
+      };
+
+    case 'DELETE_STORY':
+      return {
+        ...state,
+        stories: (state.stories || []).filter((s) => s.id !== action.payload.storyId),
+      };
 
     case 'SET_NOTIFICATIONS':
       return { ...state, notifications: action.payload };
@@ -238,7 +266,10 @@ function getInitialState() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.history && parsed.feedPosts) {
-        return parsed;
+        return {
+          ...parsed,
+          stories: parsed.stories || DEFAULT_STORIES,
+        };
       }
     }
   } catch (e) {
@@ -248,6 +279,7 @@ function getInitialState() {
   return {
     history: generateInitialHistory(),
     feedPosts: DEFAULT_FEED_POSTS,
+    stories: DEFAULT_STORIES,
     notifications: DEFAULT_NOTIFICATIONS,
     backendVotes: {
       'member-fluke': 1,
@@ -266,6 +298,12 @@ export function AppProvider({ children }) {
       const backendPosts = await api.fetchPosts(currentUser?.id);
       if (Array.isArray(backendPosts) && backendPosts.length > 0) {
         dispatch({ type: 'SET_POSTS', payload: backendPosts });
+      }
+
+      // Sync Stories / Highlights (แยกกับโพสต์ฟีด)
+      const backendStories = await api.fetchStories();
+      if (Array.isArray(backendStories)) {
+        dispatch({ type: 'SET_STORIES', payload: backendStories });
       }
 
       // Sync Notifications
@@ -510,6 +548,54 @@ export function AppProvider({ children }) {
     }
   };
 
+  // STORIES / HIGHLIGHTS (แยกกับโพสต์ฟีด)
+  const addStory = async (storyData) => {
+    const tempId = `story-${Date.now()}`;
+    const newStory = {
+      id: tempId,
+      memberId: storyData.memberId || currentUser?.id,
+      photo: storyData.photo || null,
+      caption: storyData.caption || '',
+      bgGradient: storyData.bgGradient || 'from-rose-500 to-amber-500',
+      textColor: storyData.textColor || '#ffffff',
+      stickers: storyData.stickers || '',
+      timestamp: Date.now(),
+      member: currentUser,
+    };
+
+    dispatch({ type: 'ADD_STORY', payload: newStory });
+
+    try {
+      const res = await api.createStory(storyData);
+      if (res?.story) {
+        dispatch({ type: 'ADD_STORY', payload: res.story });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend create story error, saved locally:', err.message);
+    }
+  };
+
+  const deleteStory = async (storyId) => {
+    dispatch({ type: 'DELETE_STORY', payload: { storyId } });
+    try {
+      await api.deleteStory(storyId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete story error:', err.message);
+    }
+  };
+
+  const replyStory = async (storyId, { senderId, text, emoji }) => {
+    try {
+      await api.replyStory(storyId, { senderId: senderId || currentUser?.id, text, emoji });
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend reply story error:', err.message);
+    }
+  };
+
   const value = {
     state,
     members,
@@ -521,6 +607,7 @@ export function AppProvider({ children }) {
     totalScoreMonth,
     totalScoreToday,
     feedPosts: state.feedPosts || DEFAULT_FEED_POSTS,
+    stories: state.stories || DEFAULT_STORIES,
     notifications: state.notifications || DEFAULT_NOTIFICATIONS,
     markNotificationsRead,
     getWeeklyData,
@@ -532,6 +619,9 @@ export function AppProvider({ children }) {
     addComment,
     deletePost,
     deleteComment,
+    addStory,
+    deleteStory,
+    replyStory,
     addReward,
     voteReward,
     getRewardVotes,

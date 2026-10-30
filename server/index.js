@@ -890,6 +890,155 @@ app.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
 });
 
 // ==========================================
+// 3.1 STORIES / HIGHLIGHTS (แยกกับโพสต์ฟีด)
+// ==========================================
+app.get('/api/stories', (req, res) => {
+  try {
+    const stories = db.prepare(`
+      SELECT s.*, m.name as memberName, m.avatar as memberAvatar, m.avatarType as memberAvatarType, m.avatarImage as memberAvatarImage, m.role as memberRole, m.color as memberColor
+      FROM stories s
+      LEFT JOIN members m ON s.memberId = m.id
+      ORDER BY s.timestamp DESC
+    `).all();
+
+    const enriched = stories.map(s => ({
+      id: s.id,
+      memberId: s.memberId,
+      photo: s.photo,
+      caption: s.caption,
+      bgGradient: s.bgGradient,
+      textColor: s.textColor,
+      stickers: s.stickers,
+      timestamp: s.timestamp,
+      member: {
+        id: s.memberId,
+        name: s.memberName || 'สมาชิกในบ้าน',
+        avatar: s.memberAvatar || '😊',
+        avatarType: s.memberAvatarType || 'emoji',
+        avatarImage: s.memberAvatarImage || null,
+        role: s.memberRole || 'สมาชิก',
+        color: s.memberColor || '#5F8D75',
+      }
+    }));
+    res.json(enriched);
+  } catch (err) {
+    console.error('Fetch stories error:', err);
+    res.status(500).json({ error: 'Failed to fetch stories' });
+  }
+});
+
+app.post('/api/stories', (req, res) => {
+  try {
+    const { memberId, photo, caption, bgGradient, textColor, stickers } = req.body;
+    if (!memberId) {
+      return res.status(400).json({ error: 'memberId is required' });
+    }
+    const member = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
+    if (!member) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    const id = `story-${Date.now()}`;
+    const now = Date.now();
+    db.prepare(`
+      INSERT INTO stories (id, memberId, photo, caption, bgGradient, textColor, stickers, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      memberId,
+      photo || null,
+      caption ? caption.trim() : '',
+      bgGradient || 'from-rose-500 to-amber-500',
+      textColor || '#ffffff',
+      stickers || '',
+      now
+    );
+
+    // Create notification for other members
+    const others = db.prepare("SELECT id FROM members WHERE id != ? AND status = 'active'").all(memberId);
+    for (const o of others) {
+      db.prepare(`
+        INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        `notif-${Date.now()}-${o.id}`,
+        o.id,
+        memberId,
+        'story',
+        `🌟 ${member.name} ได้ลงไฮไลท์สตอรี่ใหม่`,
+        0,
+        now
+      );
+    }
+
+    const created = {
+      id,
+      memberId,
+      photo: photo || null,
+      caption: caption ? caption.trim() : '',
+      bgGradient: bgGradient || 'from-rose-500 to-amber-500',
+      textColor: textColor || '#ffffff',
+      stickers: stickers || '',
+      timestamp: now,
+      member,
+    };
+
+    res.json({ success: true, story: created });
+  } catch (err) {
+    console.error('Create story error:', err);
+    res.status(500).json({ error: 'Failed to create story' });
+  }
+});
+
+app.delete('/api/stories/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM stories WHERE id = ?').run(id);
+    res.json({ success: true, message: 'Story deleted successfully' });
+  } catch (err) {
+    console.error('Delete story error:', err);
+    res.status(500).json({ error: 'Failed to delete story' });
+  }
+});
+
+app.post('/api/stories/:id/reply', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { senderId, text, emoji } = req.body;
+    const story = db.prepare('SELECT * FROM stories WHERE id = ?').get(id);
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    const sender = db.prepare('SELECT * FROM members WHERE id = ?').get(senderId);
+    if (!sender) {
+      return res.status(404).json({ error: 'Sender not found' });
+    }
+
+    const messageText = emoji
+      ? `💖 ${sender.name} ส่งความรู้สึก ${emoji} ให้ไฮไลท์สตอรี่ของคุณ`
+      : `💬 ${sender.name} ตอบกลับไฮไลท์ของคุณ: "${text}"`;
+
+    db.prepare(`
+      INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `notif-${Date.now()}`,
+      story.memberId,
+      senderId,
+      'story_reply',
+      messageText,
+      0,
+      Date.now()
+    );
+
+    res.json({ success: true, message: 'Reply sent successfully' });
+  } catch (err) {
+    console.error('Reply story error:', err);
+    res.status(500).json({ error: 'Failed to reply story' });
+  }
+});
+
+// ==========================================
 // 4. REWARDS & VOTING
 // ==========================================
 app.get('/api/rewards', (req, res) => {

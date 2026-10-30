@@ -7,6 +7,7 @@ import {
   Broom,
   Sparkle,
   CaretRight,
+  CaretLeft,
   DotsThree,
   X,
   Trash,
@@ -14,10 +15,12 @@ import {
   Check,
   Flame,
   Target,
+  Plus,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
+import CreateStoryModal from './CreateStoryModal';
 
 const MEMBER_THEMES = {
   'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -76,6 +79,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     totalScoreMonth,
     monthlyGoal,
     feedPosts,
+    stories,
+    addStory,
+    deleteStory,
+    replyStory,
     likePost,
     addComment,
     deletePost,
@@ -89,8 +96,13 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentText, setCommentText] = useState({});
-  const [viewingStory, setViewingStory] = useState(null); // Story viewer state
+
+  // IG Story / Highlight States
+  const [createStoryModalOpen, setCreateStoryModalOpen] = useState(false);
+  const [storyViewer, setStoryViewer] = useState(null); // { member, stories, currentIndex }
   const [storyReplyText, setStoryReplyText] = useState('');
+  const [storyToast, setStoryToast] = useState('');
+
   const [activePostMenuId, setActivePostMenuId] = useState(null);
   const [viewingPhoto, setViewingPhoto] = useState(null);
   const [copiedPostId, setCopiedPostId] = useState(null);
@@ -124,14 +136,95 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     }
   };
 
-  const handleSendStoryReply = () => {
-    if (!storyReplyText.trim() || !viewingStory?.post?.id) {
-      setViewingStory(null);
+  // Story Auto-advance Timer (6s per story)
+  useEffect(() => {
+    if (!storyViewer || !storyViewer.stories || storyViewer.stories.length === 0) return;
+    const timer = setTimeout(() => {
+      if (storyViewer.currentIndex < storyViewer.stories.length - 1) {
+        setStoryViewer((prev) => ({
+          ...prev,
+          currentIndex: prev.currentIndex + 1,
+        }));
+      } else {
+        setStoryViewer(null);
+      }
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [storyViewer]);
+
+  const handleOpenMemberStory = (member) => {
+    const memberStories = (stories || []).filter((s) => s.memberId === member.id);
+    if (memberStories.length === 0) {
+      if (member.id === currentUser?.id) {
+        setCreateStoryModalOpen(true);
+      } else {
+        alert(`${member.name} ยังไม่มีไฮไลท์ใหม่ในขณะนี้ครับ ✨`);
+      }
       return;
     }
-    addComment(viewingStory.post.id, currentUser?.id || 'member-fluke', storyReplyText.trim());
+
+    setStoryViewer({
+      member,
+      stories: memberStories,
+      currentIndex: 0,
+    });
     setStoryReplyText('');
-    setViewingStory(null);
+    setStoryToast('');
+  };
+
+  const handleNextStory = () => {
+    if (!storyViewer) return;
+    if (storyViewer.currentIndex < storyViewer.stories.length - 1) {
+      setStoryViewer((prev) => ({
+        ...prev,
+        currentIndex: prev.currentIndex + 1,
+      }));
+    } else {
+      setStoryViewer(null);
+    }
+  };
+
+  const handlePrevStory = () => {
+    if (!storyViewer) return;
+    if (storyViewer.currentIndex > 0) {
+      setStoryViewer((prev) => ({
+        ...prev,
+        currentIndex: prev.currentIndex - 1,
+      }));
+    }
+  };
+
+  const handleDeleteCurrentStory = async (storyId) => {
+    if (!window.confirm('คุณต้องการลบไฮไลท์สตอรี่นี้ใช่หรือไม่?')) return;
+    await deleteStory(storyId);
+    if (!storyViewer) return;
+    const remaining = storyViewer.stories.filter((s) => s.id !== storyId);
+    if (remaining.length === 0) {
+      setStoryViewer(null);
+    } else {
+      setStoryViewer({
+        ...storyViewer,
+        stories: remaining,
+        currentIndex: Math.max(0, Math.min(storyViewer.currentIndex, remaining.length - 1)),
+      });
+    }
+  };
+
+  const handleSendStoryReaction = async (emoji) => {
+    const currentStory = storyViewer?.stories[storyViewer.currentIndex];
+    if (!currentStory) return;
+    await replyStory(currentStory.id, { senderId: currentUser?.id, emoji });
+    setStoryToast(`ส่ง ${emoji} ให้ ${storyViewer.member.name} แล้ว! ✨`);
+    setTimeout(() => setStoryToast(''), 1800);
+  };
+
+  const handleSendStoryText = async () => {
+    const currentStory = storyViewer?.stories[storyViewer.currentIndex];
+    if (!currentStory || !storyReplyText.trim()) return;
+    await replyStory(currentStory.id, { senderId: currentUser?.id, text: storyReplyText.trim() });
+    setStoryReplyText('');
+    setStoryToast(`ส่งข้อความถึง ${storyViewer.member.name} เรียบร้อยแล้ว ✨`);
+    setTimeout(() => setStoryToast(''), 1800);
   };
 
   // Mouse drag-to-scroll (Smooth swiping for desktop & mobile)
@@ -183,19 +276,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
 
   // Filter other family members (excluding currentUser so avatar isn't duplicated)
   const otherMembers = members.filter((m) => m.id !== currentUser?.id);
-
-  const handleOpenStory = (member) => {
-    // Find member's most recent post or photo
-    const post = feedPosts.find((p) => p.memberId === member.id);
-    setViewingStory({
-      member,
-      post: post || {
-        caption: `${member.name} กำลังเพลิดเพลินกับวันสบาย ๆ ที่บ้าน ✨`,
-        photo: member.avatarImage || 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80',
-        timestamp: Date.now() - 3600000,
-      },
-    });
-  };
+  const myStories = (stories || []).filter((s) => s.memberId === currentUser?.id);
 
   const handleSendComment = (postId) => {
     const text = commentText[postId]?.trim();
@@ -206,31 +287,60 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
 
   return (
     <div className="space-y-3 pb-24">
-      {/* 1. Ultra-Clean Instagram/Facebook Stories Bar (ไฮไลท์สตอรี่คลีน ๆ แบบไม่มีลูกศร) */}
-      <section
-        ref={storiesContainerRef}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        className={`bg-white rounded-3xl py-3 px-3.5 border border-[#ECE7DF] shadow-2xs overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none ${
-          isMouseDown ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
-      >
-        <div className="flex items-center gap-4 min-w-max">
-          {/* Your Story (เรื่องราวของคุณ) with + badge */}
+      {/* 1. Ultra-Clean Instagram Stories / Highlights Bar (แยกกับโพสต์ฟีด) */}
+      <section className="bg-white rounded-3xl p-3 sm:p-3.5 border border-[#ECE7DF] shadow-2xs space-y-2.5 select-none">
+        {/* Story Bar Subheader */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-black text-[#2D2825]">ไฮไลท์สตอรี่ประจำวัน</span>
+            <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.2 rounded-full font-bold">
+              แบบ IG (แยกกับโพสต์ฟีด)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreateStoryModalOpen(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E88D67] to-[#F15BB5] hover:opacity-90 text-white text-[10px] font-black shadow-2xs cursor-pointer active:scale-95 transition-all"
+          >
+            <Sparkle size={12} weight="fill" />
+            <span>+ ลงไฮไลท์</span>
+          </button>
+        </div>
+
+        {/* Scrollable Story Avatars */}
+        <div
+          ref={storiesContainerRef}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          className={`flex items-center gap-4 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-1 pb-0.5 ${
+            isMouseDown ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+        >
+          {/* Your Story with + badge */}
           <button
             type="button"
             onClick={() => {
               if (isDraggingRef.current) return;
-              openCreatePost('routine');
+              if (myStories.length > 0) {
+                handleOpenMemberStory(currentUser);
+              } else {
+                setCreateStoryModalOpen(true);
+              }
             }}
-            className="flex flex-col items-center gap-1.5 group text-center cursor-pointer select-none"
+            className="flex flex-col items-center gap-1.5 group text-center cursor-pointer select-none shrink-0"
           >
             <div className="relative">
-              {/* Clean outer ring for user */}
-              <div className="w-[62px] h-[62px] rounded-full p-[2.5px] bg-gradient-to-tr from-[#5F8D75] via-[#7BA7C2] to-[#E88D67] group-hover:scale-105 transition-transform shadow-2xs">
+              {/* Outer ring: IG gradient if active stories, or dashed/soft ring if none */}
+              <div
+                className={`w-[62px] h-[62px] rounded-full p-[2.5px] transition-transform group-hover:scale-105 shadow-2xs ${
+                  myStories.length > 0
+                    ? 'bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]'
+                    : 'bg-gradient-to-tr from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]'
+                }`}
+              >
                 <div className="w-full h-full rounded-full p-[2px] bg-white">
                   <div className="w-full h-full rounded-full bg-[#FAF8F5] flex items-center justify-center text-2xl font-bold overflow-hidden">
                     {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
@@ -241,16 +351,31 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   </div>
                 </div>
               </div>
-              {/* Instagram-style Blue/Coral Plus Badge */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#E88D67] text-white flex items-center justify-center text-xs font-black border-2 border-white shadow-xs">
+
+              {/* Instagram-style Plus Badge (Tap opens CreateStoryModal directly) */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCreateStoryModalOpen(true);
+                }}
+                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#E88D67] hover:bg-[#CF6E46] text-white flex items-center justify-center text-xs font-black border-2 border-white shadow-xs cursor-pointer active:scale-90"
+                title="ลงไฮไลท์สตอรี่ใหม่"
+              >
                 +
               </div>
             </div>
-            <span className="text-[11px] font-bold text-[#2D2825] tracking-tight">คุณ</span>
+            <div className="flex items-center gap-0.5 justify-center">
+              <span className="text-[11px] font-bold text-[#2D2825] tracking-tight">คุณ</span>
+              {myStories.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E88D67] shrink-0" />
+              )}
+            </div>
           </button>
 
-          {/* Other Members Stories (พ่อ, แม่, พี่, น้อง) - No Duplicates! */}
+          {/* Other Members Stories */}
           {otherMembers.map((member) => {
+            const memberStories = (stories || []).filter((s) => s.memberId === member.id);
+            const hasStories = memberStories.length > 0;
             const theme = MEMBER_THEMES[member.id] || MEMBER_THEMES.default;
             return (
               <button
@@ -258,16 +383,24 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 type="button"
                 onClick={() => {
                   if (isDraggingRef.current) return;
-                  handleOpenStory(member);
+                  handleOpenMemberStory(member);
                 }}
-                className="flex flex-col items-center gap-1.5 group text-center cursor-pointer select-none"
+                className="flex flex-col items-center gap-1.5 group text-center cursor-pointer select-none shrink-0"
               >
-                {/* Vivid Instagram Story Ring */}
-                <div className={`w-[62px] h-[62px] rounded-full p-[2.5px] bg-gradient-to-tr ${theme.border} group-hover:scale-105 transition-transform shadow-2xs`}>
-                  {/* Clean white gap separator */}
+                {/* Vivid Instagram Story Ring if active stories, or subtle ring if none */}
+                <div
+                  className={`w-[62px] h-[62px] rounded-full p-[2.5px] transition-transform group-hover:scale-105 shadow-2xs ${
+                    hasStories
+                      ? 'bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]'
+                      : 'bg-[#ECE7DF]'
+                  }`}
+                >
                   <div className="w-full h-full rounded-full p-[2px] bg-white">
-                    {/* Inner avatar container that fills completely */}
-                    <div className={`w-full h-full rounded-full bg-gradient-to-br ${theme.bg} flex items-center justify-center text-2xl overflow-hidden`}>
+                    <div
+                      className={`w-full h-full rounded-full flex items-center justify-center text-2xl overflow-hidden ${
+                        hasStories ? `bg-gradient-to-br ${theme.bg}` : 'bg-[#FAF8F5]'
+                      }`}
+                    >
                       {member.avatarType === 'image' && member.avatarImage ? (
                         <img src={member.avatarImage} alt={member.name} className="w-full h-full object-cover" />
                       ) : (
@@ -276,9 +409,18 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                     </div>
                   </div>
                 </div>
-                <span className="text-[11px] font-bold text-[#2D2825] tracking-tight truncate max-w-[62px]">
-                  {member.name}
-                </span>
+                <div className="flex items-center gap-0.5 justify-center">
+                  <span
+                    className={`text-[11px] font-bold tracking-tight truncate max-w-[62px] ${
+                      hasStories ? 'text-[#2D2825]' : 'text-[#9E958D]'
+                    }`}
+                  >
+                    {member.name}
+                  </span>
+                  {hasStories && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E88D67] shrink-0" />
+                  )}
+                </div>
               </button>
             );
           })}
@@ -697,82 +839,187 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         })}
       </div>
 
-      {/* Instagram Story Fullscreen Viewer Modal */}
-      {viewingStory && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/90 flex flex-col justify-between p-4 animate-enter-rise text-white backdrop-blur-md"
-          onClick={() => setViewingStory(null)}
-        >
-          {/* Top Progress Bar & Header */}
-          <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
-            {/* Story Progress Bar Line */}
-            <div className="w-full h-1 bg-white/30 rounded-full overflow-hidden">
-              <div className="h-full bg-white rounded-full w-full animate-pulse" />
-            </div>
+      {/* Real Instagram Story Fullscreen Viewer Modal */}
+      {storyViewer && storyViewer.stories && storyViewer.stories.length > 0 && (() => {
+        const currentStory = storyViewer.stories[storyViewer.currentIndex] || storyViewer.stories[0];
+        const isOwner = currentStory.memberId === currentUser?.id;
+        const stickersArray = currentStory.stickers ? currentStory.stickers.split(',').filter(Boolean) : [];
 
-            {/* Author Row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <MemberAvatar member={viewingStory.member} size="sm" />
-                <div>
-                  <p className="text-xs font-bold text-white leading-tight">
-                    {viewingStory.member.name}
-                  </p>
-                  <p className="text-[10px] text-white/70">
-                    {viewingStory.member.role} · สตอรี่วันนี้
-                  </p>
-                </div>
+        return (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-3 sm:p-5 animate-enter-rise text-white backdrop-blur-md select-none"
+            onClick={() => setStoryViewer(null)}
+          >
+            {/* Top Segmented Progress Bars & Header */}
+            <div className="space-y-2.5 max-w-sm mx-auto w-full" onClick={(e) => e.stopPropagation()}>
+              {/* Progress Bars (1 line per story) */}
+              <div className="flex items-center gap-1.5 w-full">
+                {storyViewer.stories.map((st, idx) => (
+                  <div key={st.id || idx} className="h-1 flex-1 bg-white/25 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        idx < storyViewer.currentIndex
+                          ? 'bg-white w-full'
+                          : idx === storyViewer.currentIndex
+                          ? 'bg-white w-full animate-pulse'
+                          : 'w-0'
+                      }`}
+                    />
+                  </div>
+                ))}
               </div>
 
+              {/* Author Row & Close */}
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2.5">
+                  <MemberAvatar member={storyViewer.member} size="sm" />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-black text-white leading-tight">
+                        {storyViewer.member.name}
+                      </p>
+                      <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.2 rounded font-bold">
+                        {storyViewer.currentIndex + 1}/{storyViewer.stories.length}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-white/70">
+                      {timeAgo(currentStory.timestamp)} · ไฮไลท์สตอรี่
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCurrentStory(currentStory.id)}
+                      className="w-8 h-8 rounded-full bg-red-500/30 hover:bg-red-500/50 text-red-200 flex items-center justify-center transition-colors cursor-pointer"
+                      title="ลบสตอรี่นี้"
+                    >
+                      <Trash size={16} weight="bold" />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setStoryViewer(null)}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer"
+                  >
+                    <X size={18} weight="bold" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Center Story Display with Left/Right Tap zones */}
+            <div
+              className="relative flex-1 max-w-sm mx-auto w-full my-3 flex items-center justify-center overflow-hidden rounded-3xl bg-[#23201D] shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Background: Photo or Gradient */}
+              {currentStory.photo ? (
+                <img
+                  src={currentStory.photo}
+                  alt="Story"
+                  className="w-full h-full object-cover rounded-3xl"
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${currentStory.bgGradient || 'from-rose-500 to-amber-500'} flex items-center justify-center p-6 text-center rounded-3xl`} />
+              )}
+
+              {/* Subtle top/bottom gradient overlay for readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none rounded-3xl" />
+
+              {/* Story Content Overlay */}
+              <div className="absolute inset-0 flex flex-col justify-between p-5 pointer-events-none">
+                <div />
+
+                {/* Center text / caption & stickers */}
+                <div className="text-center space-y-2">
+                  {currentStory.caption && (
+                    <div className="inline-block max-w-[280px] bg-black/50 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-white font-bold text-sm leading-relaxed shadow-lg">
+                      {currentStory.caption}
+                    </div>
+                  )}
+
+                  {stickersArray.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+                      {stickersArray.map((stk, i) => (
+                        <span key={i} className="text-3xl drop-shadow-lg">
+                          {stk}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Floating toast notification */}
+                {storyToast ? (
+                  <div className="mx-auto bg-white text-[#2D2825] px-4 py-2 rounded-full font-bold text-xs shadow-xl animate-enter-rise">
+                    {storyToast}
+                  </div>
+                ) : <div />}
+              </div>
+
+              {/* Left Tap Zone (Previous Story) */}
               <button
                 type="button"
-                onClick={() => setViewingStory(null)}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
-          </div>
-
-          {/* Center Story Photo */}
-          <div className="flex-1 flex items-center justify-center my-4 overflow-hidden rounded-3xl" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={viewingStory.post.photo || viewingStory.post.afterImage || viewingStory.member.avatarImage}
-              alt="Story"
-              className="max-h-[60vh] w-full object-cover rounded-3xl shadow-2xl"
-            />
-          </div>
-
-          {/* Bottom Story Caption & Quick Heart */}
-          <div className="space-y-3 max-w-sm mx-auto w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/10 text-center">
-              <p className="text-xs text-white leading-relaxed">
-                {viewingStory.post.caption}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={storyReplyText}
-                onChange={(e) => setStoryReplyText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendStoryReply()}
-                placeholder={`ส่งข้อความถึง ${viewingStory.member.name}...`}
-                className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-full text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-white"
+                onClick={handlePrevStory}
+                className="absolute left-0 inset-y-0 w-1/3 opacity-0 cursor-pointer"
+                title="สตอรี่ก่อนหน้า"
               />
+
+              {/* Right Tap Zone (Next Story) */}
               <button
                 type="button"
-                onClick={handleSendStoryReply}
-                className="px-3.5 py-2 rounded-full bg-[#E88D67] text-white flex items-center justify-center font-bold text-xs hover:scale-105 transition-transform cursor-pointer shadow-md"
-              >
-                ส่ง ✨
-              </button>
+                onClick={handleNextStory}
+                className="absolute right-0 inset-y-0 w-2/3 opacity-0 cursor-pointer"
+                title="สตอรี่ถัดไป"
+              />
+            </div>
+
+            {/* Bottom Controls: Emojis & Reply */}
+            <div className="space-y-2 max-w-sm mx-auto w-full" onClick={(e) => e.stopPropagation()}>
+              {/* Quick Emojis Reaction Bar */}
+              <div className="flex items-center justify-around py-1 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
+                {['❤️', '🔥', '👏', '😂', '😍', '🥳'].map((em) => (
+                  <button
+                    key={em}
+                    type="button"
+                    onClick={() => handleSendStoryReaction(em)}
+                    className="text-2xl hover:scale-125 active:scale-95 transition-transform p-1 cursor-pointer"
+                    title={`ส่ง ${em}`}
+                  >
+                    {em}
+                  </button>
+                ))}
+              </div>
+
+              {/* Text Input Row */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={storyReplyText}
+                  onChange={(e) => setStoryReplyText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendStoryText()}
+                  placeholder={`ส่งข้อความถึง ${storyViewer.member.name}...`}
+                  className="flex-1 px-4 py-2.5 bg-white/10 border border-white/20 rounded-full text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-white focus:bg-white/20 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendStoryText}
+                  disabled={!storyReplyText.trim()}
+                  className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#E88D67] to-[#F15BB5] text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md disabled:opacity-40"
+                >
+                  ส่ง ✨
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Fullscreen Photo Zoom Preview Modal */}
       {viewingPhoto && (
@@ -806,6 +1053,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         onClose={() => setCreatePostModalOpen(false)}
         initialMode={createPostMode}
         initialChoreId={selectedChoreId}
+      />
+
+      {/* Instagram Story / Highlight Creator Modal (แยกเฉพาะ) */}
+      <CreateStoryModal
+        isOpen={createStoryModalOpen}
+        onClose={() => setCreateStoryModalOpen(false)}
       />
     </div>
   );

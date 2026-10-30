@@ -1,0 +1,578 @@
+import { useState } from 'react';
+import {
+  Heart,
+  ChatCircle,
+  Plus,
+  SquaresFour,
+  Rows,
+  Broom,
+  Camera,
+  Sparkle,
+  ArrowLeft,
+  X,
+} from '@phosphor-icons/react';
+import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import CreatePostModal from './CreatePostModal';
+
+function timeAgo(timestamp) {
+  if (!timestamp) return 'เมื่อสักครู่';
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'เมื่อสักครู่';
+  if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ชม. ที่แล้ว`;
+  const days = Math.floor(hours / 24);
+  return `${days} วันที่แล้ว`;
+}
+
+function MemberAvatar({ member, size = 'md' }) {
+  const sizeMap = {
+    xs: 'w-6 h-6 text-xs rounded-full',
+    comment: 'w-7 h-7 text-xs rounded-full',
+    sm: 'w-8 h-8 text-sm rounded-full',
+    md: 'w-10 h-10 text-base rounded-full',
+    lg: 'w-16 h-16 text-2xl rounded-full',
+  };
+
+  if (member?.avatarType === 'image' && member?.avatarImage) {
+    return (
+      <img
+        src={member.avatarImage}
+        alt={member.name}
+        className={`${sizeMap[size]} object-cover border border-[#ECE7DF] shadow-2xs shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeMap[size]} flex items-center justify-center border border-[#ECE7DF] shadow-2xs font-bold shrink-0 bg-[#FAF8F5]`}
+    >
+      {member?.avatar || '😊'}
+    </div>
+  );
+}
+
+export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
+  const { currentUser, members } = useAuth();
+  const { feedPosts, likePost, addComment } = useApp();
+
+  const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
+  const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [commentText, setCommentText] = useState({});
+  const [selectedGridPost, setSelectedGridPost] = useState(null);
+
+  // Determine which profile is being viewed: currentUser or another member
+  const activeMember = viewingMember || currentUser;
+  const isMe = activeMember?.id === currentUser?.id;
+
+  // Filter posts that belong to this member
+  // (Matches memberId, and also pairs member-big with the older sibling/Fluke)
+  const memberPosts = (feedPosts || []).filter((p) => {
+    if (p.memberId === activeMember?.id) return true;
+    if (
+      p.memberId === 'member-big' &&
+      (activeMember?.name?.toLowerCase().includes('fluke') ||
+        activeMember?.role?.includes('พี่') ||
+        activeMember?.name === 'พี่เบล')
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  // Filter by type
+  const filteredPosts = memberPosts.filter((post) => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'chore') return post.type === 'chore';
+    if (activeFilter === 'routine') return post.type === 'routine';
+    return true;
+  });
+
+  // Calculate stats
+  const totalPoints = memberPosts.reduce((sum, p) => sum + (p.points || 0), 0);
+  const totalLikes = memberPosts.reduce((sum, p) => sum + (p.likes || 0), 0);
+  const totalComments = memberPosts.reduce((sum, p) => sum + (p.comments?.length || 0), 0);
+
+  const handleSendComment = (postId) => {
+    const text = commentText[postId]?.trim();
+    if (!text) return;
+    addComment(postId, currentUser?.id || 'member-dad', text);
+    setCommentText((prev) => ({ ...prev, [postId]: '' }));
+  };
+
+  return (
+    <div className="space-y-3.5 pb-24 animate-enter-rise select-none">
+      {/* Back button if viewing another family member */}
+      {!isMe && (
+        <button
+          type="button"
+          onClick={onBackToMe}
+          className="flex items-center gap-1.5 text-xs font-bold text-[#5F8D75] hover:underline px-1 py-0.5 cursor-pointer"
+        >
+          <ArrowLeft size={16} weight="bold" />
+          <span>กลับไปหน้าโปรไฟล์ของฉัน</span>
+        </button>
+      )}
+
+      {/* 1. Profile Header Card */}
+      <section className="bg-white rounded-3xl p-4 border border-[#ECE7DF] shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full p-[2.5px] bg-gradient-to-tr from-[#5F8D75] to-[#E88D67] shadow-xs">
+                <div className="w-full h-full rounded-full bg-white p-[2px]">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF8F5] flex items-center justify-center text-2xl font-bold">
+                    {activeMember?.avatarType === 'image' && activeMember?.avatarImage ? (
+                      <img src={activeMember.avatarImage} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      activeMember?.avatar || '😊'
+                    )}
+                  </div>
+                </div>
+              </div>
+              <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-[#5F8D75] text-white text-[9px] font-black border border-white">
+                {activeMember?.role || 'สมาชิก'}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-base font-black text-[#2D2825]">{activeMember?.name}</h2>
+                {isMe && (
+                  <span className="text-[10px] text-[#5F8D75] bg-[#EEF4F0] px-1.5 py-0.2 rounded-md font-bold">
+                    คุณ
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#746C65]">
+                {isMe ? 'ฟีดและบันทึกส่วนตัวของคุณ' : `โพสต์และงานบ้านของ ${activeMember?.name}`}
+              </p>
+              <div className="flex items-center gap-1 text-[10px] text-[#5F8D75] font-bold mt-0.5">
+                <span>🍯 แต้มโหลสะสม:</span>
+                <span className="bg-[#EEF4F0] px-1.5 py-0.2 rounded-md">+{totalPoints} แต้ม</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Create Post Button (Shown ONLY on your own profile) */}
+          {isMe && (
+            <button
+              type="button"
+              onClick={() => setCreatePostOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-black rounded-2xl shadow-xs transition-all cursor-pointer"
+            >
+              <Plus size={15} weight="bold" />
+              <span>โพสต์</span>
+            </button>
+          )}
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#ECE7DF]/70 text-center">
+          <div className="bg-[#FAF8F5] p-2 rounded-2xl">
+            <p className="text-sm font-black text-[#2D2825]">{memberPosts.length}</p>
+            <p className="text-[10px] text-[#746C65] font-semibold">โพสต์</p>
+          </div>
+          <div className="bg-[#FAF8F5] p-2 rounded-2xl">
+            <p className="text-sm font-black text-[#E88D67]">{totalLikes}</p>
+            <p className="text-[10px] text-[#746C65] font-semibold">ได้รับหัวใจ ❤️</p>
+          </div>
+          <div className="bg-[#FAF8F5] p-2 rounded-2xl">
+            <p className="text-sm font-black text-[#5F8D75]">{totalComments}</p>
+            <p className="text-[10px] text-[#746C65] font-semibold">คอมเมนต์ 💬</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Controls: Filter Pills & View Mode (Timeline vs Grid) */}
+      <div className="flex items-center justify-between gap-1.5 px-0.5">
+        {/* Filter Pills with horizontal scroll support on small screens */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0 pr-1">
+          <button
+            type="button"
+            onClick={() => setActiveFilter('all')}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap text-[11px] sm:text-xs font-bold cursor-pointer shrink-0 ${
+              activeFilter === 'all'
+                ? 'bg-[#2D2825] text-white shadow-2xs'
+                : 'bg-white text-[#746C65] border border-[#ECE7DF]'
+            }`}
+          >
+            ทั้งหมด ({memberPosts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('chore')}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap text-[11px] sm:text-xs font-bold cursor-pointer shrink-0 ${
+              activeFilter === 'chore'
+                ? 'bg-[#5F8D75] text-white shadow-2xs'
+                : 'bg-white text-[#746C65] border border-[#ECE7DF]'
+            }`}
+          >
+            🧹 งานบ้าน
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('routine')}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap text-[11px] sm:text-xs font-bold cursor-pointer shrink-0 ${
+              activeFilter === 'routine'
+                ? 'bg-[#E88D67] text-white shadow-2xs'
+                : 'bg-white text-[#746C65] border border-[#ECE7DF]'
+            }`}
+          >
+            📸 กิจกรรม
+          </button>
+        </div>
+
+        {/* View Switcher (Feed vs Grid) */}
+        <div className="flex items-center bg-white p-0.5 rounded-xl border border-[#ECE7DF] shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('feed')}
+            className={`p-1.5 rounded-lg transition-all ${
+              viewMode === 'feed'
+                ? 'bg-[#2D2825] text-white shadow-2xs'
+                : 'text-[#746C65] hover:text-[#2D2825]'
+            }`}
+            title="มุมมองฟีดเต็ม"
+          >
+            <Rows size={16} weight="bold" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('grid')}
+            className={`p-1.5 rounded-lg transition-all ${
+              viewMode === 'grid'
+                ? 'bg-[#2D2825] text-white shadow-2xs'
+                : 'text-[#746C65] hover:text-[#2D2825]'
+            }`}
+            title="มุมมองตารางรูป"
+          >
+            <SquaresFour size={16} weight="bold" />
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Empty State */}
+      {filteredPosts.length === 0 && (
+        <div className="bg-white rounded-3xl p-8 border border-[#ECE7DF] shadow-2xs text-center space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-full bg-[#FAF8F5] flex items-center justify-center text-3xl">
+            📷
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-[#2D2825]">
+              {isMe ? 'ยังไม่มีโพสต์ของคุณ' : `ยังไม่มีโพสต์ของ ${activeMember?.name}`}
+            </h3>
+            <p className="text-xs text-[#746C65] mt-1">
+              {isMe
+                ? 'เริ่มแชร์ภาพกิจกรรมหรืองานบ้าน เพื่อสะสมแต้มเข้าโหลและรับคอมเมนต์จากครอบครัว'
+                : 'เมื่อคนนี้โพสต์เรื่องราวหรืองานบ้าน จะแสดงที่นี่'}
+            </p>
+          </div>
+          {isMe && (
+            <button
+              type="button"
+              onClick={() => setCreatePostOpen(true)}
+              className="px-4 py-2.5 bg-[#5F8D75] text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-[#476E5B] transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus size={15} weight="bold" />
+              <span>สร้างโพสต์แรกของคุณเลย ✨</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 4. GRID VIEW (Instagram Style 3x3) */}
+      {viewMode === 'grid' && filteredPosts.length > 0 && (
+        <div className="grid grid-cols-3 gap-1.5">
+          {filteredPosts.map((post) => {
+            const photoUrl = post.photo || post.afterImage || post.beforeImage;
+            return (
+              <div
+                key={post.id}
+                onClick={() => setSelectedGridPost(post)}
+                className="relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-[#ECE7DF] cursor-pointer group"
+              >
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xl bg-[#FAF8F5]">
+                    {post.type === 'chore' ? '🧹' : '📸'}
+                  </div>
+                )}
+
+                {/* Overlay with Likes and Comments count */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold">
+                  <span className="flex items-center gap-0.5">
+                    <Heart size={13} weight="fill" />
+                    <span>{post.likes || 0}</span>
+                  </span>
+                  <span className="flex items-center gap-0.5">
+                    <ChatCircle size={13} weight="fill" />
+                    <span>{post.comments?.length || 0}</span>
+                  </span>
+                </div>
+
+                {post.type === 'chore' && (
+                  <span className="absolute top-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded backdrop-blur-xs font-bold">
+                    งานบ้าน
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 5. TIMELINE FEED VIEW (Full Post Cards with Comments) */}
+      {viewMode === 'feed' && filteredPosts.length > 0 && (
+        <div className="space-y-3.5">
+          {filteredPosts.map((post) => {
+            const isChore = post.type === 'chore';
+            const commentsList = post.comments || [];
+
+            return (
+              <article
+                key={post.id}
+                className="bg-white rounded-3xl border border-[#ECE7DF] shadow-xs overflow-hidden"
+              >
+                {/* Post Header */}
+                <div className="p-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <MemberAvatar member={activeMember} size="md" />
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[#2D2825]">
+                          {activeMember?.name}
+                        </span>
+                        <span className="text-[10px] text-[#9E958D]">({activeMember?.role})</span>
+                      </div>
+                      <p className="text-[10px] text-[#9E958D]">{timeAgo(post.timestamp)}</p>
+                    </div>
+                  </div>
+
+                  <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
+                    +{post.points} แต้ม
+                  </span>
+                </div>
+
+                {/* Post Media */}
+                {isChore ? (
+                  <div className="px-3.5 space-y-1.5">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#ECE7DF]">
+                        {post.beforeImage ? (
+                          <img src={post.beforeImage} alt="ก่อนทำ" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">ก่อนทำ</div>
+                        )}
+                        <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                          ก่อนทำ
+                        </span>
+                      </div>
+
+                      <div className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#5F8D75]/40 ring-1 ring-[#5F8D75]/20">
+                        {post.afterImage || post.imageUrl ? (
+                          <img src={post.afterImage || post.imageUrl} alt="หลังทำ" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">หลังทำ</div>
+                        )}
+                        <span className="absolute bottom-2 left-2 bg-[#5F8D75] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs">
+                          หลังทำ ✨
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  post.photo && (
+                    <div className="px-3.5">
+                      <div className="w-full h-52 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5">
+                        <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Action Bar (Likes & Comments Count) */}
+                <div className="px-3.5 pt-3 pb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => likePost(post.id, currentUser?.id)}
+                      className="flex items-center gap-1 text-[#2D2825] hover:text-[#E88D67] transition-all active:scale-125 cursor-pointer"
+                    >
+                      <Heart
+                        size={22}
+                        weight={post.isLiked ? 'fill' : 'regular'}
+                        className={post.isLiked ? 'text-[#E88D67]' : 'text-[#2D2825]'}
+                      />
+                    </button>
+                    <span className="flex items-center gap-1 text-xs text-[#746C65] font-bold">
+                      <ChatCircle size={22} weight="regular" />
+                      <span>{commentsList.length}</span>
+                    </span>
+                  </div>
+
+                  {isChore && (
+                    <span className="text-[10px] font-bold text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#5F8D75]/20">
+                      <span>✨</span>
+                      <span>สะอาดเรียบร้อย</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Likes count */}
+                <div className="px-3.5 pb-1">
+                  <p className="text-xs font-bold text-[#2D2825]">ถูกใจ {post.likes || 1} คน</p>
+                </div>
+
+                {/* Caption */}
+                {post.caption && (
+                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825]">
+                    <span className="font-bold mr-1.5">{activeMember?.name}:</span>
+                    <span>{post.caption}</span>
+                  </div>
+                )}
+
+                {/* Comments Section */}
+                <div className="px-3.5 pb-3.5 pt-2 border-t border-[#ECE7DF]/60 space-y-2.5">
+                  <p className="text-[11px] font-bold text-[#746C65] flex items-center justify-between">
+                    <span>💬 ความคิดเห็น ({commentsList.length})</span>
+                    {commentsList.length > 0 && (
+                      <span className="text-[10px] text-[#5F8D75]">คนในบ้านมาให้กำลังใจ</span>
+                    )}
+                  </p>
+
+                  {commentsList.length > 0 ? (
+                    <div className="space-y-2">
+                      {commentsList.map((c) => {
+                        const commenter = members.find((m) => m.id === c.memberId);
+                        return (
+                          <div key={c.id} className="flex items-start gap-2">
+                            <MemberAvatar member={commenter} size="comment" />
+                            <div className="flex-1 bg-[#FAF8F5] rounded-2xl rounded-tl-xs px-3 py-2 border border-[#ECE7DF]/80 text-xs shadow-2xs">
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-[#2D2825] text-xs">
+                                    {commenter?.name || 'สมาชิก'}
+                                  </span>
+                                  {commenter?.role && (
+                                    <span className="text-[10px] text-[#9E958D]">({commenter.role})</span>
+                                  )}
+                                </div>
+                                {c.timestamp && (
+                                  <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp)}</span>
+                                )}
+                              </div>
+                              <p className="text-[#3E3834] leading-relaxed break-words text-xs">{c.text}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[#9E958D] py-1 text-center bg-[#FAF8F5] rounded-xl border border-dashed border-[#ECE7DF]">
+                      ยังไม่มีใครคอมเมนต์ในโพสต์นี้
+                    </p>
+                  )}
+
+                  {/* Inline Reply Box */}
+                  <div className="pt-1 flex items-center gap-2">
+                    <MemberAvatar member={currentUser} size="comment" />
+                    <div className="flex-1 relative flex items-center">
+                      <input
+                        type="text"
+                        value={commentText[post.id] || ''}
+                        onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendComment(post.id)}
+                        placeholder="พิมพ์ความคิดเห็น..."
+                        className="w-full pl-3.5 pr-14 py-2 bg-[#FAF8F5] focus:bg-white rounded-full border border-[#ECE7DF] focus:border-[#5F8D75] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none transition-all shadow-2xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSendComment(post.id)}
+                        disabled={!commentText[post.id]?.trim()}
+                        className="absolute right-1.5 px-3 py-1 text-xs font-bold text-white bg-[#5F8D75] hover:bg-[#476E5B] disabled:bg-[#ECE7DF] disabled:text-[#9E958D] rounded-full disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
+                      >
+                        ส่ง
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 6. Post Detail Modal (when clicked from Grid View) */}
+      {selectedGridPost && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs select-none"
+          onClick={() => setSelectedGridPost(null)}
+        >
+          <div
+            className="relative bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto animate-enter-rise text-[#2D2825] p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-[#ECE7DF]">
+              <h3 className="text-sm font-black text-[#2D2825]">รายละเอียดโพสต์</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedGridPost(null)}
+                className="w-7 h-7 rounded-full bg-[#FAF8F5] flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden aspect-4/3 bg-black/5 border border-[#ECE7DF]">
+              <img
+                src={selectedGridPost.photo || selectedGridPost.afterImage || selectedGridPost.beforeImage}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <p className="text-xs text-[#2D2825] leading-relaxed">
+              <span className="font-bold mr-1.5">{activeMember?.name}:</span>
+              {selectedGridPost.caption}
+            </p>
+
+            <div className="space-y-1.5 pt-2 border-t border-[#ECE7DF]">
+              <p className="text-[11px] font-bold text-[#746C65]">ความคิดเห็น ({selectedGridPost.comments?.length || 0}):</p>
+              {(selectedGridPost.comments || []).map((c) => {
+                const commenter = members.find((m) => m.id === c.memberId);
+                return (
+                  <div key={c.id} className="flex items-start gap-1.5 text-xs bg-[#FAF8F5] p-2 rounded-xl">
+                    <MemberAvatar member={commenter} size="xs" />
+                    <div>
+                      <span className="font-bold mr-1">{commenter?.name}:</span>
+                      <span className="text-[#3E3834]">{c.text}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={createPostOpen}
+        onClose={() => setCreatePostOpen(false)}
+        initialMode="routine"
+      />
+    </div>
+  );
+}

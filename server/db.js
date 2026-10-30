@@ -1,0 +1,357 @@
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Support both local development and Vercel serverless environment
+const isVercel = process.env.VERCEL === '1';
+const dbDir = isVercel ? '/tmp' : __dirname;
+const uploadsDir = isVercel ? path.join('/tmp', 'uploads') : path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const dbPath = path.join(dbDir, 'homespace.db');
+let db;
+try {
+  db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+} catch (e) {
+  console.warn('Fallback to in-memory database:', e.message);
+  db = new Database(':memory:');
+}
+
+// 1. Initialize Database Schema
+export function initDb() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS members (
+      id TEXT PRIMARY KEY,
+      phone TEXT UNIQUE,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL,
+      avatar TEXT NOT NULL,
+      avatarType TEXT DEFAULT 'emoji',
+      avatarImage TEXT,
+      color TEXT,
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS posts (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      memberId TEXT NOT NULL,
+      caption TEXT,
+      choreName TEXT,
+      choreEmoji TEXT,
+      points INTEGER DEFAULT 25,
+      praise TEXT,
+      praiseEmoji TEXT,
+      photo TEXT,
+      beforeImage TEXT,
+      afterImage TEXT,
+      imageUrl TEXT,
+      likes INTEGER DEFAULT 0,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS post_likes (
+      postId TEXT NOT NULL,
+      memberId TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      PRIMARY KEY (postId, memberId),
+      FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY,
+      postId TEXT NOT NULL,
+      memberId TEXT NOT NULL,
+      text TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS rewards (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      description TEXT,
+      target INTEGER NOT NULL,
+      category TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS reward_votes (
+      memberId TEXT PRIMARY KEY,
+      rewardId TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE,
+      FOREIGN KEY (rewardId) REFERENCES rewards(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      recipientId TEXT NOT NULL,
+      senderId TEXT NOT NULL,
+      type TEXT NOT NULL,
+      postId TEXT,
+      text TEXT NOT NULL,
+      isRead INTEGER DEFAULT 0,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (recipientId) REFERENCES members(id) ON DELETE CASCADE,
+      FOREIGN KEY (senderId) REFERENCES members(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS chore_history (
+      id TEXT PRIMARY KEY,
+      memberId TEXT NOT NULL,
+      choreName TEXT NOT NULL,
+      choreEmoji TEXT,
+      points INTEGER DEFAULT 25,
+      praise TEXT,
+      praiseEmoji TEXT,
+      date TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      imageUrl TEXT,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+  `);
+
+  // Seed default settings and initial data if not already present
+  seedInitialData();
+}
+
+function seedInitialData() {
+  const memberCount = db.prepare('SELECT COUNT(*) as count FROM members').get().count;
+  if (memberCount === 0) {
+    const insertMember = db.prepare(`
+      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const now = Date.now();
+    const defaultMembers = [
+      ['member-dad', '0811111111', 'พ่อ', 'คุณพ่อ', '👨', 'emoji', null, '#5F8D75', now - 30 * 86400000],
+      ['member-mom', '0822222222', 'แม่', 'คุณแม่', '👩', 'emoji', null, '#E88D67', now - 30 * 86400000],
+      ['member-big', '0833333333', 'Fluke', 'พี่ชาย', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', now - 30 * 86400000],
+      ['member-sister', '0833333334', 'พี่เบล', 'ลูกคนโต', '👧', 'emoji', null, '#7BA7C2', now - 30 * 86400000],
+      ['member-little', '0844444444', 'น้องบีม', 'ลูกคนเล็ก', '👶', 'emoji', null, '#C49B6F', now - 30 * 86400000],
+    ];
+
+    const tx = db.transaction(() => {
+      for (const m of defaultMembers) {
+        insertMember.run(...m);
+      }
+    });
+    tx();
+  }
+
+  // Seed rewards
+  const rewardCount = db.prepare('SELECT COUNT(*) as count FROM rewards').get().count;
+  if (rewardCount === 0) {
+    const insertReward = db.prepare(`
+      INSERT INTO rewards (id, name, emoji, description, target, category)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const defaultRewards = [
+      ['reward-1', 'ปาร์ตี้ชาบูหม้อไฟที่บ้าน', '🍲', 'รวมพลสมาชิกทุกคน นั่งล้อมวงกินชาบู เลือกน้ำซุปและเครื่องจิ้มโปรด', 200, 'อาหาร'],
+      ['reward-2', 'คาเฟ่บอร์ดเกมแสนสนุก', '🎲', 'ยกบ้านไปเล่นเกมสนุกๆ พร้อมขนมและเครื่องดื่มอร่อยๆ', 300, 'กิจกรรม'],
+      ['reward-3', 'ดูหนังรอบพิเศษพร้อมป๊อปคอร์นถังใหญ่', '🎬', 'เลือกดูภาพยนตร์เรื่องใหม่พร้อมกันทั้งบ้าน เอนเบาะนุ่มๆ สบายๆ', 350, 'กิจกรรม'],
+      ['reward-4', 'บุฟเฟต์ปิ้งย่างมื้อใหญ่', '🥩', 'ฉลองความขยันด้วยเนื้อย่างและอาหารญี่ปุ่นไม่อั้น', 400, 'อาหาร'],
+      ['reward-5', 'ทริปสวนสนุกทั้งวัน', '🎢', 'ไปเล่นเครื่องเล่นให้สุดเหวี่ยงและถ่ายรูปเก็บความทรงจำด้วยกัน', 450, 'ท่องเที่ยว'],
+      ['reward-6', 'ทริปทะเล 2 วัน 1 คืน', '🏖️', 'รางวัลสูงสุดของบ้าน พักผ่อนฟังเสียงคลื่นและกินอาหารทะเลสดๆ', 500, 'ท่องเที่ยว'],
+    ];
+
+    const tx = db.transaction(() => {
+      for (const r of defaultRewards) {
+        insertReward.run(...r);
+      }
+    });
+    tx();
+  }
+
+  // Seed initial feed posts
+  const postCount = db.prepare('SELECT COUNT(*) as count FROM posts').get().count;
+  if (postCount === 0) {
+    const insertPost = db.prepare(`
+      INSERT INTO posts (id, type, memberId, caption, choreName, choreEmoji, points, praise, praiseEmoji, photo, beforeImage, afterImage, imageUrl, likes, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const insertComment = db.prepare(`
+      INSERT INTO comments (id, postId, memberId, text, timestamp)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    const now = Date.now();
+    const defaultPosts = [
+      {
+        id: 'post-1',
+        type: 'routine',
+        memberId: 'member-mom',
+        caption: 'ทำอาหารเช้าเพื่อสุขภาพ สลัดผักไข่ต้มกับผลไม้ให้เด็กๆ กินก่อนไปโรงเรียน สดชื่นพร้อมเริ่มวันใหม่ 🍳🥗',
+        photo: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+        points: 25,
+        likes: 4,
+        timestamp: now - 3600000 * 1.5,
+        comments: [
+          ['c1', 'post-1', 'member-dad', 'น่ากินมาก ขอบคุณนะครับแม่ ❤️', now - 3600000 * 1.2],
+          ['c2', 'post-1', 'member-little', 'หนูกินหมดเกลี้ยงเลยยย อร่อยมาก 😋', now - 3600000 * 1.0],
+        ],
+      },
+      {
+        id: 'post-2',
+        type: 'chore',
+        memberId: 'member-little',
+        choreName: 'ปูเตียงจัดห้องนอน',
+        choreEmoji: '🛏️',
+        caption: 'ตื่นมาพับผ้าห่มและจัดเตียงให้ตึงเปรี๊ยะตามที่แม่สอนแล้วครับ สะอาดน่านอนสุดๆ ✨',
+        beforeImage: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80',
+        afterImage: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+        imageUrl: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+        praise: 'สะอาดเรียบร้อยดีมาก! ✨',
+        praiseEmoji: '✨',
+        points: 25,
+        likes: 5,
+        timestamp: now - 3600000 * 3,
+        comments: [
+          ['c3', 'post-2', 'member-mom', 'เก่งมากๆ เลยลูก ห้องสะอาดน่านอนที่สุด! 👏', now - 3600000 * 2.8],
+          ['c4', 'post-2', 'member-big', 'ปรบมือให้น้องบีมคนเก่ง 🎉', now - 3600000 * 2.5],
+        ],
+      },
+      {
+        id: 'post-3',
+        type: 'routine',
+        memberId: 'member-dad',
+        caption: 'วิ่งออกกำลังกายยามเช้า 5 กิโลเมตร สูดอากาศบริสุทธิ์รอบหมู่บ้าน ร่างกายสดชื่นกระปรี้กระเปร่ามากครับ 🏃‍♂️🌳',
+        photo: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80',
+        points: 25,
+        likes: 3,
+        timestamp: now - 3600000 * 5,
+        comments: [
+          ['c5', 'post-3', 'member-mom', 'สุดยอดเลยพ่อ วันหลังพาลูกๆ ไปวิ่งด้วยกันนะ 🏃‍♀️', now - 3600000 * 4.8],
+        ],
+      },
+      {
+        id: 'post-4',
+        type: 'chore',
+        memberId: 'member-big',
+        choreName: 'ล้างจานชามในซิงค์',
+        choreEmoji: '🧽',
+        caption: 'ล้างจานชามในซิงค์เสร็จเรียบร้อยแล้วครับ คว่ำจานเรียบร้อย สะอาดเงาวับ ✨',
+        beforeImage: 'https://images.unsplash.com/photo-1585837575652-267c041d77d4?auto=format&fit=crop&w=600&q=80',
+        afterImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
+        imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
+        praise: 'สะอาดเงาวับ! +25 แต้ม',
+        praiseEmoji: '✨',
+        points: 25,
+        likes: 6,
+        timestamp: now - 3600000 * 7,
+        comments: [
+          ['c6', 'post-4', 'member-dad', 'ขอบคุณมากครับลูก จานสะอาดมาก', now - 3600000 * 6.5],
+        ],
+      },
+    ];
+
+    const tx = db.transaction(() => {
+      for (const p of defaultPosts) {
+        insertPost.run(
+          p.id,
+          p.type,
+          p.memberId,
+          p.caption || null,
+          p.choreName || null,
+          p.choreEmoji || null,
+          p.points || 25,
+          p.praise || null,
+          p.praiseEmoji || null,
+          p.photo || null,
+          p.beforeImage || null,
+          p.afterImage || null,
+          p.imageUrl || null,
+          p.likes || 0,
+          p.timestamp
+        );
+
+        if (p.comments) {
+          for (const c of p.comments) {
+            insertComment.run(...c);
+          }
+        }
+      }
+    });
+    tx();
+  }
+
+  // Seed initial chore history for MVP & Charts
+  const historyCount = db.prepare('SELECT COUNT(*) as count FROM chore_history').get().count;
+  if (historyCount === 0) {
+    const insertHistory = db.prepare(`
+      INSERT INTO chore_history (id, memberId, choreName, choreEmoji, points, praise, praiseEmoji, date, timestamp, imageUrl)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const now = new Date();
+    const sampleChores = [
+      { name: 'ล้างจาน', emoji: '🧽', points: 25 },
+      { name: 'กวาดถูบ้าน', emoji: '🧹', points: 25 },
+      { name: 'จัดห้องนอน', emoji: '🛏️', points: 25 },
+      { name: 'ซักผ้า', emoji: '🧺', points: 25 },
+      { name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
+    ];
+    const memberIds = ['member-dad', 'member-mom', 'member-big', 'member-little'];
+
+    const tx = db.transaction(() => {
+      for (let day = 14; day >= 0; day--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - day);
+        const dateStr = d.toISOString().split('T')[0];
+
+        memberIds.forEach((mId, mIdx) => {
+          const chore = sampleChores[(day + mIdx) % sampleChores.length];
+          const histId = `hist-${dateStr}-${mId}`;
+          insertHistory.run(
+            histId,
+            mId,
+            chore.name,
+            chore.emoji,
+            chore.points,
+            'ทำได้ยอดเยี่ยม!',
+            '✨',
+            dateStr,
+            d.getTime() + mIdx * 1000,
+            null
+          );
+        });
+      }
+    });
+    tx();
+  }
+
+  // Seed default goal
+  const goalSetting = db.prepare('SELECT value FROM system_settings WHERE key = ?').get('monthlyGoal');
+  if (!goalSetting) {
+    db.prepare('INSERT INTO system_settings (key, value) VALUES (?, ?)').run('monthlyGoal', '500');
+  }
+
+  // Seed initial vote
+  const voteCount = db.prepare('SELECT COUNT(*) as count FROM reward_votes').get().count;
+  if (voteCount === 0) {
+    db.prepare('INSERT INTO reward_votes (memberId, rewardId, timestamp) VALUES (?, ?, ?)')
+      .run('member-dad', 'reward-1', Date.now());
+  }
+}
+
+export default db;

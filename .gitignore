@@ -30,3 +30,5 @@ server/*.db-wal
 server/*.db-shm
 server/uploads/*
 !server/uploads/.gitkeep
+
+.vercel

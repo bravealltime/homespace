@@ -1,5 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Auto-load .env in Node 20+
+try {
+  if (typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile('.env');
+  }
+} catch {
+  // .env may not exist on cloud environments like Vercel where process.env is injected directly
+}
+
 // Load Supabase credentials from environment
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;

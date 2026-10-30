@@ -12,6 +12,7 @@ import {
   Bell,
   UserCircle,
   MagnifyingGlass,
+  Plus,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -59,7 +60,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
 }
 
 function AppContent({ displayMode, onToggleMode }) {
-  const { currentUser, members, setCurrentPhone, logout } = useAuth();
+  const { currentUser, members, setCurrentPhone, logout, register } = useAuth();
   const { notifications } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -68,6 +69,10 @@ function AppContent({ displayMode, onToggleMode }) {
   const [switchUserOpen, setSwitchUserOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState('');
+  const [newMemberEmoji, setNewMemberEmoji] = useState('🧑');
 
   // Auto-hiding floating nav on scroll & touch
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -75,79 +80,83 @@ function AppContent({ displayMode, onToggleMode }) {
   const lastScrollTopRef = useRef(0);
   const accumulatedDeltaRef = useRef(0);
 
-  // Universal touch, wheel and scroll detection for all mobile phones & PC
-  useEffect(() => {
-    let touchStartY = 0;
-
-    const handleTouchStart = (e) => {
-      if (e.touches && e.touches[0]) {
-        touchStartY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (!e.touches || !e.touches[0]) return;
-      const currentY = e.touches[0].clientY;
-      const diffY = touchStartY - currentY; // positive = swiping up = scrolling down
-
-      // Swiped up by > 12px -> scroll down -> hide nav completely!
-      if (diffY > 12) {
-        setIsNavVisible(false);
-      }
-      // Swiped down by > 8px -> scroll up -> show nav!
-      else if (diffY < -8) {
-        setIsNavVisible(true);
-      }
-    };
-
-    const handleWheel = (e) => {
-      if (e.deltaY > 8) {
-        setIsNavVisible(false);
-      } else if (e.deltaY < -8) {
-        setIsNavVisible(true);
-      }
-    };
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('wheel', handleWheel, { passive: true });
-
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('wheel', handleWheel);
-    };
-  }, []);
-
+  // Scroll event handler on container: smooth, reliable collapse & reveal
   const handleScroll = (e) => {
     const currentScrollTop = e.currentTarget.scrollTop;
     const deltaY = currentScrollTop - lastScrollTopRef.current;
 
-    // Reset when at top
-    if (currentScrollTop <= 20) {
+    // 1. If at top of feed (first 35px), ALWAYS show nav
+    if (currentScrollTop <= 35) {
       setIsNavVisible(true);
       accumulatedDeltaRef.current = 0;
       lastScrollTopRef.current = currentScrollTop;
       return;
     }
 
-    // Direction flip resets accumulator
+    // 2. Accumulate delta in same direction
     if ((deltaY > 0 && accumulatedDeltaRef.current < 0) || (deltaY < 0 && accumulatedDeltaRef.current > 0)) {
       accumulatedDeltaRef.current = 0;
     }
     accumulatedDeltaRef.current += deltaY;
 
-    // Scrolling down accumulated > 14px -> hide nav
-    if (accumulatedDeltaRef.current > 14 && currentScrollTop > 30) {
+    // 3. Scrolling DOWN accumulated > 10px -> collapse/tuck ("ฮุบ") nav
+    if (accumulatedDeltaRef.current > 10 && currentScrollTop > 40) {
       setIsNavVisible(false);
     }
-    // Scrolling up accumulated < -8px -> reveal nav
-    else if (accumulatedDeltaRef.current < -8) {
+    // 4. Scrolling UP accumulated < -6px -> smoothly reveal nav
+    else if (accumulatedDeltaRef.current < -6) {
       setIsNavVisible(true);
     }
 
     lastScrollTopRef.current = currentScrollTop;
   };
+
+  // Instantaneous touch & wheel listeners on the container
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let lastTouchY = 0;
+
+    const handleTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        lastTouchY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      const currentY = e.touches[0].clientY;
+      const deltaY = lastTouchY - currentY; // positive = dragged up = scrolling down
+
+      if (Math.abs(deltaY) > 6) {
+        if (deltaY > 6 && container.scrollTop > 30) {
+          setIsNavVisible(false);
+        } else if (deltaY < -6) {
+          setIsNavVisible(true);
+        }
+        lastTouchY = currentY;
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (e.deltaY > 6 && container.scrollTop > 30) {
+        setIsNavVisible(false);
+      } else if (e.deltaY < -6) {
+        setIsNavVisible(true);
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('wheel', handleWheel, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   // Reset scroll position and show nav when changing tabs or profiles
   useEffect(() => {
@@ -263,7 +272,7 @@ function AppContent({ displayMode, onToggleMode }) {
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain relative [transform:translateZ(0)]"
+        className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain relative"
       >
         <main className="w-full px-3.5 pt-3 pb-24">
           {activeTab === 'home' && (
@@ -287,12 +296,11 @@ function AppContent({ displayMode, onToggleMode }) {
       {/* Floating Mobile Bottom Navigation Island (Auto-hides / collapses gracefully on scroll down) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className={`fixed md:absolute inset-x-0 z-40 max-w-[390px] mx-auto px-3 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`absolute bottom-3 inset-x-0 z-40 max-w-[390px] mx-auto px-3.5 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isNavVisible
             ? 'translate-y-0 opacity-100 pointer-events-auto scale-100'
-            : 'translate-y-28 opacity-0 pointer-events-none scale-90'
+            : 'translate-y-24 opacity-0 pointer-events-none scale-90'
         }`}
-        style={{ bottom: 'max(10px, env(safe-area-inset-bottom, 10px))' }}
       >
         <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around pointer-events-auto">
           {TABS.map((tab) => {
@@ -327,7 +335,7 @@ function AppContent({ displayMode, onToggleMode }) {
         <button
           type="button"
           onClick={() => setIsNavVisible(true)}
-          className="fixed md:absolute bottom-2 inset-x-0 mx-auto w-16 h-1.5 bg-[#2D2825]/40 hover:bg-[#5F8D75] active:bg-[#5F8D75] rounded-full transition-all z-30 cursor-pointer shadow-sm animate-pulse"
+          className="absolute bottom-1.5 inset-x-0 mx-auto w-16 h-1.5 bg-[#2D2825]/40 hover:bg-[#5F8D75] active:bg-[#5F8D75] rounded-full transition-all z-30 cursor-pointer shadow-2xs animate-pulse"
           title="แตะเพื่อเปิดแถบเมนู"
         />
       )}
@@ -378,24 +386,26 @@ function AppContent({ displayMode, onToggleMode }) {
                 </button>
               </div>
 
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2 mb-3">
                 {members.map((m) => {
                   const isCurrent = m.id === currentUser?.id;
                   return (
-                    <button
+                    <div
                       key={m.id}
-                      type="button"
-                      onClick={() => {
-                        setCurrentPhone(m.phone);
-                        setSwitchUserOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-2xl border transition-all text-left ${
+                      className={`w-full flex items-center justify-between p-2.5 rounded-2xl border transition-all ${
                         isCurrent
                           ? 'bg-[#EEF4F0] border-[#5F8D75] shadow-xs'
                           : 'bg-[#FAF8F5] border-[#ECE7DF] hover:bg-white'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentPhone(m.phone);
+                          setSwitchUserOpen(false);
+                        }}
+                        className="flex-1 flex items-center gap-2.5 text-left cursor-pointer"
+                      >
                         <div className="text-xl">
                           {m.avatarType === 'image' && m.avatarImage ? (
                             <img src={m.avatarImage} alt={m.name} className="w-7 h-7 rounded-lg object-cover" />
@@ -407,16 +417,117 @@ function AppContent({ displayMode, onToggleMode }) {
                           <p className="text-xs font-bold text-[#2D2825]">{m.name}</p>
                           <p className="text-[10px] text-[#746C65]">{m.role}</p>
                         </div>
-                      </div>
-                      {isCurrent && (
-                        <span className="text-[10px] font-bold text-[#5F8D75] px-1.5 py-0.5 bg-white rounded-md">
-                          ใช้งาน
-                        </span>
+                      </button>
+
+                      {isCurrent ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSwitchUserOpen(false);
+                              setProfileOpen(true);
+                            }}
+                            className="text-[10px] font-bold text-[#746C65] hover:text-[#2D2825] px-2 py-0.8 bg-white rounded-lg border border-[#ECE7DF] shadow-2xs cursor-pointer"
+                            title="แก้ไขโปรไฟล์"
+                          >
+                            ✏️ แก้ไข
+                          </button>
+                          <span className="text-[10px] font-bold text-[#5F8D75] px-1.5 py-0.5 bg-white rounded-md">
+                            ใช้งาน
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentPhone(m.phone);
+                            setSwitchUserOpen(false);
+                          }}
+                          className="text-[10px] font-bold text-[#5F8D75] hover:underline px-2 py-1 cursor-pointer"
+                        >
+                          สลับ →
+                        </button>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
+
+              {/* Add New Member Toggle / Form */}
+              {!isAddingMember ? (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingMember(true)}
+                  className="w-full mb-3 py-2 px-3 rounded-2xl border border-dashed border-[#5F8D75] bg-[#EEF4F0]/60 hover:bg-[#EEF4F0] text-[#5F8D75] text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus size={14} weight="bold" />
+                  <span>+ เพิ่มสมาชิกครอบครัว</span>
+                </button>
+              ) : (
+                <div className="mb-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#2D2825]">เพิ่มสมาชิกใหม่</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingMember(false)}
+                      className="text-xs text-[#746C65] hover:text-[#2D2825]"
+                    >
+                      ยกเลิก
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="ชื่อ เช่น ปู่, ย่า, น้าปุ้ย, สัตว์เลี้ยง"
+                    className="w-full px-2.5 py-1.5 bg-white rounded-xl border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
+                  />
+                  <input
+                    type="text"
+                    value={newMemberRole}
+                    onChange={(e) => setNewMemberRole(e.target.value)}
+                    placeholder="บทบาท เช่น คุณยาย, พี่ชาย, สุนัข"
+                    className="w-full px-2.5 py-1.5 bg-white rounded-xl border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
+                  />
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[11px] text-[#746C65] shrink-0">อิโมจิ:</span>
+                    <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                      {['👴', '👵', '🧑', '👧', '👶', '🐶', '🐱', '✨'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setNewMemberEmoji(emoji)}
+                          className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border transition-all cursor-pointer ${
+                            newMemberEmoji === emoji ? 'bg-white border-[#5F8D75] shadow-xs scale-110 font-bold' : 'bg-transparent border-transparent'
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!newMemberName.trim()) return;
+                      const dummyPhone = `08${Math.floor(10000000 + Math.random() * 90000000)}`;
+                      await register(dummyPhone, newMemberName.trim(), newMemberRole.trim() || 'สมาชิกในบ้าน', {
+                        avatar: newMemberEmoji,
+                        avatarType: 'emoji',
+                      });
+                      setCurrentPhone(dummyPhone);
+                      setNewMemberName('');
+                      setNewMemberRole('');
+                      setIsAddingMember(false);
+                      setSwitchUserOpen(false);
+                    }}
+                    disabled={!newMemberName.trim()}
+                    className="w-full py-2 bg-[#5F8D75] disabled:bg-[#ECE7DF] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs"
+                  >
+                    บันทึกสมาชิกใหม่ ✨
+                  </button>
+                </div>
+              )}
 
               <div className="pt-2 border-t border-[#ECE7DF] flex items-center justify-between">
                 <button

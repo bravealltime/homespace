@@ -78,6 +78,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     likePost,
     addComment,
     deletePost,
+    deleteComment,
     unlockedRewards,
   } = useApp();
 
@@ -637,11 +638,23 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                                   </span>
                                 )}
                               </div>
-                              {c.timestamp && (
-                                <span className="text-[9px] text-[#B0A79E]">
-                                  {timeAgo(c.timestamp)}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5">
+                                {c.timestamp && (
+                                  <span className="text-[9px] text-[#B0A79E]">
+                                    {timeAgo(c.timestamp)}
+                                  </span>
+                                )}
+                                {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteComment(post.id, c.id)}
+                                    className="text-[#B0A79E] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
+                                    title="ลบคอมเมนต์"
+                                  >
+                                    <Trash size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <p className="text-[#3E3834] leading-relaxed break-words text-xs">
                               {c.text}

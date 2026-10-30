@@ -112,7 +112,7 @@ export default function PhoneMockup({ children, displayMode, onToggleMode }) {
         <div className="hidden md:block absolute -right-[14px] top-36 w-[4px] h-20 bg-[#2E2B27] rounded-r-md border-r border-white/20" />
 
         {/* Inner Phone Display Container */}
-        <div className="relative w-full h-full bg-[#FAF8F5] md:rounded-[42px] overflow-hidden flex flex-col justify-between shadow-inner [transform:translateZ(0)]">
+        <div className="relative w-full h-full bg-[#FAF8F5] md:rounded-[42px] overflow-hidden flex flex-col justify-between shadow-inner">
           {/* Top Phone Status Bar (Simulated on PC; native mobile uses real status bar) */}
           <div className="hidden md:flex sticky top-0 z-50 bg-[#FAF8F5]/90 backdrop-blur-md px-6 pt-3 pb-2 items-center justify-between text-[#2D2825] text-xs font-bold select-none shrink-0 border-b border-[#ECE7DF]/50">
             {/* Clock */}

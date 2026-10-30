@@ -11,10 +11,12 @@ import {
   ArrowLeft,
   X,
   Trash,
+  PencilSimple,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
+import ProfileModal from './ProfileModal';
 
 function timeAgo(timestamp) {
   if (!timestamp) return 'เมื่อสักครู่';
@@ -58,12 +60,13 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, likePost, addComment, deletePost } = useApp();
+  const { feedPosts, likePost, addComment, deletePost, deleteComment } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [commentText, setCommentText] = useState({});
+  const [profileOpen, setProfileOpen] = useState(false);
   const [selectedGridPost, setSelectedGridPost] = useState(null);
 
   const handleDeletePost = (postId) => {
@@ -165,16 +168,27 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
             </div>
           </div>
 
-          {/* Create Post Button (Shown ONLY on your own profile) */}
+          {/* Actions: Edit Profile + Create Post */}
           {isMe && (
-            <button
-              type="button"
-              onClick={() => setCreatePostOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-black rounded-2xl shadow-xs transition-all cursor-pointer"
-            >
-              <Plus size={15} weight="bold" />
-              <span>โพสต์</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center gap-1 px-3 py-2 bg-[#FAF8F5] hover:bg-[#ECE7DF] text-[#746C65] hover:text-[#2D2825] text-xs font-bold rounded-2xl border border-[#ECE7DF] transition-all cursor-pointer shadow-2xs"
+                title="แก้ไขข้อมูลส่วนตัว"
+              >
+                <PencilSimple size={14} weight="bold" />
+                <span>แก้ไข</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreatePostOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-black rounded-2xl shadow-xs transition-all cursor-pointer"
+              >
+                <Plus size={15} weight="bold" />
+                <span>โพสต์</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -486,9 +500,21 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                                     <span className="text-[10px] text-[#9E958D]">({commenter.role})</span>
                                   )}
                                 </div>
-                                {c.timestamp && (
-                                  <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp)}</span>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {c.timestamp && (
+                                    <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp)}</span>
+                                  )}
+                                  {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteComment(post.id, c.id)}
+                                      className="text-[#B0A79E] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
+                                      title="ลบคอมเมนต์"
+                                    >
+                                      <Trash size={12} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <p className="text-[#3E3834] leading-relaxed break-words text-xs">{c.text}</p>
                             </div>
@@ -592,6 +618,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
         onClose={() => setCreatePostOpen(false)}
         initialMode="routine"
       />
+      <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }

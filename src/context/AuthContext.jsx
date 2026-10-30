@@ -301,6 +301,35 @@ export function AuthProvider({ children }) {
     }
   }, [currentUser, refreshMembers]);
 
+  const loginWithPin = useCallback(async (phone, pin) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPin = String(pin).replace(/\D/g, '').slice(0, 4);
+
+    try {
+      const res = await api.loginWithPin(cleanPhone, cleanPin);
+      if (res?.member) {
+        if (res.member.status === 'active') {
+          setCurrentPhone(cleanPhone);
+        }
+        return res;
+      }
+    } catch (err) {
+      console.warn('Login via API warning, trying local:', err.message);
+      const member = members.find(m => m.phone.replace(/\D/g, '') === cleanPhone);
+      if (member) {
+        if (member.status === 'pending') {
+          return { status: 'pending', member };
+        }
+        if (member.pin && member.pin !== cleanPin) {
+          throw new Error('รหัส PIN 4 หลักไม่ถูกต้อง กรุณาลองใหม่');
+        }
+        setCurrentPhone(cleanPhone);
+        return { success: true, member };
+      }
+      throw err;
+    }
+  }, [members]);
+
   const login = useCallback(async (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
     try {
@@ -377,6 +406,7 @@ export function AuthProvider({ children }) {
     refreshPendingRequests,
     findMemberByPhone,
     login,
+    loginWithPin,
     logout,
     updateProfile,
     setCurrentPhone,

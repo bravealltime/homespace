@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Camera, User, Check, Trash, Sparkle } from '@phosphor-icons/react';
+import { X, Camera, User, Check, Trash, Sparkle, LockKey, Eye, EyeSlash } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 
 const EMOJI_AVATARS = ['😊', '😎', '🥰', '😄', '🤗', '👨', '👩', '👧', '👦', '👶', '🧑', '👴', '👵', '🐱', '🐶', '🌻', '⭐', '🎈'];
@@ -8,6 +8,9 @@ export default function ProfileModal({ isOpen, onClose }) {
   const { currentUser, updateProfile } = useAuth();
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [pinError, setPinError] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [avatarImage, setAvatarImage] = useState(null);
   const [useImageAvatar, setUseImageAvatar] = useState(false);
@@ -18,6 +21,9 @@ export default function ProfileModal({ isOpen, onClose }) {
     if (currentUser && isOpen) {
       setName(currentUser.name || '');
       setRole(currentUser.role || '');
+      setPin(currentUser.pin || '1234');
+      setShowPin(false);
+      setPinError('');
       setSelectedEmoji(currentUser.avatarType === 'emoji' ? currentUser.avatar : '😊');
       setAvatarImage(currentUser.avatarImage || null);
       setUseImageAvatar(currentUser.avatarType === 'image');
@@ -44,12 +50,20 @@ export default function ProfileModal({ isOpen, onClose }) {
   const handleSave = () => {
     if (!name.trim() || !currentUser) return;
 
+    const cleanPin = pin.replace(/\D/g, '');
+    if (cleanPin.length !== 4) {
+      setPinError('รหัส PIN ต้องเป็นตัวเลข 4 หลักเท่านั้น');
+      return;
+    }
+    setPinError('');
+
     updateProfile(currentUser.phone, {
       name: name.trim(),
       role: role.trim() || 'สมาชิกในบ้าน',
       avatar: useImageAvatar ? '📷' : selectedEmoji,
       avatarType: useImageAvatar ? 'image' : 'emoji',
       avatarImage: useImageAvatar ? avatarImage : null,
+      pin: cleanPin,
     });
 
     setSaved(true);
@@ -211,6 +225,45 @@ export default function ProfileModal({ isOpen, onClose }) {
           <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7DF] flex items-center justify-between">
             <span className="text-xs text-[#746C65]">เบอร์โทรศัพท์ประจำตัว:</span>
             <span className="text-xs font-bold text-[#2D2825]">{formatPhoneDisplay(currentUser.phone)}</span>
+          </div>
+
+          {/* 4-Digit PIN */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="edit-pin" className="text-xs font-bold text-[#2D2825] flex items-center gap-1.5">
+                <LockKey size={14} className="text-[#5F8D75]" weight="bold" />
+                <span>รหัส PIN 4 หลัก (สำหรับเข้าสู่ระบบ)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                className="text-[11px] text-[#746C65] hover:text-[#2D2825] flex items-center gap-1 font-medium transition-colors"
+              >
+                {showPin ? <EyeSlash size={14} /> : <Eye size={14} />}
+                <span>{showPin ? 'ซ่อนรหัส' : 'ดูรหัส PIN'}</span>
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                id="edit-pin"
+                type={showPin ? 'text' : 'password'}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => {
+                  setPin(e.target.value.replace(/\D/g, '').slice(0, 4));
+                  if (pinError) setPinError('');
+                }}
+                placeholder="1234"
+                className="w-full px-3.5 py-2.5 bg-[#FAF8F5] rounded-xl border border-[#ECE7DF] text-center tracking-[0.4em] font-mono text-base font-bold text-[#2D2825] focus:outline-none focus:ring-2 focus:ring-[#5F8D75]"
+              />
+            </div>
+            {pinError ? (
+              <p className="text-[11px] text-red-500 font-medium mt-1">{pinError}</p>
+            ) : (
+              <p className="text-[10px] text-[#9E9589] mt-1">ใช้ตัวเลข 4 หลักเพื่อความสะดวกรวดเร็วในการเข้าสู่ระบบครั้งถัดไป</p>
+            )}
           </div>
 
           {/* Save Button */}

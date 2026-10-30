@@ -24,7 +24,14 @@ async function request(endpoint, options = {}) {
 
 // 1. Members & Auth
 
-// 1.5 OTP & Multi-Family Invite System
+// 1.5 Phone + PIN & Multi-Family Invite System
+export async function loginWithPin(phone, pin) {
+  return request('/auth/login-pin', {
+    method: 'POST',
+    body: JSON.stringify({ phone, pin }),
+  });
+}
+
 export async function sendOtp(phone) {
   return request('/auth/send-otp', {
     method: 'POST',

@@ -57,6 +57,7 @@ export function initDb() {
       avatarType TEXT DEFAULT 'emoji',
       avatarImage TEXT,
       color TEXT,
+      pin TEXT DEFAULT '1234',
       createdAt INTEGER NOT NULL
     );
 
@@ -155,6 +156,9 @@ export function initDb() {
     }
     if (!cols.includes('isAdmin')) {
       db.exec("ALTER TABLE members ADD COLUMN isAdmin INTEGER DEFAULT 0");
+    }
+    if (!cols.includes('pin')) {
+      db.exec("ALTER TABLE members ADD COLUMN pin TEXT DEFAULT '1234'");
     }
     // Ensure Fluke is the sole house owner & admin (0615678160)
     const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();

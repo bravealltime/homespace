@@ -154,14 +154,68 @@ app.post('/api/auth/verify-otp', (req, res) => {
   }
 });
 
+// Login with Phone + 4-digit PIN (Free, Secure, Instant)
+app.post('/api/auth/login-pin', (req, res) => {
+  try {
+    const { phone, pin } = req.body;
+    if (!phone || !pin) {
+      return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและรหัส PIN 4 หลัก' });
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPin = String(pin).replace(/\D/g, '').slice(0, 4);
+
+    const member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    if (!member) {
+      return res.status(404).json({
+        error: 'ยังไม่มีเบอร์นี้ในระบบ กรุณาใช้ลิงก์เชิญเพื่อขอเข้าร่วมครอบครัว',
+        isNewUser: true,
+      });
+    }
+
+    if (member.status === 'pending') {
+      return res.status(403).json({
+        error: 'คำขอของคุณกำลังรอคุณ Fluke (เจ้าบ้าน) กดอนุมัติ',
+        status: 'pending',
+        member,
+      });
+    }
+
+    // Check PIN
+    if (member.pin && member.pin !== cleanPin) {
+      return res.status(401).json({ error: 'รหัส PIN 4 หลักไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' });
+    }
+
+    // If member has no PIN set yet, set it now
+    if (!member.pin) {
+      db.prepare('UPDATE members SET pin = ? WHERE id = ?').run(cleanPin, member.id);
+      member.pin = cleanPin;
+    }
+
+    const family = db.prepare('SELECT * FROM families WHERE id = ?').get(member.familyId || 'family-main');
+
+    console.log(`[Auth] Member logged in with PIN: ${member.name} (${cleanPhone})`);
+
+    res.json({
+      success: true,
+      member,
+      family,
+      status: member.status || 'active',
+    });
+  } catch (err) {
+    console.error('Login PIN error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' });
+  }
+});
+
 // Register new member with pending approval request
 app.post('/api/auth/register-request', (req, res) => {
   try {
-    const { phone, name, role, avatar, avatarType, avatarImage, familyCode, familyId } = req.body;
+    const { phone, pin, name, role, avatar, avatarType, avatarImage, familyCode, familyId } = req.body;
     if (!phone || !name) {
       return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและชื่อเล่น' });
     }
     const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPin = pin ? String(pin).replace(/\D/g, '').slice(0, 4) : '1234';
 
     // Find target family
     let family = null;
@@ -185,7 +239,7 @@ app.post('/api/auth/register-request', (req, res) => {
       // If already pending, update details
       db.prepare(`
         UPDATE members 
-        SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?, familyId = ?, status = 'pending'
+        SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?, familyId = ?, status = 'pending', pin = ?
         WHERE phone = ?
       `).run(
         name.trim(),
@@ -194,6 +248,7 @@ app.post('/api/auth/register-request', (req, res) => {
         avatarType || 'emoji',
         avatarImage || null,
         targetFamilyId,
+        cleanPin,
         cleanPhone
       );
       const updated = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
@@ -206,8 +261,8 @@ app.post('/api/auth/register-request', (req, res) => {
     const color = colors[Math.floor(Math.random() * colors.length)];
 
     db.prepare(`
-      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, familyId, status, isAdmin, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?)
+      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, familyId, status, isAdmin, pin, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?)
     `).run(
       newId,
       cleanPhone,
@@ -218,6 +273,7 @@ app.post('/api/auth/register-request', (req, res) => {
       avatarImage || null,
       color,
       targetFamilyId,
+      cleanPin,
       Date.now()
     );
 
@@ -458,16 +514,18 @@ app.post('/api/auth/register', (req, res) => {
 app.put('/api/members/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, avatar, avatarType, avatarImage } = req.body;
+    const { name, role, avatar, avatarType, avatarImage, pin } = req.body;
 
     const existing = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ error: 'Member not found' });
     }
 
+    const cleanPin = pin ? String(pin).replace(/\D/g, '').slice(0, 4) : existing.pin || '1234';
+
     db.prepare(`
       UPDATE members 
-      SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?
+      SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?, pin = ?
       WHERE id = ?
     `).run(
       name !== undefined ? name.trim() : existing.name,
@@ -475,6 +533,7 @@ app.put('/api/members/:id', (req, res) => {
       avatar !== undefined ? avatar : existing.avatar,
       avatarType !== undefined ? avatarType : existing.avatarType,
       avatarImage !== undefined ? avatarImage : existing.avatarImage,
+      cleanPin,
       id
     );
 

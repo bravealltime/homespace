@@ -7,7 +7,7 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 import db, { initDb } from './db.js';
 import { isSupabaseConfigured, uploadBufferToSupabase, uploadBase64ToSupabase } from './supabase.js';
-import { pullFromCloud, pushToCloud } from './cloudSync.js';
+import { pullFromCloud, pushToCloud, ensureCloudSynced } from './cloudSync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 initDb();
 
 // Initial cloud sync to restore persistent state from Supabase
-pullFromCloud().catch((err) => console.warn('[CloudSync] Boot pull warning:', err.message));
+ensureCloudSynced().catch((err) => console.warn('[CloudSync] Boot pull warning:', err.message));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +26,19 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('dev'));
+
+// Guarantee database is 100% synchronized from Supabase Cloud Storage before handling any API request
+app.use(async (req, res, next) => {
+  if (req.path === '/api/health') {
+    return next();
+  }
+  try {
+    await ensureCloudSynced();
+  } catch (err) {
+    console.warn('[CloudSync Middleware] sync error:', err.message);
+  }
+  next();
+});
 
 // Uploads directory (Support both local and Vercel)
 const isVercel = process.env.VERCEL === '1';

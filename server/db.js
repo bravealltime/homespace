@@ -206,6 +206,7 @@ export function initDb() {
       DELETE FROM posts WHERE id = 'post-1';
       DELETE FROM stories WHERE id = 'story-welcome-fluke';
       DELETE FROM chore_history WHERE id LIKE '%post-1%' OR choreName = 'ล้างจานชามในซิงค์';
+      DELETE FROM chore_history WHERE id LIKE 'hist-2026-%' OR id LIKE 'hist-2025-%';
       DELETE FROM chore_history WHERE memberId IN ('member-dad', 'member-mom', 'member-sister', 'member-little', 'member-big');
     `);
 

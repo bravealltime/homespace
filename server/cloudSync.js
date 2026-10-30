@@ -240,6 +240,40 @@ export function importJsonToDb(data) {
   }
 }
 
+let cloudSyncPromise = null;
+
+/**
+ * Guarantee that the database has been downloaded from Supabase Cloud Storage
+ * before any request handler is executed. Concurrent requests wait on the same promise.
+ */
+export async function ensureCloudSynced() {
+  if (!isSupabaseConfigured() || !supabase) return true;
+
+  // If already pulled within the last 5 seconds, use local DB immediately
+  if (Date.now() - lastSyncTime < 5000) {
+    return true;
+  }
+
+  // If a sync is already running, wait for it
+  if (cloudSyncPromise) {
+    return cloudSyncPromise;
+  }
+
+  cloudSyncPromise = (async () => {
+    try {
+      await pullFromCloud(true);
+      return true;
+    } catch (err) {
+      console.warn('[CloudSync] ensureCloudSynced error:', err.message);
+      return false;
+    } finally {
+      cloudSyncPromise = null;
+    }
+  })();
+
+  return cloudSyncPromise;
+}
+
 /**
  * Download state from Supabase Storage and populate local SQLite
  */

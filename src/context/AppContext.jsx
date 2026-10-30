@@ -48,6 +48,14 @@ function reducer(state, action) {
         totalScoreMonth: action.payload.totalScoreMonth ?? state.totalScoreMonth,
       };
 
+    case 'SET_STATS_DATA':
+      return {
+        ...state,
+        backendMemberScores: action.payload.memberScores || {},
+        totalScoreMonth: action.payload.totalScoreMonth ?? state.totalScoreMonth,
+        history: action.payload.recentEntries || state.history,
+      };
+
     case 'ADD_CHORE_ENTRY': {
       const {
         memberId,
@@ -232,28 +240,10 @@ function reducer(state, action) {
 
 function getInitialState() {
   try {
-    const saved = localStorage.getItem('homespace-state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Clean out lingering post-1, story-welcome-fluke, or mock generator items from cache
-      const cleanedFeed = (parsed.feedPosts || []).filter((p) => {
-        if (p.id === 'post-1') return false;
-        if (p.beforeImage?.includes('photo-1585837575652') || p.afterImage?.includes('photo-1556911220')) return false;
-        return true;
-      });
-      const cleanedStories = (parsed.stories || []).filter((s) => s.id !== 'story-welcome-fluke');
-      const cleanedHistory = (parsed.history || []).filter(
-        (h) => !h.id.startsWith('hist-2026') && !h.id.startsWith('hist-2025')
-      );
-      return {
-        ...parsed,
-        history: cleanedHistory,
-        feedPosts: cleanedFeed,
-        stories: cleanedStories,
-      };
-    }
+    // Purge any legacy stale mock state from localStorage
+    localStorage.removeItem('homespace-state');
   } catch (e) {
-    console.warn('Initial state parse error:', e);
+    // ignore
   }
 
   return {
@@ -261,9 +251,9 @@ function getInitialState() {
     feedPosts: [],
     stories: [],
     notifications: [],
-    backendVotes: {
-      'member-fluke': 'reward-1',
-    },
+    backendVotes: {},
+    backendMemberScores: {},
+    totalScoreMonth: 0,
   };
 }
 
@@ -297,8 +287,14 @@ export function AppProvider({ children }) {
       if (rewardsData) {
         dispatch({ type: 'SET_REWARDS_DATA', payload: rewardsData });
       }
+
+      // Sync Stats (scores, monthly total, recent real history)
+      const stats = await api.fetchStatsSummary();
+      if (stats) {
+        dispatch({ type: 'SET_STATS_DATA', payload: stats });
+      }
     } catch (err) {
-      // Backend momentarily restarting; silent fallback to memory/localStorage
+      // Backend momentarily restarting; silent fallback
     }
   }, [currentUser?.id]);
 
@@ -307,15 +303,6 @@ export function AppProvider({ children }) {
     const interval = setInterval(syncWithBackend, 8000); // 8-second background poll
     return () => clearInterval(interval);
   }, [syncWithBackend]);
-
-  // Persist local backup
-  useEffect(() => {
-    try {
-      localStorage.setItem('homespace-state', JSON.stringify(state));
-    } catch (e) {
-      console.error('Save state error', e);
-    }
-  }, [state]);
 
   const members = useMemo(() => {
     return authMembers.map((m) => ({
@@ -348,9 +335,12 @@ export function AppProvider({ children }) {
     memberScoresToday[m.id] = todayEntries
       .filter((e) => e.memberId === m.id)
       .reduce((sum, e) => sum + (e.points || 0), 0);
-    memberScoresMonth[m.id] = monthEntries
+    const calculatedMonth = monthEntries
       .filter((e) => e.memberId === m.id)
       .reduce((sum, e) => sum + (e.points || 0), 0);
+    memberScoresMonth[m.id] = state.backendMemberScores?.[m.id] !== undefined
+      ? state.backendMemberScores[m.id]
+      : calculatedMonth;
   });
 
   // Calculate total points

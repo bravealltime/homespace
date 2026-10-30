@@ -154,6 +154,15 @@ export default function LoginPage() {
             setStep(STEP.PENDING);
           } else {
             login(phone);
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('invite');
+              url.searchParams.delete('join');
+              url.searchParams.delete('code');
+              window.history.replaceState({}, '', url.toString());
+            } catch {
+              // ignore
+            }
           }
         } else {
           // New User -> Move to Setup Profile & Request Join Family

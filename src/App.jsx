@@ -636,9 +636,16 @@ function AppRouter() {
   // Default to 'phone' mode on PC so it renders as a phone app mockup
   const [displayMode, setDisplayMode] = useState('phone');
 
+  // If opening via invite link (e.g. ?invite=HOME-2026), always show LoginPage so the invited person can enter their phone and register!
+  const hasInviteLink = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).has('invite') ||
+    new URLSearchParams(window.location.search).has('join') ||
+    new URLSearchParams(window.location.search).has('code')
+  );
+
   return (
     <PhoneMockup displayMode={displayMode} onToggleMode={setDisplayMode}>
-      {!isLoggedIn || isPending ? <LoginPage /> : <AppContent displayMode={displayMode} onToggleMode={setDisplayMode} />}
+      {!isLoggedIn || isPending || hasInviteLink ? <LoginPage /> : <AppContent displayMode={displayMode} onToggleMode={setDisplayMode} />}
     </PhoneMockup>
   );
 }

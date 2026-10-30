@@ -43,12 +43,28 @@ function saveMembers(members) {
 }
 
 function getStoredCurrentPhone() {
-  const phone = localStorage.getItem('homespace-current-phone');
-  // If stored phone was dad/mom/sister/little, default to Fluke (0615678160)
-  if (!phone || phone === '0811111111' || phone === '0822222222' || phone === '0833333333' || phone === '0844444444') {
-    return '0615678160';
+  try {
+    // If URL has invite or join parameter, do NOT auto-login as anyone!
+    if (typeof window !== 'undefined' && window.location.search) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('invite') || urlParams.has('join') || urlParams.has('code')) {
+        return null;
+      }
+    }
+
+    const phone = localStorage.getItem('homespace-current-phone');
+    if (!phone) return null;
+
+    // Filter out old mock phones (dad, mom, sister, little)
+    if (phone === '0811111111' || phone === '0822222222' || phone === '0833333333' || phone === '0844444444') {
+      localStorage.removeItem('homespace-current-phone');
+      return null;
+    }
+
+    return phone;
+  } catch {
+    return null;
   }
-  return phone;
 }
 
 function saveCurrentPhone(phone) {
@@ -336,15 +352,17 @@ export function AuthProvider({ children }) {
     isPending: currentUser?.status === 'pending',
     isApproved: currentUser?.status === 'active',
     isAdmin: Boolean(
-      currentUser?.isAdmin === 1 ||
-      currentUser?.isAdmin === true ||
-      currentFamily?.adminMemberId === currentUser?.id ||
-      currentUser?.role?.includes('เจ้าบ้าน') ||
-      currentUser?.role?.includes('หัวหน้า') ||
-      currentUser?.role?.includes('พ่อ') ||
-      currentUser?.role?.includes('แม่') ||
-      currentUser?.role?.toLowerCase().includes('admin') ||
-      members.filter(m => m.status !== 'pending').length <= 1
+      currentUser && (
+        currentUser?.isAdmin === 1 ||
+        currentUser?.isAdmin === true ||
+        currentFamily?.adminMemberId === currentUser?.id ||
+        currentUser?.role?.includes('เจ้าบ้าน') ||
+        currentUser?.role?.includes('หัวหน้า') ||
+        currentUser?.role?.includes('พ่อ') ||
+        currentUser?.role?.includes('แม่') ||
+        currentUser?.role?.toLowerCase().includes('admin') ||
+        members.filter(m => m.status !== 'pending').length <= 1
+      )
     ),
     families,
     currentFamily,

@@ -310,13 +310,21 @@ app.post('/api/families/:familyId/approve', (req, res) => {
     db.prepare("UPDATE members SET status = 'active' WHERE id = ?").run(memberId);
     const approvedMember = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
 
+    // Find admin who approved or family admin
+    let senderId = 'member-dad';
+    if (adminPhone) {
+      const adminMember = db.prepare('SELECT id FROM members WHERE phone = ?').get(adminPhone.replace(/\D/g, ''));
+      if (adminMember) senderId = adminMember.id;
+    }
+
     // Create notification for the approved member
     db.prepare(`
       INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
-      VALUES (?, ?, 'system', 'approval', '🎉 คุณได้รับการอนุมัติให้เข้าสู่ครอบครัวเรียบร้อยแล้ว!', 0, ?)
+      VALUES (?, ?, ?, 'approval', '🎉 คุณได้รับการอนุมัติให้เข้าสู่ครอบครัวเรียบร้อยแล้ว!', 0, ?)
     `).run(
       `notif-app-${Date.now()}`,
       memberId,
+      senderId,
       Date.now()
     );
 

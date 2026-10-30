@@ -90,6 +90,13 @@ export async function registerMember(memberData) {
   });
 }
 
+
+export async function deleteMember(id) {
+  return request(`/members/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function updateMember(id, memberData) {
   return request(`/members/${id}`, {
     method: 'PUT',

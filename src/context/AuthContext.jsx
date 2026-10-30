@@ -249,6 +249,22 @@ export function AuthProvider({ children }) {
     await refreshMembers();
   }, [currentFamily, currentUser, refreshMembers]);
 
+
+  // Remove member from family
+  const removeMember = useCallback(async (memberId) => {
+    try {
+      await api.deleteMember(memberId);
+    } catch (err) {
+      console.warn('Delete member API warning:', err);
+    }
+
+    setMembers(prev => prev.filter(m => m.id !== memberId));
+    if (currentUser?.id === memberId) {
+      setCurrentPhone(null);
+    }
+    await refreshMembers();
+  }, [currentUser, refreshMembers]);
+
   const login = useCallback(async (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
     try {
@@ -308,6 +324,7 @@ export function AuthProvider({ children }) {
     registerWithRequest,
     approveRequest,
     rejectRequest,
+    removeMember,
     refreshMembers,
     refreshPendingRequests,
     findMemberByPhone,

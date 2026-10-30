@@ -14,6 +14,7 @@ import {
   MagnifyingGlass,
   Plus,
   ShieldCheck,
+  Trash,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -62,20 +63,16 @@ function HeaderAvatar({ member, size = 'sm' }) {
 }
 
 function AppContent({ displayMode, onToggleMode }) {
-  const { currentUser, members, setCurrentPhone, logout, register, isAdmin, pendingRequests } = useAuth();
+  const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
   const { notifications } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [switchUserOpen, setSwitchUserOpen] = useState(false);
+  const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
-  const [isAddingMember, setIsAddingMember] = useState(false);
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState('');
-  const [newMemberEmoji, setNewMemberEmoji] = useState('🧑');
 
   // Auto-hiding floating nav on scroll & touch
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -184,6 +181,24 @@ function AppContent({ displayMode, onToggleMode }) {
     setActiveTab('my-feed');
   };
 
+  const handleDeleteMember = async (member) => {
+    if (member.id === currentUser?.id) {
+      alert('คุณไม่สามารถลบตัวเองออกจากบ้านได้');
+      return;
+    }
+    const confirmed = window.confirm(
+      `คุณต้องการลบ "${member.name}" (${member.role}) ออกจากครอบครัวใช่หรือไม่?\n\nการลบนี้จะนำสมาชิกออกจากครอบครัวและลบข้อมูลที่เกี่ยวข้อง`
+    );
+    if (!confirmed) return;
+
+    try {
+      await removeMember(member.id);
+    } catch (err) {
+      console.error('Delete member error:', err);
+      alert('เกิดข้อผิดพลาดในการลบสมาชิก กรุณาลองใหม่อีกครั้ง');
+    }
+  };
+
   // Phone App View (Rendered inside Phone Mockup or Centered on Desktop)
   return (
     <div className="relative w-full h-full min-h-full flex flex-col overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text">
@@ -276,14 +291,14 @@ function AppContent({ displayMode, onToggleMode }) {
             )}
           </button>
 
-          {/* Switch User Button */}
+          {/* Household Members Button */}
           <button
             type="button"
-            onClick={() => setSwitchUserOpen(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9E958D] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer ml-0.5"
-            title="สลับสมาชิก"
+            onClick={() => setFamilyMembersOpen(true)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer ml-0.5"
+            title="สมาชิกในบ้าน"
           >
-            <UsersThree size={16} weight="bold" />
+            <UsersThree size={17} weight="bold" />
           </button>
         </div>
       </header>
@@ -381,216 +396,192 @@ function AppContent({ displayMode, onToggleMode }) {
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
 
-        {/* Fast Switch User Modal */}
-        {switchUserOpen && (
+        {/* Household Members Modal (Directory & Member Management) */}
+        {familyMembersOpen && (
           <div
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={() => setSwitchUserOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs select-none"
+            onClick={() => setFamilyMembersOpen(false)}
           >
             <div
-              className="bg-white rounded-3xl border border-[#ECE7DF] shadow-xl w-full max-w-xs p-5 animate-enter-rise"
+              className="bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm max-h-[85dvh] flex flex-col overflow-hidden animate-enter-rise"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DF] mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">👨‍👩‍👧‍👦</span>
-                  <h3 className="text-base font-bold text-[#2D2825]">สลับสมาชิกในบ้าน</h3>
+              {/* Modal Header */}
+              <div className="p-4 border-b border-[#ECE7DF] flex items-center justify-between bg-white shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-[#EEF4F0] text-[#5F8D75] flex items-center justify-center text-lg shadow-2xs">
+                    👨‍👩‍👧‍👦
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#2D2825]">สมาชิกในบ้าน</h3>
+                    <p className="text-[10px] text-[#746C65]">
+                      {currentFamily?.name || 'บ้านสุขใจ'} · {members.filter((m) => m.status !== 'pending').length} คน
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSwitchUserOpen(false)}
-                  className="text-xs text-[#746C65] hover:text-[#2D2825]"
+                  onClick={() => setFamilyMembersOpen(false)}
+                  className="w-7 h-7 rounded-full bg-[#FAF8F5] hover:bg-[#ECE7DF] text-[#746C65] flex items-center justify-center text-xs cursor-pointer transition-colors"
                 >
-                  ปิด
+                  ✕
                 </button>
               </div>
 
               {/* Admin Panel Shortcut */}
               {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSwitchUserOpen(false);
-                    setFamilyAdminOpen(true);
-                  }}
-                  className="w-full mb-3 py-2 px-3 rounded-2xl bg-[#EEF4F0] hover:bg-[#DFEDE3] text-[#5F8D75] text-xs font-bold flex items-center justify-between border border-[#5F8D75]/30 transition-all cursor-pointer shadow-2xs"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <ShieldCheck size={16} weight="bold" />
-                    <span>คำขอเข้าบ้าน & ลิงก์เชิญ</span>
-                  </div>
-                  {pendingRequests.length > 0 ? (
-                    <span className="px-2 py-0.5 rounded-full bg-[#E88D67] text-white text-[9px] font-black">
-                      {pendingRequests.length} คำขอ
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-[#5F8D75]">เปิดดู →</span>
-                  )}
-                </button>
-              )}
-
-              <div className="space-y-2 mb-3">
-                {members.map((m) => {
-                  const isCurrent = m.id === currentUser?.id;
-                  return (
-                    <div
-                      key={m.id}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-2xl border transition-all ${
-                        isCurrent
-                          ? 'bg-[#EEF4F0] border-[#5F8D75] shadow-xs'
-                          : 'bg-[#FAF8F5] border-[#ECE7DF] hover:bg-white'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCurrentPhone(m.phone);
-                          setSwitchUserOpen(false);
-                        }}
-                        className="flex-1 flex items-center gap-2.5 text-left cursor-pointer"
-                      >
-                        <div className="text-xl">
-                          {m.avatarType === 'image' && m.avatarImage ? (
-                            <img src={m.avatarImage} alt={m.name} className="w-7 h-7 rounded-lg object-cover" />
-                          ) : (
-                            m.avatar
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-[#2D2825]">{m.name}</p>
-                          <p className="text-[10px] text-[#746C65]">{m.role}</p>
-                        </div>
-                      </button>
-
-                      {isCurrent ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSwitchUserOpen(false);
-                              setProfileOpen(true);
-                            }}
-                            className="text-[10px] font-bold text-[#746C65] hover:text-[#2D2825] px-2 py-0.8 bg-white rounded-lg border border-[#ECE7DF] shadow-2xs cursor-pointer"
-                            title="แก้ไขโปรไฟล์"
-                          >
-                            ✏️ แก้ไข
-                          </button>
-                          <span className="text-[10px] font-bold text-[#5F8D75] px-1.5 py-0.5 bg-white rounded-md">
-                            ใช้งาน
-                          </span>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCurrentPhone(m.phone);
-                            setSwitchUserOpen(false);
-                          }}
-                          className="text-[10px] font-bold text-[#5F8D75] hover:underline px-2 py-1 cursor-pointer"
-                        >
-                          สลับ →
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Add New Member Toggle / Form */}
-              {!isAddingMember ? (
-                <button
-                  type="button"
-                  onClick={() => setIsAddingMember(true)}
-                  className="w-full mb-3 py-2 px-3 rounded-2xl border border-dashed border-[#5F8D75] bg-[#EEF4F0]/60 hover:bg-[#EEF4F0] text-[#5F8D75] text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Plus size={14} weight="bold" />
-                  <span>+ เพิ่มสมาชิกครอบครัว</span>
-                </button>
-              ) : (
-                <div className="mb-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#2D2825]">เพิ่มสมาชิกใหม่</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsAddingMember(false)}
-                      className="text-xs text-[#746C65] hover:text-[#2D2825]"
-                    >
-                      ยกเลิก
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
-                    placeholder="ชื่อ เช่น ปู่, ย่า, น้าปุ้ย, สัตว์เลี้ยง"
-                    className="w-full px-2.5 py-1.5 bg-white rounded-xl border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
-                  />
-                  <input
-                    type="text"
-                    value={newMemberRole}
-                    onChange={(e) => setNewMemberRole(e.target.value)}
-                    placeholder="บทบาท เช่น คุณยาย, พี่ชาย, สุนัข"
-                    className="w-full px-2.5 py-1.5 bg-white rounded-xl border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
-                  />
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="text-[11px] text-[#746C65] shrink-0">อิโมจิ:</span>
-                    <div className="flex gap-1 overflow-x-auto no-scrollbar">
-                      {['👴', '👵', '🧑', '👧', '👶', '🐶', '🐱', '✨'].map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => setNewMemberEmoji(emoji)}
-                          className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border transition-all cursor-pointer ${
-                            newMemberEmoji === emoji ? 'bg-white border-[#5F8D75] shadow-xs scale-110 font-bold' : 'bg-transparent border-transparent'
-                          }`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <div className="px-4 pt-3 shrink-0">
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (!newMemberName.trim()) return;
-                      const dummyPhone = `08${Math.floor(10000000 + Math.random() * 90000000)}`;
-                      await register(dummyPhone, newMemberName.trim(), newMemberRole.trim() || 'สมาชิกในบ้าน', {
-                        avatar: newMemberEmoji,
-                        avatarType: 'emoji',
-                      });
-                      setCurrentPhone(dummyPhone);
-                      setNewMemberName('');
-                      setNewMemberRole('');
-                      setIsAddingMember(false);
-                      setSwitchUserOpen(false);
+                    onClick={() => {
+                      setFamilyMembersOpen(false);
+                      setFamilyAdminOpen(true);
                     }}
-                    disabled={!newMemberName.trim()}
-                    className="w-full py-2 bg-[#5F8D75] disabled:bg-[#ECE7DF] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs"
+                    className="w-full py-2 px-3 rounded-2xl bg-[#EEF4F0] hover:bg-[#DFEDE3] text-[#5F8D75] text-xs font-bold flex items-center justify-between border border-[#5F8D75]/30 transition-all cursor-pointer shadow-2xs"
                   >
-                    บันทึกสมาชิกใหม่ ✨
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck size={16} weight="bold" />
+                      <span>คำขอเข้าบ้าน & ลิงก์เชิญ</span>
+                    </div>
+                    {pendingRequests.length > 0 ? (
+                      <span className="px-2 py-0.5 rounded-full bg-[#E88D67] text-white text-[9px] font-black animate-pulse">
+                        {pendingRequests.length} คำขอ
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-[#5F8D75]">จัดการ →</span>
+                    )}
                   </button>
                 </div>
               )}
 
-              <div className="pt-2 border-t border-[#ECE7DF] flex items-center justify-between">
+              {/* Members Directory List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2.5 no-scrollbar">
+                {members
+                  .filter((m) => m.status !== 'pending')
+                  .map((m) => {
+                    const isCurrent = m.id === currentUser?.id;
+                    const isMemberAdmin =
+                      m.isAdmin === 1 || m.role?.includes('พ่อ') || m.role?.includes('แม่');
+                    return (
+                      <div
+                        key={m.id}
+                        className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                          isCurrent
+                            ? 'bg-[#EEF4F0]/60 border-[#5F8D75]/40 shadow-xs'
+                            : 'bg-[#FAF8F5] border-[#ECE7DF] hover:bg-white'
+                        }`}
+                      >
+                        {/* Member Info */}
+                        <div
+                          className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                          onClick={() => {
+                            setFamilyMembersOpen(false);
+                            handleViewMember(m);
+                          }}
+                        >
+                          <div
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 overflow-hidden border border-[#ECE7DF] shadow-2xs"
+                            style={{ backgroundColor: `${m.color || '#5F8D75'}20` }}
+                          >
+                            {m.avatarType === 'image' && m.avatarImage ? (
+                              <img
+                                src={m.avatarImage}
+                                alt={m.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              m.avatar || '😊'
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-black text-[#2D2825] truncate">
+                                {m.name}
+                              </span>
+                              {isCurrent && (
+                                <span className="text-[9px] bg-[#5F8D75] text-white px-1.5 py-0.2 rounded font-bold">
+                                  คุณ
+                                </span>
+                              )}
+                              {isMemberAdmin && (
+                                <span className="text-[9px] bg-[#2D2825] text-[#F3EFEA] px-1.5 py-0.2 rounded font-bold">
+                                  Admin
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-[#746C65] mt-0.5">
+                              <span>{m.role}</span>
+                              <span>•</span>
+                              <span className="font-mono">{m.phone}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions: View Profile & Delete (Admin only, not self) */}
+                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                          {isCurrent ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFamilyMembersOpen(false);
+                                setProfileOpen(true);
+                              }}
+                              className="text-[10px] font-bold text-[#5F8D75] hover:text-[#476E5B] px-2.5 py-1 bg-white hover:bg-[#EEF4F0] rounded-xl border border-[#5F8D75]/30 shadow-2xs transition-colors cursor-pointer"
+                            >
+                              ✏️ แก้ไข
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFamilyMembersOpen(false);
+                                  handleViewMember(m);
+                                }}
+                                className="text-[10px] font-bold text-[#746C65] hover:text-[#2D2825] px-2 py-1 bg-white hover:bg-[#ECE7DF] rounded-xl border border-[#ECE7DF] shadow-2xs transition-colors cursor-pointer"
+                                title="ดูหน้าโปรไฟล์และผลงาน"
+                              >
+                                โปรไฟล์
+                              </button>
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMember(m)}
+                                  className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-red-400 hover:text-red-600 border border-[#ECE7DF] hover:border-red-200 transition-colors cursor-pointer shadow-2xs"
+                                  title={`ลบ ${m.name} ออกจากครอบครัว`}
+                                >
+                                  <Trash size={14} weight="bold" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Footer with Logout & Close */}
+              <div className="p-3 border-t border-[#ECE7DF] flex items-center justify-between bg-[#FAF8F5] shrink-0">
                 <button
                   type="button"
                   onClick={() => {
-                    setSwitchUserOpen(false);
+                    setFamilyMembersOpen(false);
                     setShowLogoutConfirm(true);
                   }}
-                  className="text-xs text-red-500 hover:underline font-semibold"
+                  className="text-xs text-red-500 hover:text-red-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
                 >
-                  ออกจากระบบ
+                  <SignOut size={14} weight="bold" />
+                  <span>ออกจากระบบ</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSwitchUserOpen(false)}
-                  className="px-3 py-1.5 rounded-xl bg-[#FAF8F5] text-xs font-semibold text-[#746C65]"
+                  onClick={() => setFamilyMembersOpen(false)}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#ECE7DF] text-xs font-bold text-[#746C65] border border-[#ECE7DF] shadow-2xs transition-colors cursor-pointer"
                 >
-                  ยกเลิก
+                  ปิด
                 </button>
               </div>
             </div>

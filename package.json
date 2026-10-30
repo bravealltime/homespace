@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n \"API,WEB\" -c \"cyan,magenta\" \"node server/index.js\" \"vite --host\"",
+    "dev": "concurrently -k -n \"API,WEB\" -c \"cyan,magenta\" \"node --watch server/index.js\" \"vite --host\"",
     "dev:client": "vite --host",
     "server": "node server/index.js",
     "build": "vite build",

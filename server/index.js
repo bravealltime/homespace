@@ -481,6 +481,24 @@ app.put('/api/members/:id', (req, res) => {
   }
 });
 
+
+app.delete('/api/members/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'ไม่พบสมาชิกที่ต้องการลบ' });
+    }
+
+    db.prepare('DELETE FROM members WHERE id = ?').run(id);
+    console.log(`[Delete Member] Removed ${existing.name} (${id})`);
+    res.json({ success: true, message: `ลบ ${existing.name} ออกจากครอบครัวเรียบร้อยแล้ว` });
+  } catch (err) {
+    console.error('Delete member error:', err);
+    res.status(500).json({ error: 'Failed to delete member' });
+  }
+});
+
 // ==========================================
 // 3. POSTS, LIKES & COMMENTS
 // ==========================================

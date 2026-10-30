@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   House,
   Sparkle,
+  Trash,
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,6 +34,8 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
     members,
     approveRequest,
     rejectRequest,
+    currentUser,
+    removeMember,
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'invite'
@@ -63,6 +66,24 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
       setProcessingId(memberId);
       await rejectRequest(memberId);
       setProcessingId(null);
+    }
+  };
+
+  const handleDeleteMember = async (member) => {
+    if (member.id === currentUser?.id) {
+      alert('คุณไม่สามารถลบตัวเองออกจากครอบครัวได้');
+      return;
+    }
+    const confirmed = window.confirm(
+      `คุณต้องการลบ "${member.name}" (${member.role}) ออกจากครอบครัวใช่หรือไม่?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await removeMember(member.id);
+    } catch (err) {
+      console.error('Delete member error:', err);
+      alert('เกิดข้อผิดพลาดในการลบสมาชิก');
     }
   };
 
@@ -311,7 +332,19 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
                         <span className="text-[10px] text-[#746C65]">{m.role}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono text-[#9E958D]">{m.phone}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-[#9E958D]">{m.phone}</span>
+                      {m.id !== currentUser?.id && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMember(m)}
+                          className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                          title={`ลบ ${m.name} ออกจากบ้าน`}
+                        >
+                          <Trash size={14} weight="bold" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

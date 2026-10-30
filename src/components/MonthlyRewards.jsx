@@ -6,6 +6,10 @@ import {
   Heart,
   Star,
   Users,
+  Plus,
+  X,
+  Sparkle,
+  Trophy,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -47,9 +51,16 @@ export default function MonthlyRewards() {
     getRewardVotes,
     getMemberVote,
     unlockedRewards,
+    addReward,
   } = useApp();
 
   const [votedRewardId, setVotedRewardId] = useState(null);
+  const [isProposeOpen, setIsProposeOpen] = useState(false);
+  const [proposeName, setProposeName] = useState('');
+  const [proposeEmoji, setProposeEmoji] = useState('🍕');
+  const [proposeTarget, setProposeTarget] = useState(300);
+  const [proposeDesc, setProposeDesc] = useState('');
+  const [celebratedRewardId, setCelebratedRewardId] = useState(null);
   const monthName = new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
 
   // Current logged in member
@@ -61,6 +72,26 @@ export default function MonthlyRewards() {
     voteReward(rewardId, votingMemberId);
     setVotedRewardId(rewardId);
     setTimeout(() => setVotedRewardId(null), 400);
+  };
+
+  const handleProposeSubmit = (e) => {
+    e.preventDefault();
+    if (!proposeName.trim()) return;
+    addReward({
+      name: proposeName.trim(),
+      emoji: proposeEmoji || '🎁',
+      target: parseInt(proposeTarget, 10) || 300,
+      description: proposeDesc.trim() || 'รางวัลพิเศษที่ครอบครัวเสนอ',
+    });
+    setProposeName('');
+    setProposeDesc('');
+    setIsProposeOpen(false);
+  };
+
+  const handleCelebrate = (reward) => {
+    setCelebratedRewardId(reward.id);
+    alert(`🎉 ยินดีด้วยครับ! ครอบครัวร่วมกันปลดล็อก "${reward.emoji} ${reward.name}" สำเร็จแล้ว!`);
+    setTimeout(() => setCelebratedRewardId(null), 3000);
   };
 
   const currentMemberVote = votingMemberId ? getMemberVote(votingMemberId) : null;
@@ -118,12 +149,23 @@ export default function MonthlyRewards() {
       {/* 2. Rewards Single-Column Mobile Feed */}
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-black text-[#2D2825]">
-            รายการรางวัล ({rewards.length} รายการ)
-          </h3>
-          <span className="text-[11px] text-[#746C65]">
-            โหวตในชื่อ: <span className="font-bold text-[#2D2825]">{myMember?.name}</span>
-          </span>
+          <div>
+            <h3 className="text-xs font-black text-[#2D2825]">
+              รายการรางวัล ({rewards.length} รายการ)
+            </h3>
+            <span className="text-[10px] text-[#746C65]">
+              โหวตในชื่อ: <span className="font-bold text-[#2D2825]">{myMember?.name}</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsProposeOpen(true)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#5F8D75] text-white text-xs font-bold shadow-xs hover:bg-[#476E5B] transition-all cursor-pointer"
+          >
+            <Plus size={14} weight="bold" />
+            <span>เสนอรางวัลใหม่</span>
+          </button>
         </div>
 
         <div className="space-y-3">
@@ -225,24 +267,158 @@ export default function MonthlyRewards() {
 
                 {/* Vote Button */}
                 {isUnlocked && (
-                  <button
-                    type="button"
-                    onClick={() => handleVote(reward.id)}
-                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-98 border shadow-2xs ${
-                      isVotedByMe
-                        ? 'bg-[#E88D67] text-white border-transparent'
-                        : 'bg-[#FAF8F5] hover:bg-[#FDF1EB] text-[#2D2825] border-[#ECE7DF] hover:border-[#E88D67]/40'
-                    }`}
-                  >
-                    <Heart size={16} weight={isVotedByMe ? 'fill' : 'bold'} className={isVotedByMe ? 'text-white' : 'text-[#E88D67]'} />
-                    <span>{isVotedByMe ? 'คุณโหวตแล้ว (แตะเพื่อถอน)' : 'กดโหวตเลือกรางวัลนี้'}</span>
-                  </button>
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleVote(reward.id)}
+                      className={`w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-98 border shadow-2xs ${
+                        isVotedByMe
+                          ? 'bg-[#E88D67] text-white border-transparent'
+                          : 'bg-[#FAF8F5] hover:bg-[#FDF1EB] text-[#2D2825] border-[#ECE7DF] hover:border-[#E88D67]/40'
+                      }`}
+                    >
+                      <Heart size={16} weight={isVotedByMe ? 'fill' : 'bold'} className={isVotedByMe ? 'text-white' : 'text-[#E88D67]'} />
+                      <span>{isVotedByMe ? 'คุณโหวตแล้ว (แตะเพื่อถอน)' : 'กดโหวตเลือกรางวัลนี้'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCelebrate(reward)}
+                      className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-[#EEF4F0] hover:bg-[#5F8D75] text-[#5F8D75] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-[#5F8D75]/30"
+                    >
+                      <Trophy size={14} weight="bold" />
+                      <span>ฉลองรางวัลนี้กับครอบครัว 🎉</span>
+                    </button>
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
       </section>
+
+      {/* Propose New Reward Modal */}
+      {isProposeOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-enter-rise"
+          onClick={() => setIsProposeOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm p-5 space-y-4 text-[#2D2825]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DF]">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎁</span>
+                <h3 className="text-sm font-black text-[#2D2825]">เสนอของรางวัลครอบครัว</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProposeOpen(false)}
+                className="w-7 h-7 rounded-full bg-[#FAF8F5] flex items-center justify-center text-xs text-[#746C65] hover:text-[#2D2825]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleProposeSubmit} className="space-y-3.5">
+              {/* Select Emoji */}
+              <div>
+                <label className="text-xs font-bold text-[#746C65] block mb-1.5">
+                  เลือกไอคอนรางวัล:
+                </label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {['🍕', '🍣', '🎬', '🏖️', '🎮', '🍦', '🍖', '🎢', '⛺', '☕'].map((em) => (
+                    <button
+                      key={em}
+                      type="button"
+                      onClick={() => setProposeEmoji(em)}
+                      className={`text-xl p-2 rounded-xl border text-center transition-all ${
+                        proposeEmoji === em
+                          ? 'bg-[#EEF4F0] border-[#5F8D75] scale-105'
+                          : 'bg-[#FAF8F5] border-[#ECE7DF] hover:bg-white'
+                      }`}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reward Name */}
+              <div>
+                <label className="text-xs font-bold text-[#746C65] block mb-1">
+                  ชื่อของรางวัล (เช่น บุฟเฟต์ชาบู, ดูหนังที่โรง):
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={proposeName}
+                  onChange={(e) => setProposeName(e.target.value)}
+                  placeholder="เช่น กินพิซซ่าฉลองพร้อมหน้า..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
+                />
+              </div>
+
+              {/* Target Points */}
+              <div>
+                <label className="text-xs font-bold text-[#746C65] block mb-1.5">
+                  แต้มที่ต้องสะสมเพื่อปลดล็อก:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[200, 300, 500].map((pts) => (
+                    <button
+                      key={pts}
+                      type="button"
+                      onClick={() => setProposeTarget(pts)}
+                      className={`py-2 rounded-xl text-xs font-black border transition-all ${
+                        proposeTarget === pts
+                          ? 'bg-[#5F8D75] text-white border-[#5F8D75]'
+                          : 'bg-[#FAF8F5] text-[#746C65] border-[#ECE7DF]'
+                      }`}
+                    >
+                      {pts} แต้ม
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-bold text-[#746C65] block mb-1">
+                  คำอธิบายเพิ่มเติม (ไม่บังคับ):
+                </label>
+                <input
+                  type="text"
+                  value={proposeDesc}
+                  onChange={(e) => setProposeDesc(e.target.value)}
+                  placeholder="เช่น มื้อพิเศษสุดสัปดาห์..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-xs text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsProposeOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#FAF8F5] text-[#746C65] border border-[#ECE7DF]"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={!proposeName.trim()}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-[#5F8D75] text-white hover:bg-[#476E5B] shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  บันทึกรางวัล ✨
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

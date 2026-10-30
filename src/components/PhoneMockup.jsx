@@ -72,7 +72,7 @@ export default function PhoneMockup({ children, displayMode, onToggleMode }) {
 
   // Realistic Smartphone Mockup View (Default on PC)
   return (
-    <div className="min-h-screen bg-[#FAF8F5] md:bg-gradient-to-br md:from-[#EAE5DE] md:via-[#FAF8F5] md:to-[#DFD6CB] flex flex-col items-center justify-center p-0 md:p-6 select-none">
+    <div className="h-[100dvh] w-full bg-[#FAF8F5] md:bg-gradient-to-br md:from-[#EAE5DE] md:via-[#FAF8F5] md:to-[#DFD6CB] flex flex-col items-center justify-center p-0 md:p-6 select-none overflow-hidden">
       {/* Top Controller Bar (Visible only on PC desktop) */}
       <header className="w-full max-w-[420px] hidden md:flex items-center justify-between mb-3 px-2 text-xs font-semibold text-[#746C65]">
         <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function PhoneMockup({ children, displayMode, onToggleMode }) {
       </header>
 
       {/* Smartphone Chassis Frame */}
-      <div className="relative w-full h-full min-h-[100dvh] md:min-h-0 md:w-[412px] md:h-[860px] md:max-h-[94vh] bg-[#FAF8F5] md:bg-[#1E1C1A] md:rounded-[52px] p-0 md:p-[10px] md:shadow-[0_25px_80px_rgba(45,40,37,0.38)] md:border md:border-[#3E3A36] md:ring-1 md:ring-white/20 flex flex-col justify-between">
+      <div className="relative w-full h-[100dvh] md:h-[860px] md:max-h-[94vh] md:w-[412px] bg-[#FAF8F5] md:bg-[#1E1C1A] md:rounded-[52px] p-0 md:p-[10px] md:shadow-[0_25px_80px_rgba(45,40,37,0.38)] md:border md:border-[#3E3A36] md:ring-1 md:ring-white/20 flex flex-col justify-between overflow-hidden">
         {/* Left Hardware Buttons (Volume & Action - Visible only on PC desktop) */}
         <div className="hidden md:block absolute -left-[14px] top-28 w-[4px] h-9 bg-[#2E2B27] rounded-l-md border-l border-white/20" />
         <div className="hidden md:block absolute -left-[14px] top-42 w-[4px] h-14 bg-[#2E2B27] rounded-l-md border-l border-white/20" />
@@ -112,7 +112,7 @@ export default function PhoneMockup({ children, displayMode, onToggleMode }) {
         <div className="hidden md:block absolute -right-[14px] top-36 w-[4px] h-20 bg-[#2E2B27] rounded-r-md border-r border-white/20" />
 
         {/* Inner Phone Display Container */}
-        <div className="relative w-full h-full min-h-[100dvh] md:min-h-0 bg-[#FAF8F5] md:rounded-[42px] overflow-hidden flex flex-col justify-between shadow-inner [transform:translateZ(0)]">
+        <div className="relative w-full h-full bg-[#FAF8F5] md:rounded-[42px] overflow-hidden flex flex-col justify-between shadow-inner [transform:translateZ(0)]">
           {/* Top Phone Status Bar (Simulated on PC; native mobile uses real status bar) */}
           <div className="hidden md:flex sticky top-0 z-50 bg-[#FAF8F5]/90 backdrop-blur-md px-6 pt-3 pb-2 items-center justify-between text-[#2D2825] text-xs font-bold select-none shrink-0 border-b border-[#ECE7DF]/50">
             {/* Clock */}

@@ -480,6 +480,34 @@ app.post('/api/posts/:id/comment', (req, res) => {
   }
 });
 
+app.delete('/api/posts/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM comments WHERE postId = ?').run(id);
+      db.prepare('DELETE FROM post_likes WHERE postId = ?').run(id);
+      db.prepare('DELETE FROM notifications WHERE postId = ?').run(id);
+      db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+    });
+    tx();
+    res.json({ success: true, message: 'Post deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
+app.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
+  try {
+    const { commentId } = req.params;
+    db.prepare('DELETE FROM comments WHERE id = ?').run(commentId);
+    res.json({ success: true, message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting comment:', err);
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
 // ==========================================
 // 4. REWARDS & VOTING
 // ==========================================
@@ -547,6 +575,33 @@ app.post('/api/rewards/vote', (req, res) => {
   } catch (err) {
     console.error('Error voting for reward:', err);
     res.status(500).json({ error: 'Failed to vote' });
+  }
+});
+
+app.post('/api/rewards', (req, res) => {
+  try {
+    const { name, emoji, target = 300, description } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อของรางวัล' });
+    }
+
+    const newId = `reward-${Date.now()}`;
+    db.prepare(`
+      INSERT INTO rewards (id, name, emoji, target, description, status)
+      VALUES (?, ?, ?, ?, ?, 'locked')
+    `).run(
+      newId,
+      name.trim(),
+      emoji || '🎁',
+      parseInt(target, 10) || 300,
+      description ? description.trim() : 'รางวัลพิเศษที่ครอบครัวร่วมกันเสนอ'
+    );
+
+    const created = db.prepare('SELECT * FROM rewards WHERE id = ?').get(newId);
+    res.json({ success: true, reward: created });
+  } catch (err) {
+    console.error('Error creating reward:', err);
+    res.status(500).json({ error: 'Failed to create reward' });
   }
 });
 

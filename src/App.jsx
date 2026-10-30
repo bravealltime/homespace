@@ -69,31 +69,80 @@ function AppContent({ displayMode, onToggleMode }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
 
-  // Auto-hiding floating nav on scroll
+  // Auto-hiding floating nav on scroll & touch
   const [isNavVisible, setIsNavVisible] = useState(true);
   const scrollContainerRef = useRef(null);
   const lastScrollTopRef = useRef(0);
+  const accumulatedDeltaRef = useRef(0);
+
+  // Universal touch, wheel and scroll detection for all mobile phones & PC
+  useEffect(() => {
+    let touchStartY = 0;
+
+    const handleTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      const currentY = e.touches[0].clientY;
+      const diffY = touchStartY - currentY; // positive = swiping up = scrolling down
+
+      // Swiped up by > 12px -> scroll down -> hide nav completely!
+      if (diffY > 12) {
+        setIsNavVisible(false);
+      }
+      // Swiped down by > 8px -> scroll up -> show nav!
+      else if (diffY < -8) {
+        setIsNavVisible(true);
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (e.deltaY > 8) {
+        setIsNavVisible(false);
+      } else if (e.deltaY < -8) {
+        setIsNavVisible(true);
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   const handleScroll = (e) => {
     const currentScrollTop = e.currentTarget.scrollTop;
-    const scrollHeight = e.currentTarget.scrollHeight;
-    const clientHeight = e.currentTarget.clientHeight;
     const deltaY = currentScrollTop - lastScrollTopRef.current;
 
-    // 1. If at the top of the feed (first 25px), always show nav
-    if (currentScrollTop <= 25) {
+    // Reset when at top
+    if (currentScrollTop <= 20) {
       setIsNavVisible(true);
+      accumulatedDeltaRef.current = 0;
+      lastScrollTopRef.current = currentScrollTop;
+      return;
     }
-    // 2. If at the very bottom edge (within 40px), show nav so user can navigate
-    else if (scrollHeight - currentScrollTop - clientHeight <= 40) {
-      setIsNavVisible(true);
+
+    // Direction flip resets accumulator
+    if ((deltaY > 0 && accumulatedDeltaRef.current < 0) || (deltaY < 0 && accumulatedDeltaRef.current > 0)) {
+      accumulatedDeltaRef.current = 0;
     }
-    // 3. Scrolling DOWN by more than 8px -> collapse/tuck ("ฮุบ") nav so it doesn't block posts
-    else if (deltaY > 8 && currentScrollTop > 40) {
+    accumulatedDeltaRef.current += deltaY;
+
+    // Scrolling down accumulated > 14px -> hide nav
+    if (accumulatedDeltaRef.current > 14 && currentScrollTop > 30) {
       setIsNavVisible(false);
     }
-    // 4. Scrolling UP by more than 5px -> smoothly reveal nav
-    else if (deltaY < -5) {
+    // Scrolling up accumulated < -8px -> reveal nav
+    else if (accumulatedDeltaRef.current < -8) {
       setIsNavVisible(true);
     }
 
@@ -238,14 +287,14 @@ function AppContent({ displayMode, onToggleMode }) {
       {/* Floating Mobile Bottom Navigation Island (Auto-hides / collapses gracefully on scroll down) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className={`absolute inset-x-0 z-40 max-w-[390px] mx-auto px-2 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`fixed md:absolute inset-x-0 z-40 max-w-[390px] mx-auto px-3 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isNavVisible
             ? 'translate-y-0 opacity-100 pointer-events-auto scale-100'
-            : 'translate-y-[135%] opacity-0 pointer-events-none scale-95'
+            : 'translate-y-28 opacity-0 pointer-events-none scale-90'
         }`}
-        style={{ bottom: 'max(8px, env(safe-area-inset-bottom, 8px))' }}
+        style={{ bottom: 'max(10px, env(safe-area-inset-bottom, 10px))' }}
       >
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-xl flex items-center justify-around pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around pointer-events-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -278,7 +327,7 @@ function AppContent({ displayMode, onToggleMode }) {
         <button
           type="button"
           onClick={() => setIsNavVisible(true)}
-          className="absolute bottom-1.5 inset-x-0 mx-auto w-14 h-1 bg-[#2D2825]/30 hover:bg-[#2D2825]/60 active:bg-[#5F8D75] rounded-full transition-all z-30 cursor-pointer shadow-xs"
+          className="fixed md:absolute bottom-2 inset-x-0 mx-auto w-16 h-1.5 bg-[#2D2825]/40 hover:bg-[#5F8D75] active:bg-[#5F8D75] rounded-full transition-all z-30 cursor-pointer shadow-sm animate-pulse"
           title="แตะเพื่อเปิดแถบเมนู"
         />
       )}

@@ -9,6 +9,11 @@ import {
   CaretRight,
   DotsThree,
   X,
+  Trash,
+  Copy,
+  Check,
+  Flame,
+  Target,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -72,15 +77,22 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     feedPosts,
     likePost,
     addComment,
+    deletePost,
     unlockedRewards,
   } = useApp();
 
   const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
   const [createPostMode, setCreatePostMode] = useState('routine');
+  const [selectedChoreId, setSelectedChoreId] = useState('dishes');
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentText, setCommentText] = useState({});
   const [viewingStory, setViewingStory] = useState(null); // Story viewer state
+  const [storyReplyText, setStoryReplyText] = useState('');
+  const [activePostMenuId, setActivePostMenuId] = useState(null);
+  const [viewingPhoto, setViewingPhoto] = useState(null);
+  const [copiedPostId, setCopiedPostId] = useState(null);
+  const [showQuests, setShowQuests] = useState(false);
 
   const storiesContainerRef = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -88,9 +100,36 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const [scrollLeftState, setScrollLeftState] = useState(0);
   const isDraggingRef = useRef(false);
 
-  const openCreatePost = (mode = 'routine') => {
+  const openCreatePost = (mode = 'routine', choreId = 'dishes') => {
     setCreatePostMode(mode);
+    setSelectedChoreId(choreId);
     setCreatePostModalOpen(true);
+  };
+
+  const handleDeletePost = (postId) => {
+    if (window.confirm('คุณต้องการลบโพสต์นี้ใช่หรือไม่?')) {
+      deletePost(postId);
+      setActivePostMenuId(null);
+    }
+  };
+
+  const handleCopyCaption = (postId, text) => {
+    if (text) {
+      navigator.clipboard?.writeText(text);
+      setCopiedPostId(postId);
+      setTimeout(() => setCopiedPostId(null), 2000);
+      setActivePostMenuId(null);
+    }
+  };
+
+  const handleSendStoryReply = () => {
+    if (!storyReplyText.trim() || !viewingStory?.post?.id) {
+      setViewingStory(null);
+      return;
+    }
+    addComment(viewingStory.post.id, currentUser?.id || 'member-dad', storyReplyText.trim());
+    setStoryReplyText('');
+    setViewingStory(null);
   };
 
   // Mouse drag-to-scroll (Smooth swiping for desktop & mobile)
@@ -269,6 +308,50 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         </div>
       </section>
 
+      {/* 2.1 Daily Quests Card (เควสต์งานบ้านประจำวัน แตะเลือกทำได้ทันที) */}
+      <section className="bg-white rounded-2xl p-3 border border-[#ECE7DF] shadow-2xs space-y-2">
+        <div
+          onClick={() => setShowQuests(!showQuests)}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎯</span>
+            <span className="text-xs font-black text-[#2D2825]">เควสต์งานบ้านวันนี้</span>
+            <span className="text-[10px] text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full font-bold">
+              รับสูงสุด +120 แต้ม
+            </span>
+          </div>
+          <span className="text-xs font-bold text-[#5F8D75]">
+            {showQuests ? 'ซ่อน ▲' : 'ดูเควสต์ทั้งหมด ▼'}
+          </span>
+        </div>
+
+        {showQuests && (
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#ECE7DF]">
+            {[
+              { id: 'dishes', name: 'ล้างจานชาม', emoji: '🧽', points: 25 },
+              { id: 'clean', name: 'กวาดถูบ้าน', emoji: '🧹', points: 20 },
+              { id: 'laundry', name: 'ซักผ้า-พับผ้า', emoji: '🧺', points: 25 },
+              { id: 'bed', name: 'จัดห้องนอน', emoji: '🛏️', points: 20 },
+              { id: 'trash', name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
+            ].map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => openCreatePost('chore', q.id)}
+                className="flex items-center justify-between p-2 rounded-xl bg-[#FAF8F5] hover:bg-[#EEF4F0] border border-[#ECE7DF] hover:border-[#5F8D75]/40 transition-all text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-lg">{q.emoji}</span>
+                  <span className="text-[11px] font-bold text-[#2D2825] truncate">{q.name}</span>
+                </div>
+                <span className="text-[10px] font-black text-[#5F8D75] shrink-0">+{q.points}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* 3. Sleek Mobile Create Post Bar (แถบโพสต์เร็วแบบมินิมอล) */}
       <section className="bg-white rounded-2xl p-2 px-3 border border-[#ECE7DF] shadow-2xs flex items-center gap-2.5">
         <div
@@ -376,13 +459,44 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 relative">
                   <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
                     +{post.points} แต้ม
                   </span>
-                  <span className="text-[#9E958D]">
-                    <DotsThree size={18} weight="bold" />
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActivePostMenuId(activePostMenuId === post.id ? null : post.id)}
+                    className="p-1 rounded-full text-[#9E958D] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                    title="ตัวเลือกโพสต์"
+                  >
+                    <DotsThree size={20} weight="bold" />
+                  </button>
+
+                  {/* Post Options Menu */}
+                  {activePostMenuId === post.id && (
+                    <div className="absolute right-0 top-8 z-30 bg-white rounded-2xl shadow-xl border border-[#ECE7DF] py-1.5 min-w-[140px] animate-enter-rise text-xs">
+                      {post.caption && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCaption(post.id, post.caption)}
+                          className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#FAF8F5] text-[#2D2825] font-semibold cursor-pointer"
+                        >
+                          {copiedPostId === post.id ? <Check size={14} className="text-[#5F8D75]" /> : <Copy size={14} />}
+                          <span>{copiedPostId === post.id ? 'คัดลอกแล้ว!' : 'คัดลอกข้อความ'}</span>
+                        </button>
+                      )}
+                      {(post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePost(post.id)}
+                          className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-red-50 text-red-500 font-semibold cursor-pointer border-t border-[#ECE7DF]/50"
+                        >
+                          <Trash size={14} />
+                          <span>ลบโพสต์นี้</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -392,30 +506,38 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 <div className="px-3.5 space-y-1.5">
                   <div className="grid grid-cols-2 gap-2">
                     {/* Before Image */}
-                    <div className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#ECE7DF]">
+                    <div
+                      onClick={() => post.beforeImage && setViewingPhoto(post.beforeImage)}
+                      className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#ECE7DF] cursor-pointer group"
+                      title="แตะเพื่อดูรูปขนาดเต็ม"
+                    >
                       {post.beforeImage ? (
-                        <img src={post.beforeImage} alt="ก่อนทำ" className="w-full h-full object-cover" />
+                        <img src={post.beforeImage} alt="ก่อนทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">
                           ก่อนทำ
                         </div>
                       )}
                       <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
-                        ก่อนทำ
+                        ก่อนทำ 🔍
                       </span>
                     </div>
 
                     {/* After Image */}
-                    <div className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#5F8D75]/40 ring-1 ring-[#5F8D75]/20">
+                    <div
+                      onClick={() => (post.afterImage || post.imageUrl) && setViewingPhoto(post.afterImage || post.imageUrl)}
+                      className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#5F8D75]/40 ring-1 ring-[#5F8D75]/20 cursor-pointer group"
+                      title="แตะเพื่อดูรูปขนาดเต็ม"
+                    >
                       {post.afterImage || post.imageUrl ? (
-                        <img src={post.afterImage || post.imageUrl} alt="หลังทำ" className="w-full h-full object-cover" />
+                        <img src={post.afterImage || post.imageUrl} alt="หลังทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">
                           หลังทำ
                         </div>
                       )}
                       <span className="absolute bottom-2 left-2 bg-[#5F8D75] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs">
-                        หลังทำ ✨
+                        หลังทำ ✨ 🔍
                       </span>
                     </div>
                   </div>
@@ -424,8 +546,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 /* Routine Lifestyle Photo */
                 post.photo && (
                   <div className="px-3.5">
-                    <div className="w-full h-52 sm:h-56 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5">
-                      <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover" />
+                    <div
+                      onClick={() => setViewingPhoto(post.photo)}
+                      className="w-full h-52 sm:h-56 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 cursor-pointer group"
+                      title="แตะเพื่อดูรูปขนาดเต็ม"
+                    >
+                      <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
                     </div>
                   </div>
                 )
@@ -616,17 +742,46 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             <div className="flex items-center gap-2">
               <input
                 type="text"
+                value={storyReplyText}
+                onChange={(e) => setStoryReplyText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendStoryReply()}
                 placeholder={`ส่งข้อความถึง ${viewingStory.member.name}...`}
                 className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-full text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-white"
               />
               <button
                 type="button"
-                onClick={() => setViewingStory(null)}
-                className="w-9 h-9 rounded-full bg-[#E88D67] text-white flex items-center justify-center hover:scale-105 transition-transform"
+                onClick={handleSendStoryReply}
+                className="px-3.5 py-2 rounded-full bg-[#E88D67] text-white flex items-center justify-center font-bold text-xs hover:scale-105 transition-transform cursor-pointer shadow-md"
               >
-                <Heart size={18} weight="fill" />
+                ส่ง ✨
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Photo Zoom Preview Modal */}
+      {viewingPhoto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-enter-rise"
+          onClick={() => setViewingPhoto(null)}
+        >
+          <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setViewingPhoto(null)}
+              className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:bg-white/40 transition-colors"
+            >
+              ✕
+            </button>
+            <img
+              src={viewingPhoto}
+              alt="ดูรูปขนาดเต็ม"
+              className="max-h-[80vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}
@@ -636,6 +791,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         isOpen={createPostModalOpen}
         onClose={() => setCreatePostModalOpen(false)}
         initialMode={createPostMode}
+        initialChoreId={selectedChoreId}
       />
     </div>
   );

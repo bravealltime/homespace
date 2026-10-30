@@ -81,7 +81,7 @@ const ROUTINE_SAMPLES = [
   'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80', // Plants
 ];
 
-export default function CreatePostModal({ isOpen, onClose, initialMode = 'routine' }) {
+export default function CreatePostModal({ isOpen, onClose, initialMode = 'routine', initialChoreId = 'dishes' }) {
   const { currentUser } = useAuth();
   const { addRoutineEntry, addChoreEntry } = useApp();
 
@@ -89,7 +89,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
   const [mode, setMode] = useState(initialMode);
 
   // Selected chore state (used ONLY when mode === 'chore')
-  const [selectedChoreId, setSelectedChoreId] = useState('dishes');
+  const [selectedChoreId, setSelectedChoreId] = useState(initialChoreId || 'dishes');
   const [isCustomChore, setIsCustomChore] = useState(false);
   const [customChoreName, setCustomChoreName] = useState('');
 
@@ -111,7 +111,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode || 'routine');
-      setSelectedChoreId('dishes');
+      setSelectedChoreId(initialChoreId || 'dishes');
       setIsCustomChore(false);
       setCustomChoreName('');
       setCaption('');
@@ -119,7 +119,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
       setBeforeImage(null);
       setAfterImage(null);
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen, initialMode, initialChoreId]);
 
   // Use sample photos (for fast demo/testing)
   const handleUseSamplePhotos = () => {

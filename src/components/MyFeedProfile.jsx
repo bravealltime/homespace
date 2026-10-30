@@ -10,6 +10,7 @@ import {
   Sparkle,
   ArrowLeft,
   X,
+  Trash,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -57,13 +58,19 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, likePost, addComment } = useApp();
+  const { feedPosts, likePost, addComment, deletePost } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [commentText, setCommentText] = useState({});
   const [selectedGridPost, setSelectedGridPost] = useState(null);
+
+  const handleDeletePost = (postId) => {
+    if (window.confirm('คุณต้องการลบโพสต์นี้ใช่หรือไม่?')) {
+      deletePost(postId);
+    }
+  };
 
   // Determine which profile is being viewed: currentUser or another member
   const activeMember = viewingMember || currentUser;
@@ -358,9 +365,21 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                     </div>
                   </div>
 
-                  <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
-                    +{post.points} แต้ม
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
+                      +{post.points} แต้ม
+                    </span>
+                    {isMe && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-1 text-[#9E958D] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        title="ลบโพสต์นี้"
+                      >
+                        <Trash size={16} weight="bold" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Post Media */}

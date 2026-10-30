@@ -82,9 +82,28 @@ export async function addPostComment(postId, memberId, text) {
   });
 }
 
+export async function deletePost(postId) {
+  return request(`/posts/${postId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function deleteComment(postId, commentId) {
+  return request(`/posts/${postId}/comments/${commentId}`, {
+    method: 'DELETE',
+  });
+}
+
 // 3. Rewards & Voting
 export async function fetchRewards() {
   return request('/rewards');
+}
+
+export async function createReward(rewardData) {
+  return request('/rewards', {
+    method: 'POST',
+    body: JSON.stringify(rewardData),
+  });
 }
 
 export async function voteForReward(memberId, rewardId) {

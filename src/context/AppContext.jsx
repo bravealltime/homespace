@@ -228,6 +228,35 @@ function reducer(state, action) {
       };
     }
 
+    case 'DELETE_POST': {
+      const { postId } = action.payload;
+      return {
+        ...state,
+        feedPosts: (state.feedPosts || []).filter((p) => p.id !== postId),
+        history: (state.history || []).filter((h) => h.id !== postId && !h.id.includes(postId)),
+      };
+    }
+
+    case 'DELETE_COMMENT': {
+      const { postId, commentId } = action.payload;
+      return {
+        ...state,
+        feedPosts: (state.feedPosts || []).map((p) =>
+          p.id === postId
+            ? { ...p, comments: (p.comments || []).filter((c) => c.id !== commentId) }
+            : p
+        ),
+      };
+    }
+
+    case 'ADD_REWARD': {
+      const newReward = action.payload;
+      return {
+        ...state,
+        customRewards: [...(state.customRewards || []), newReward],
+      };
+    }
+
     case 'ADD_COMMENT': {
       const { postId, memberId, text } = action.payload;
       const newComment = {
@@ -513,6 +542,47 @@ export function AppProvider({ children }) {
     }
   };
 
+  const deletePost = async (postId) => {
+    dispatch({ type: 'DELETE_POST', payload: { postId } });
+    try {
+      await api.deletePost(postId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete post warning:', err.message);
+    }
+  };
+
+  const deleteComment = async (postId, commentId) => {
+    dispatch({ type: 'DELETE_COMMENT', payload: { postId, commentId } });
+    try {
+      await api.deleteComment(postId, commentId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete comment warning:', err.message);
+    }
+  };
+
+  const addReward = async (rewardData) => {
+    try {
+      const res = await api.createReward(rewardData);
+      if (res?.reward) {
+        dispatch({ type: 'ADD_REWARD', payload: res.reward });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend add reward warning:', err.message);
+      dispatch({
+        type: 'ADD_REWARD',
+        payload: {
+          id: `reward-${Date.now()}`,
+          ...rewardData,
+          unlockAt: rewardData.target || 300,
+        },
+      });
+    }
+  };
+
   const value = {
     state,
     members,
@@ -533,11 +603,14 @@ export function AppProvider({ children }) {
     addRoutineEntry,
     likePost,
     addComment,
+    deletePost,
+    deleteComment,
+    addReward,
     voteReward,
     getRewardVotes,
     getMemberVote,
     unlockedRewards,
-    rewards: REWARDS,
+    rewards: [...REWARDS, ...(state.customRewards || [])],
     syncWithBackend,
   };
 

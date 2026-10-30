@@ -28,6 +28,21 @@ try {
 // 1. Initialize Database Schema
 export function initDb() {
   db.exec(`
+    
+    CREATE TABLE IF NOT EXISTS families (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      code TEXT UNIQUE NOT NULL,
+      adminMemberId TEXT NOT NULL,
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS otps (
+      phone TEXT PRIMARY KEY,
+      code TEXT NOT NULL,
+      expiresAt INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS system_settings (
       key TEXT PRIMARY KEY,
       value TEXT
@@ -128,11 +143,42 @@ export function initDb() {
     );
   `);
 
+  
+  // Ensure members table has familyId, status, isAdmin
+  try {
+    const cols = db.prepare('PRAGMA table_info(members)').all().map(c => c.name);
+    if (!cols.includes('familyId')) {
+      db.exec("ALTER TABLE members ADD COLUMN familyId TEXT DEFAULT 'family-main'");
+    }
+    if (!cols.includes('status')) {
+      db.exec("ALTER TABLE members ADD COLUMN status TEXT DEFAULT 'active'");
+    }
+    if (!cols.includes('isAdmin')) {
+      db.exec("ALTER TABLE members ADD COLUMN isAdmin INTEGER DEFAULT 0");
+    }
+    // Set dad and mom as admin
+    db.exec("UPDATE members SET isAdmin = 1 WHERE id IN ('member-dad', 'member-mom')");
+    db.exec("UPDATE members SET familyId = 'family-main' WHERE familyId IS NULL");
+    db.exec("UPDATE members SET status = 'active' WHERE status IS NULL");
+  } catch (err) {
+    console.warn('Migration warning:', err.message);
+  }
+
   // Seed default settings and initial data if not already present
   seedInitialData();
 }
 
 function seedInitialData() {
+
+  // Seed default family
+  const famCount = db.prepare('SELECT COUNT(*) as count FROM families').get().count;
+  if (famCount === 0) {
+    db.prepare(`
+      INSERT INTO families (id, name, code, adminMemberId, createdAt)
+      VALUES (?, ?, ?, ?, ?)
+    `).run('family-main', 'บ้านสุขใจ (Family Home)', 'HOME-2026', 'member-dad', Date.now());
+  }
+
   const memberCount = db.prepare('SELECT COUNT(*) as count FROM members').get().count;
   if (memberCount === 0) {
     const insertMember = db.prepare(`

@@ -6,6 +6,13 @@ const AuthContext = createContext(null);
 
 const COLOR_PALETTE = ['#5F8D75', '#E88D67', '#7BA7C2', '#C49B6F', '#9381FF', '#F15BB5'];
 
+const DEFAULT_FAMILY = {
+  id: 'family-main',
+  name: 'บ้านสุขใจ (Family Home)',
+  code: 'HOME-2026',
+  adminMemberId: 'member-dad',
+};
+
 function getStoredMembers() {
   try {
     const data = localStorage.getItem('homespace-members');
@@ -45,25 +52,58 @@ function saveCurrentPhone(phone) {
 export function AuthProvider({ children }) {
   const [members, setMembers] = useState(getStoredMembers);
   const [currentPhone, setCurrentPhone] = useState(getStoredCurrentPhone);
+  const [families, setFamilies] = useState([DEFAULT_FAMILY]);
+  const [currentFamily, setCurrentFamily] = useState(DEFAULT_FAMILY);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync with real backend SQLite database on mount
+  // Sync data with backend SQLite database
+  const refreshMembers = useCallback(async () => {
+    try {
+      const backendMembers = await api.fetchMembers();
+      if (Array.isArray(backendMembers) && backendMembers.length > 0) {
+        setMembers(backendMembers);
+        saveMembers(backendMembers);
+      }
+    } catch (err) {
+      console.warn('Backend fetch members warning:', err.message);
+    }
+  }, []);
+
+  const refreshFamilies = useCallback(async () => {
+    try {
+      const fList = await api.fetchFamilies();
+      if (Array.isArray(fList) && fList.length > 0) {
+        setFamilies(fList);
+        setCurrentFamily(fList[0]);
+      }
+    } catch (err) {
+      console.warn('Backend fetch families warning:', err.message);
+    }
+  }, []);
+
+  const refreshPendingRequests = useCallback(async (famId) => {
+    const targetId = famId || currentFamily?.id || 'family-main';
+    try {
+      const reqs = await api.fetchFamilyRequests(targetId);
+      if (Array.isArray(reqs)) {
+        setPendingRequests(reqs);
+      }
+    } catch (err) {
+      console.warn('Backend fetch requests warning:', err.message);
+    }
+  }, [currentFamily]);
+
+  // Initial load
   useEffect(() => {
     let isMounted = true;
-    async function loadMembersFromBackend() {
-      try {
-        const backendMembers = await api.fetchMembers();
-        if (isMounted && Array.isArray(backendMembers) && backendMembers.length > 0) {
-          setMembers(backendMembers);
-          saveMembers(backendMembers);
-        }
-      } catch (err) {
-        console.warn('Backend connection falling back to local storage cache:', err.message);
-      }
+    async function init() {
+      await refreshMembers();
+      await refreshFamilies();
     }
-    loadMembersFromBackend();
+    init();
     return () => { isMounted = false; };
-  }, []);
+  }, [refreshMembers, refreshFamilies]);
 
   useEffect(() => {
     saveMembers(members);
@@ -73,28 +113,72 @@ export function AuthProvider({ children }) {
     saveCurrentPhone(currentPhone);
   }, [currentPhone]);
 
+  // Current active user
   const currentUser = currentPhone
-    ? members.find(m => m.phone === currentPhone) || members[0]
-    : members[0];
+    ? members.find(m => m.phone === currentPhone) || null
+    : null;
+
+  // Poll or refresh pending requests if user is Admin
+  useEffect(() => {
+    if (currentUser?.isAdmin || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) {
+      refreshPendingRequests(currentFamily?.id);
+      const timer = setInterval(() => {
+        refreshPendingRequests(currentFamily?.id);
+      }, 15000);
+      return () => clearInterval(timer);
+    }
+  }, [currentUser, currentFamily, refreshPendingRequests]);
 
   const findMemberByPhone = useCallback((phone) => {
     const clean = phone.replace(/\D/g, '');
     return members.find(m => m.phone.replace(/\D/g, '') === clean) || null;
   }, [members]);
 
-  const register = useCallback(async (phone, name, role, avatarData) => {
+  // OTP Functions
+  const sendOtp = useCallback(async (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    const color = COLOR_PALETTE[members.length % COLOR_PALETTE.length];
-    
     try {
-      const res = await api.registerMember({
+      const res = await api.sendOtp(cleanPhone);
+      return res;
+    } catch (err) {
+      // Local demo fallback
+      const demoOtp = '123456';
+      return {
+        success: true,
         phone: cleanPhone,
-        name,
-        role: role || 'สมาชิกในบ้าน',
-        avatar: avatarData?.avatar || '😊',
-        avatarType: avatarData?.avatarType || 'emoji',
-        avatarImage: avatarData?.avatarImage || null,
-        color,
+        otp: demoOtp,
+        message: 'รหัส OTP (จำลอง): ' + demoOtp,
+      };
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (phone, code) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    try {
+      const res = await api.verifyOtp(cleanPhone, code);
+      return res;
+    } catch (err) {
+      if (code === '123456') {
+        const existing = members.find(m => m.phone.replace(/\D/g, '') === cleanPhone);
+        return {
+          success: true,
+          verified: true,
+          isExisting: !!existing,
+          member: existing || null,
+          status: existing ? (existing.status || 'active') : 'new',
+        };
+      }
+      throw err;
+    }
+  }, [members]);
+
+  // Register with pending approval request
+  const registerWithRequest = useCallback(async (data) => {
+    const cleanPhone = data.phone.replace(/\D/g, '');
+    try {
+      const res = await api.registerWithRequest({
+        ...data,
+        phone: cleanPhone,
       });
 
       if (res?.member) {
@@ -108,51 +192,65 @@ export function AuthProvider({ children }) {
           return [...prev, res.member];
         });
         setCurrentPhone(cleanPhone);
-        return res.member;
+        return res;
       }
     } catch (err) {
-      console.warn('Register via API failed, saving locally:', err);
+      console.warn('Register request via API failed, saving locally:', err);
     }
 
     // Local fallback
-    const existingIndex = members.findIndex(m => m.phone.replace(/\D/g, '') === cleanPhone);
-    let updatedMembers = [];
-    let savedMember = null;
+    const newMember = {
+      id: `member-${Date.now()}`,
+      phone: cleanPhone,
+      name: data.name,
+      role: data.role || 'สมาชิกในบ้าน',
+      avatar: data.avatar || '😊',
+      avatarType: data.avatarType || 'emoji',
+      avatarImage: data.avatarImage || null,
+      familyId: data.familyId || currentFamily?.id || 'family-main',
+      status: 'pending',
+      isAdmin: 0,
+      createdAt: Date.now(),
+    };
 
-    if (existingIndex >= 0) {
-      savedMember = {
-        ...members[existingIndex],
-        name,
-        role: role || 'สมาชิกในบ้าน',
-        avatar: avatarData?.avatar || members[existingIndex].avatar,
-        avatarType: avatarData?.avatarType || members[existingIndex].avatarType,
-        avatarImage: avatarData?.avatarImage !== undefined ? avatarData.avatarImage : members[existingIndex].avatarImage,
-      };
-      updatedMembers = [...members];
-      updatedMembers[existingIndex] = savedMember;
-    } else {
-      savedMember = {
-        id: `member-${Date.now()}`,
-        phone: cleanPhone,
-        name,
-        role: role || 'สมาชิกในบ้าน',
-        avatar: avatarData?.avatar || '😊',
-        avatarType: avatarData?.avatarType || 'emoji',
-        avatarImage: avatarData?.avatarImage || null,
-        color,
-        createdAt: Date.now(),
-      };
-      updatedMembers = [...members, savedMember];
+    setMembers(prev => [...prev, newMember]);
+    setPendingRequests(prev => [...prev, newMember]);
+    setCurrentPhone(cleanPhone);
+    return { success: true, member: newMember, status: 'pending' };
+  }, [currentFamily]);
+
+  // Admin Approval
+  const approveRequest = useCallback(async (memberId) => {
+    try {
+      await api.approveMemberRequest(currentFamily?.id || 'family-main', memberId, currentUser?.phone);
+    } catch (err) {
+      console.warn('Approve member API warning:', err);
     }
 
-    setMembers(updatedMembers);
-    setCurrentPhone(cleanPhone);
-    return savedMember;
-  }, [members]);
+    setMembers(prev =>
+      prev.map(m => (m.id === memberId ? { ...m, status: 'active' } : m))
+    );
+    setPendingRequests(prev => prev.filter(r => r.id !== memberId));
+    await refreshMembers();
+  }, [currentFamily, currentUser, refreshMembers]);
+
+  // Admin Reject
+  const rejectRequest = useCallback(async (memberId) => {
+    try {
+      await api.rejectMemberRequest(currentFamily?.id || 'family-main', memberId, currentUser?.phone);
+    } catch (err) {
+      console.warn('Reject member API warning:', err);
+    }
+
+    setMembers(prev =>
+      prev.map(m => (m.id === memberId ? { ...m, status: 'rejected' } : m))
+    );
+    setPendingRequests(prev => prev.filter(r => r.id !== memberId));
+    await refreshMembers();
+  }, [currentFamily, currentUser, refreshMembers]);
 
   const login = useCallback(async (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    
     try {
       const res = await api.loginWithPhone(cleanPhone);
       if (res?.member) {
@@ -179,7 +277,6 @@ export function AuthProvider({ children }) {
     const cleanPhone = phone.replace(/\D/g, '');
     const member = members.find(m => m.phone.replace(/\D/g, '') === cleanPhone);
 
-    // Optimistic local update
     setMembers(prev =>
       prev.map(m =>
         m.phone.replace(/\D/g, '') === cleanPhone ? { ...m, ...updates } : m
@@ -200,12 +297,25 @@ export function AuthProvider({ children }) {
     currentUser,
     currentPhone,
     isLoggedIn: !!currentUser,
+    isPending: currentUser?.status === 'pending',
+    isApproved: currentUser?.status === 'active',
+    isAdmin: currentUser?.isAdmin === 1 || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่'),
+    families,
+    currentFamily,
+    pendingRequests,
+    sendOtp,
+    verifyOtp,
+    registerWithRequest,
+    approveRequest,
+    rejectRequest,
+    refreshMembers,
+    refreshPendingRequests,
     findMemberByPhone,
-    register,
     login,
     logout,
     updateProfile,
     setCurrentPhone,
+    setCurrentFamily,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

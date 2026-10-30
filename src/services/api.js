@@ -23,6 +23,55 @@ async function request(endpoint, options = {}) {
 }
 
 // 1. Members & Auth
+
+// 1.5 OTP & Multi-Family Invite System
+export async function sendOtp(phone) {
+  return request('/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  });
+}
+
+export async function verifyOtp(phone, code) {
+  return request('/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone, code }),
+  });
+}
+
+export async function registerWithRequest(data) {
+  return request('/auth/register-request', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchFamilies() {
+  return request('/families');
+}
+
+export async function fetchFamilyByCode(code) {
+  return request(`/families/by-code/${encodeURIComponent(code)}`);
+}
+
+export async function fetchFamilyRequests(familyId) {
+  return request(`/families/${encodeURIComponent(familyId)}/requests`);
+}
+
+export async function approveMemberRequest(familyId, memberId, adminPhone) {
+  return request(`/families/${encodeURIComponent(familyId)}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ memberId, adminPhone }),
+  });
+}
+
+export async function rejectMemberRequest(familyId, memberId, adminPhone) {
+  return request(`/families/${encodeURIComponent(familyId)}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ memberId, adminPhone }),
+  });
+}
+
 export async function fetchMembers() {
   return request('/members');
 }

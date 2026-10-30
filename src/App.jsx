@@ -13,6 +13,7 @@ import {
   UserCircle,
   MagnifyingGlass,
   Plus,
+  ShieldCheck,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -24,6 +25,7 @@ import NotificationModal from './components/NotificationModal';
 import SearchModal from './components/SearchModal';
 import FamilySummary from './components/FamilySummary';
 import MonthlyRewards from './components/MonthlyRewards';
+import FamilyAdminModal from './components/FamilyAdminModal';
 import PhoneMockup from './components/PhoneMockup';
 
 const TABS = [
@@ -60,10 +62,11 @@ function HeaderAvatar({ member, size = 'sm' }) {
 }
 
 function AppContent({ displayMode, onToggleMode }) {
-  const { currentUser, members, setCurrentPhone, logout, register } = useAuth();
+  const { currentUser, members, setCurrentPhone, logout, register, isAdmin, pendingRequests } = useAuth();
   const { notifications } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [switchUserOpen, setSwitchUserOpen] = useState(false);
@@ -202,8 +205,25 @@ function AppContent({ displayMode, onToggleMode }) {
           </div>
         </div>
 
-        {/* Right Actions: Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
+        {/* Right Actions: Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Admin Family Requests & Invite Link Button */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setFamilyAdminOpen(true)}
+              className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#5F8D75] hover:bg-[#EEF4F0] transition-colors cursor-pointer"
+              title="จัดการคำขอเข้าครอบครัว & ลิงก์เชิญ"
+            >
+              <ShieldCheck size={19} weight="bold" />
+              {pendingRequests.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Search Button (ค้นหาคนในบ้าน หรืองานบ้าน) */}
           <button
             type="button"
@@ -359,6 +379,7 @@ function AppContent({ displayMode, onToggleMode }) {
 
       {/* Edit Profile Modal */}
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
 
         {/* Fast Switch User Modal */}
         {switchUserOpen && (
@@ -372,7 +393,7 @@ function AppContent({ displayMode, onToggleMode }) {
               className="bg-white rounded-3xl border border-[#ECE7DF] shadow-xl w-full max-w-xs p-5 animate-enter-rise"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DF] mb-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DF] mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">👨‍👩‍👧‍👦</span>
                   <h3 className="text-base font-bold text-[#2D2825]">สลับสมาชิกในบ้าน</h3>
@@ -385,6 +406,30 @@ function AppContent({ displayMode, onToggleMode }) {
                   ปิด
                 </button>
               </div>
+
+              {/* Admin Panel Shortcut */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSwitchUserOpen(false);
+                    setFamilyAdminOpen(true);
+                  }}
+                  className="w-full mb-3 py-2 px-3 rounded-2xl bg-[#EEF4F0] hover:bg-[#DFEDE3] text-[#5F8D75] text-xs font-bold flex items-center justify-between border border-[#5F8D75]/30 transition-all cursor-pointer shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={16} weight="bold" />
+                    <span>คำขอเข้าบ้าน & ลิงก์เชิญ</span>
+                  </div>
+                  {pendingRequests.length > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-[#E88D67] text-white text-[9px] font-black">
+                      {pendingRequests.length} คำขอ
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-[#5F8D75]">เปิดดู →</span>
+                  )}
+                </button>
+              )}
 
               <div className="space-y-2 mb-3">
                 {members.map((m) => {
@@ -596,13 +641,13 @@ function AppContent({ displayMode, onToggleMode }) {
 }
 
 function AppRouter() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isPending } = useAuth();
   // Default to 'phone' mode on PC so it renders as a phone app mockup
   const [displayMode, setDisplayMode] = useState('phone');
 
   return (
     <PhoneMockup displayMode={displayMode} onToggleMode={setDisplayMode}>
-      {!isLoggedIn ? <LoginPage /> : <AppContent displayMode={displayMode} onToggleMode={setDisplayMode} />}
+      {!isLoggedIn || isPending ? <LoginPage /> : <AppContent displayMode={displayMode} onToggleMode={setDisplayMode} />}
     </PhoneMockup>
   );
 }

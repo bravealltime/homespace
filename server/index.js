@@ -65,6 +65,284 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   res.json({ success: true, url: fileUrl, filename: req.file.filename });
 });
 
+
+// ==========================================
+// 1.5 OTP & INVITE / MULTI-FAMILY SYSTEM
+// ==========================================
+
+// Request OTP for phone verification
+app.post('/api/auth/send-otp', (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'กรุณาระบุเบอร์โทรศัพท์' });
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 9) {
+      return res.status(400).json({ error: 'เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมีอย่างน้อย 9-10 หลัก)' });
+    }
+
+    // Generate 6-digit OTP (e.g. 123456 or random)
+    // For development convenience, we can generate a random 6-digit code or fallback
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    db.prepare(`
+      INSERT OR REPLACE INTO otps (phone, code, expiresAt)
+      VALUES (?, ?, ?)
+    `).run(cleanPhone, otpCode, expiresAt);
+
+    console.log(`[OTP] Generated OTP for ${cleanPhone}: ${otpCode}`);
+
+    res.json({
+      success: true,
+      phone: cleanPhone,
+      otp: otpCode, // sent in response for easy testing/simulation
+      expiresIn: 300,
+      message: 'รหัส OTP ถูกส่งเรียบร้อยแล้ว (รหัสทดสอบ: ' + otpCode + ')',
+    });
+  } catch (err) {
+    console.error('Send OTP error:', err);
+    res.status(500).json({ error: 'ไม่สามารถส่งรหัส OTP ได้' });
+  }
+});
+
+// Verify OTP
+app.post('/api/auth/verify-otp', (req, res) => {
+  try {
+    const { phone, code: userOtp } = req.body;
+    if (!phone || !userOtp) {
+      return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและรหัส OTP ให้ครบถ้วน' });
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    // Allow master test code '123456' or verify against DB
+    const stored = db.prepare('SELECT * FROM otps WHERE phone = ?').get(cleanPhone);
+    const isValid = userOtp === '123456' || (stored && stored.code === String(userOtp).trim() && stored.expiresAt > Date.now());
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'รหัส OTP ไม่ถูกต้องหรือหมดอายุแล้ว กรุณาลองใหม่อีกครั้ง' });
+    }
+
+    // Remove used OTP
+    db.prepare('DELETE FROM otps WHERE phone = ?').run(cleanPhone);
+
+    // Check if user already exists
+    const member = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+
+    if (member) {
+      const family = db.prepare('SELECT * FROM families WHERE id = ?').get(member.familyId || 'family-main');
+      return res.json({
+        success: true,
+        verified: true,
+        isExisting: true,
+        member,
+        family,
+        status: member.status || 'active',
+      });
+    }
+
+    res.json({
+      success: true,
+      verified: true,
+      isNewUser: true,
+      phone: cleanPhone,
+    });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบ OTP' });
+  }
+});
+
+// Register new member with pending approval request
+app.post('/api/auth/register-request', (req, res) => {
+  try {
+    const { phone, name, role, avatar, avatarType, avatarImage, familyCode, familyId } = req.body;
+    if (!phone || !name) {
+      return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรและชื่อเล่น' });
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    // Find target family
+    let family = null;
+    if (familyCode) {
+      family = db.prepare('SELECT * FROM families WHERE code = ?').get(familyCode.trim().toUpperCase());
+    }
+    if (!family && familyId) {
+      family = db.prepare('SELECT * FROM families WHERE id = ?').get(familyId);
+    }
+    if (!family) {
+      family = db.prepare('SELECT * FROM families LIMIT 1').get();
+    }
+    const targetFamilyId = family ? family.id : 'family-main';
+
+    const existing = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    if (existing) {
+      // If already active, return member
+      if (existing.status === 'active') {
+        return res.json({ success: true, member: existing, status: 'active', family });
+      }
+      // If already pending, update details
+      db.prepare(`
+        UPDATE members 
+        SET name = ?, role = ?, avatar = ?, avatarType = ?, avatarImage = ?, familyId = ?, status = 'pending'
+        WHERE phone = ?
+      `).run(
+        name.trim(),
+        role ? role.trim() : 'สมาชิกในบ้าน',
+        avatar || '😊',
+        avatarType || 'emoji',
+        avatarImage || null,
+        targetFamilyId,
+        cleanPhone
+      );
+      const updated = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+      return res.json({ success: true, member: updated, status: 'pending', family, message: 'คำขอของคุณส่งไปยัง Admin เรียบร้อยแล้ว' });
+    }
+
+    // Insert new pending member
+    const newId = `member-${Date.now()}`;
+    const colors = ['#5F8D75', '#E88D67', '#7BA7C2', '#C49B6F', '#9381FF', '#F15BB5'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    db.prepare(`
+      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, familyId, status, isAdmin, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?)
+    `).run(
+      newId,
+      cleanPhone,
+      name.trim(),
+      role ? role.trim() : 'สมาชิกในบ้าน',
+      avatar || '😊',
+      avatarType || 'emoji',
+      avatarImage || null,
+      color,
+      targetFamilyId,
+      Date.now()
+    );
+
+    // Notify family admin
+    const admins = db.prepare("SELECT * FROM members WHERE familyId = ? AND isAdmin = 1").all(targetFamilyId);
+    for (const admin of admins) {
+      db.prepare(`
+        INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+        VALUES (?, ?, ?, 'join_request', ?, 0, ?)
+      `).run(
+        `notif-req-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        admin.id,
+        newId,
+        `🔔 ${name.trim()} (${role || 'สมาชิก'}) ส่งคำขอเข้าร่วมครอบครัว`,
+        Date.now()
+      );
+    }
+
+    const created = db.prepare('SELECT * FROM members WHERE id = ?').get(newId);
+    res.json({
+      success: true,
+      member: created,
+      status: 'pending',
+      family,
+      message: 'ส่งคำขอเข้าร่วมครอบครัวเรียบร้อยแล้ว กรุณารอ Admin อนุมัติ',
+    });
+  } catch (err) {
+    console.error('Register request error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการส่งคำขอเข้าร่วม' });
+  }
+});
+
+// List all families or get by code
+app.get('/api/families', (req, res) => {
+  try {
+    const families = db.prepare('SELECT * FROM families ORDER BY createdAt ASC').all();
+    const enriched = families.map(f => {
+      const memberCount = db.prepare("SELECT COUNT(*) as count FROM members WHERE familyId = ? AND status = 'active'").get(f.id).count;
+      const pendingCount = db.prepare("SELECT COUNT(*) as count FROM members WHERE familyId = ? AND status = 'pending'").get(f.id).count;
+      return {
+        ...f,
+        memberCount,
+        pendingCount,
+      };
+    });
+    res.json(enriched);
+  } catch (err) {
+    console.error('Fetch families error:', err);
+    res.status(500).json({ error: 'Failed to fetch families' });
+  }
+});
+
+app.get('/api/families/by-code/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    const family = db.prepare('SELECT * FROM families WHERE UPPER(code) = ?').get(code.toUpperCase());
+    if (!family) {
+      return res.status(404).json({ error: 'ไม่พบครอบครัวจากรหัสเชิญนี้' });
+    }
+    const memberCount = db.prepare("SELECT COUNT(*) as count FROM members WHERE familyId = ? AND status = 'active'").get(family.id).count;
+    res.json({ ...family, memberCount });
+  } catch (err) {
+    console.error('Fetch family by code error:', err);
+    res.status(500).json({ error: 'Failed to fetch family' });
+  }
+});
+
+// Get pending member join requests for a family (Admin only)
+app.get('/api/families/:familyId/requests', (req, res) => {
+  try {
+    const { familyId } = req.params;
+    const requests = db.prepare("SELECT * FROM members WHERE familyId = ? AND status = 'pending' ORDER BY createdAt DESC").all(familyId);
+    res.json(requests);
+  } catch (err) {
+    console.error('Fetch requests error:', err);
+    res.status(500).json({ error: 'Failed to fetch requests' });
+  }
+});
+
+// Approve pending member
+app.post('/api/families/:familyId/approve', (req, res) => {
+  try {
+    const { familyId } = req.params;
+    const { memberId, adminPhone } = req.body;
+
+    if (!memberId) {
+      return res.status(400).json({ error: 'กรุณาระบุ memberId' });
+    }
+
+    db.prepare("UPDATE members SET status = 'active' WHERE id = ?").run(memberId);
+    const approvedMember = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
+
+    // Create notification for the approved member
+    db.prepare(`
+      INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+      VALUES (?, ?, 'system', 'approval', '🎉 คุณได้รับการอนุมัติให้เข้าสู่ครอบครัวเรียบร้อยแล้ว!', 0, ?)
+    `).run(
+      `notif-app-${Date.now()}`,
+      memberId,
+      Date.now()
+    );
+
+    res.json({ success: true, member: approvedMember, message: 'อนุมัติสมาชิกสำเร็จ' });
+  } catch (err) {
+    console.error('Approve member error:', err);
+    res.status(500).json({ error: 'Failed to approve member' });
+  }
+});
+
+// Reject pending member
+app.post('/api/families/:familyId/reject', (req, res) => {
+  try {
+    const { memberId } = req.body;
+    if (!memberId) {
+      return res.status(400).json({ error: 'กรุณาระบุ memberId' });
+    }
+
+    db.prepare("UPDATE members SET status = 'rejected' WHERE id = ?").run(memberId);
+    res.json({ success: true, message: 'ปฏิเสธคำขอเรียบร้อยแล้ว' });
+  } catch (err) {
+    console.error('Reject member error:', err);
+    res.status(500).json({ error: 'Failed to reject member' });
+  }
+});
+
 // ==========================================
 // 2. MEMBERS & AUTH
 // ==========================================

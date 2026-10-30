@@ -463,7 +463,7 @@ function AppContent({ displayMode, onToggleMode }) {
                   .map((m) => {
                     const isCurrent = m.id === currentUser?.id;
                     const isMemberAdmin =
-                      m.isAdmin === 1 || m.role?.includes('พ่อ') || m.role?.includes('แม่');
+                      m.isAdmin === 1 || m.role?.includes('เจ้าบ้าน') || m.role?.includes('หัวหน้า') || m.role?.includes('พ่อ') || m.role?.includes('แม่') || currentFamily?.adminMemberId === m.id;
                     return (
                       <div
                         key={m.id}

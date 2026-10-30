@@ -490,12 +490,25 @@ app.delete('/api/members/:id', (req, res) => {
       return res.status(404).json({ error: 'ไม่พบสมาชิกที่ต้องการลบ' });
     }
 
-    db.prepare('DELETE FROM members WHERE id = ?').run(id);
+    const tx = db.transaction(() => {
+      // If deleted member was family admin, transfer to first remaining active member
+      const fam = db.prepare('SELECT id FROM families WHERE adminMemberId = ?').get(id);
+      if (fam) {
+        const nextAdmin = db.prepare('SELECT id FROM members WHERE id != ? AND status = "active" LIMIT 1').get(id);
+        if (nextAdmin) {
+          db.prepare('UPDATE families SET adminMemberId = ? WHERE id = ?').run(nextAdmin.id, fam.id);
+          db.prepare('UPDATE members SET isAdmin = 1 WHERE id = ?').run(nextAdmin.id);
+        }
+      }
+      db.prepare('DELETE FROM members WHERE id = ?').run(id);
+    });
+    tx();
+
     console.log(`[Delete Member] Removed ${existing.name} (${id})`);
     res.json({ success: true, message: `ลบ ${existing.name} ออกจากครอบครัวเรียบร้อยแล้ว` });
   } catch (err) {
     console.error('Delete member error:', err);
-    res.status(500).json({ error: 'Failed to delete member' });
+    res.status(500).json({ error: 'Failed to delete member: ' + err.message });
   }
 });
 

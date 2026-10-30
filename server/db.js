@@ -156,8 +156,26 @@ export function initDb() {
     if (!cols.includes('isAdmin')) {
       db.exec("ALTER TABLE members ADD COLUMN isAdmin INTEGER DEFAULT 0");
     }
-    // Set dad and mom as admin
-    db.exec("UPDATE members SET isAdmin = 1 WHERE id IN ('member-dad', 'member-mom')");
+    // Ensure Fluke is the sole house owner & admin (0615678160)
+    const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();
+    if (!fluke) {
+      db.prepare(`
+        INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId)
+        VALUES ('member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', ?, 1, 'active', 'family-main')
+      `).run(Date.now() - 30 * 86400000);
+    } else {
+      db.prepare(`
+        UPDATE members
+        SET phone = '0615678160', name = 'Fluke', role = 'เจ้าบ้าน', isAdmin = 1, status = 'active'
+        WHERE id = ?
+      `).run(fluke.id);
+    }
+
+    // Remove old mock members
+    db.prepare("DELETE FROM members WHERE id IN ('member-dad', 'member-mom', 'member-sister', 'member-little', 'member-big')").run();
+
+    // Ensure family admin is member-fluke
+    db.prepare("UPDATE families SET adminMemberId = 'member-fluke' WHERE id = 'family-main'").run();
     db.exec("UPDATE members SET familyId = 'family-main' WHERE familyId IS NULL");
     db.exec("UPDATE members SET status = 'active' WHERE status IS NULL");
   } catch (err) {
@@ -176,23 +194,19 @@ function seedInitialData() {
     db.prepare(`
       INSERT INTO families (id, name, code, adminMemberId, createdAt)
       VALUES (?, ?, ?, ?, ?)
-    `).run('family-main', 'บ้านสุขใจ (Family Home)', 'HOME-2026', 'member-dad', Date.now());
+    `).run('family-main', 'บ้านสุขใจ (Family Home)', 'HOME-2026', 'member-fluke', Date.now());
   }
 
   const memberCount = db.prepare('SELECT COUNT(*) as count FROM members').get().count;
   if (memberCount === 0) {
     const insertMember = db.prepare(`
-      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = Date.now();
     const defaultMembers = [
-      ['member-dad', '0811111111', 'พ่อ', 'คุณพ่อ', '👨', 'emoji', null, '#5F8D75', now - 30 * 86400000],
-      ['member-mom', '0822222222', 'แม่', 'คุณแม่', '👩', 'emoji', null, '#E88D67', now - 30 * 86400000],
-      ['member-big', '0833333333', 'Fluke', 'พี่ชาย', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', now - 30 * 86400000],
-      ['member-sister', '0833333334', 'พี่เบล', 'ลูกคนโต', '👧', 'emoji', null, '#7BA7C2', now - 30 * 86400000],
-      ['member-little', '0844444444', 'น้องบีม', 'ลูกคนเล็ก', '👶', 'emoji', null, '#C49B6F', now - 30 * 86400000],
+      ['member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', now - 30 * 86400000, 1, 'active', 'family-main'],
     ];
 
     const tx = db.transaction(() => {
@@ -245,55 +259,8 @@ function seedInitialData() {
     const defaultPosts = [
       {
         id: 'post-1',
-        type: 'routine',
-        memberId: 'member-mom',
-        caption: 'ทำอาหารเช้าเพื่อสุขภาพ สลัดผักไข่ต้มกับผลไม้ให้เด็กๆ กินก่อนไปโรงเรียน สดชื่นพร้อมเริ่มวันใหม่ 🍳🥗',
-        photo: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-        points: 25,
-        likes: 4,
-        timestamp: now - 3600000 * 1.5,
-        comments: [
-          ['c1', 'post-1', 'member-dad', 'น่ากินมาก ขอบคุณนะครับแม่ ❤️', now - 3600000 * 1.2],
-          ['c2', 'post-1', 'member-little', 'หนูกินหมดเกลี้ยงเลยยย อร่อยมาก 😋', now - 3600000 * 1.0],
-        ],
-      },
-      {
-        id: 'post-2',
         type: 'chore',
-        memberId: 'member-little',
-        choreName: 'ปูเตียงจัดห้องนอน',
-        choreEmoji: '🛏️',
-        caption: 'ตื่นมาพับผ้าห่มและจัดเตียงให้ตึงเปรี๊ยะตามที่แม่สอนแล้วครับ สะอาดน่านอนสุดๆ ✨',
-        beforeImage: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80',
-        afterImage: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
-        imageUrl: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
-        praise: 'สะอาดเรียบร้อยดีมาก! ✨',
-        praiseEmoji: '✨',
-        points: 25,
-        likes: 5,
-        timestamp: now - 3600000 * 3,
-        comments: [
-          ['c3', 'post-2', 'member-mom', 'เก่งมากๆ เลยลูก ห้องสะอาดน่านอนที่สุด! 👏', now - 3600000 * 2.8],
-          ['c4', 'post-2', 'member-big', 'ปรบมือให้น้องบีมคนเก่ง 🎉', now - 3600000 * 2.5],
-        ],
-      },
-      {
-        id: 'post-3',
-        type: 'routine',
-        memberId: 'member-dad',
-        caption: 'วิ่งออกกำลังกายยามเช้า 5 กิโลเมตร สูดอากาศบริสุทธิ์รอบหมู่บ้าน ร่างกายสดชื่นกระปรี้กระเปร่ามากครับ 🏃‍♂️🌳',
-        photo: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80',
-        points: 25,
-        likes: 3,
-        timestamp: now - 3600000 * 5,
-        comments: [
-          ['c5', 'post-3', 'member-mom', 'สุดยอดเลยพ่อ วันหลังพาลูกๆ ไปวิ่งด้วยกันนะ 🏃‍♀️', now - 3600000 * 4.8],
-        ],
-      },
-      {
-        id: 'post-4',
-        type: 'chore',
-        memberId: 'member-big',
+        memberId: 'member-fluke',
         choreName: 'ล้างจานชามในซิงค์',
         choreEmoji: '🧽',
         caption: 'ล้างจานชามในซิงค์เสร็จเรียบร้อยแล้วครับ คว่ำจานเรียบร้อย สะอาดเงาวับ ✨',
@@ -304,10 +271,8 @@ function seedInitialData() {
         praiseEmoji: '✨',
         points: 25,
         likes: 6,
-        timestamp: now - 3600000 * 7,
-        comments: [
-          ['c6', 'post-4', 'member-dad', 'ขอบคุณมากครับลูก จานสะอาดมาก', now - 3600000 * 6.5],
-        ],
+        timestamp: now - 3600000 * 2,
+        comments: [],
       },
     ];
 
@@ -357,7 +322,7 @@ function seedInitialData() {
       { name: 'ซักผ้า', emoji: '🧺', points: 25 },
       { name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
     ];
-    const memberIds = ['member-dad', 'member-mom', 'member-big', 'member-little'];
+    const memberIds = ['member-fluke'];
 
     const tx = db.transaction(() => {
       for (let day = 14; day >= 0; day--) {
@@ -396,7 +361,7 @@ function seedInitialData() {
   const voteCount = db.prepare('SELECT COUNT(*) as count FROM reward_votes').get().count;
   if (voteCount === 0) {
     db.prepare('INSERT INTO reward_votes (memberId, rewardId, timestamp) VALUES (?, ?, ?)')
-      .run('member-dad', 'reward-1', Date.now());
+      .run('member-fluke', 'reward-1', Date.now());
   }
 }
 

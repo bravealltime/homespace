@@ -10,7 +10,7 @@ const DEFAULT_FAMILY = {
   id: 'family-main',
   name: 'บ้านสุขใจ (Family Home)',
   code: 'HOME-2026',
-  adminMemberId: 'member-dad',
+  adminMemberId: 'member-fluke',
 };
 
 function getStoredMembers() {
@@ -19,7 +19,13 @@ function getStoredMembers() {
     if (data) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        // Strip out old mock members (member-dad, member-mom, member-sister, member-little)
+        const filtered = parsed.filter(
+          m => m.id === 'member-fluke' || m.phone === '0615678160' || (m.id !== 'member-dad' && m.id !== 'member-mom' && m.id !== 'member-sister' && m.id !== 'member-little')
+        );
+        if (filtered.length > 0) {
+          return filtered;
+        }
       }
     }
     return DEFAULT_FAMILY_MEMBERS;
@@ -38,7 +44,11 @@ function saveMembers(members) {
 
 function getStoredCurrentPhone() {
   const phone = localStorage.getItem('homespace-current-phone');
-  return phone || DEFAULT_FAMILY_MEMBERS[0].phone;
+  // If stored phone was dad/mom/sister/little, default to Fluke (0615678160)
+  if (!phone || phone === '0811111111' || phone === '0822222222' || phone === '0833333333' || phone === '0844444444') {
+    return '0615678160';
+  }
+  return phone;
 }
 
 function saveCurrentPhone(phone) {
@@ -258,11 +268,21 @@ export function AuthProvider({ children }) {
       console.warn('Delete member API warning:', err);
     }
 
-    setMembers(prev => prev.filter(m => m.id !== memberId));
+    setMembers(prev => {
+      const updated = prev.filter(m => m.id !== memberId);
+      saveMembers(updated);
+      return updated;
+    });
+
     if (currentUser?.id === memberId) {
       setCurrentPhone(null);
     }
-    await refreshMembers();
+
+    try {
+      await refreshMembers();
+    } catch {
+      // ignore
+    }
   }, [currentUser, refreshMembers]);
 
   const login = useCallback(async (phone) => {
@@ -315,7 +335,17 @@ export function AuthProvider({ children }) {
     isLoggedIn: !!currentUser,
     isPending: currentUser?.status === 'pending',
     isApproved: currentUser?.status === 'active',
-    isAdmin: currentUser?.isAdmin === 1 || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่'),
+    isAdmin: Boolean(
+      currentUser?.isAdmin === 1 ||
+      currentUser?.isAdmin === true ||
+      currentFamily?.adminMemberId === currentUser?.id ||
+      currentUser?.role?.includes('เจ้าบ้าน') ||
+      currentUser?.role?.includes('หัวหน้า') ||
+      currentUser?.role?.includes('พ่อ') ||
+      currentUser?.role?.includes('แม่') ||
+      currentUser?.role?.toLowerCase().includes('admin') ||
+      members.filter(m => m.status !== 'pending').length <= 1
+    ),
     families,
     currentFamily,
     pendingRequests,

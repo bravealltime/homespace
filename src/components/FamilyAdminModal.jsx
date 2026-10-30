@@ -323,7 +323,7 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
                       <div>
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-bold text-[#2D2825]">{m.name}</span>
-                          {(m.isAdmin === 1 || m.role?.includes('พ่อ') || m.role?.includes('แม่')) && (
+                          {(m.isAdmin === 1 || m.role?.includes('เจ้าบ้าน') || m.role?.includes('หัวหน้า') || m.role?.includes('พ่อ') || m.role?.includes('แม่') || currentFamily?.adminMemberId === m.id) && (
                             <span className="text-[9px] bg-[#5F8D75] text-white px-1 py-0.1 rounded font-bold">
                               Admin
                             </span>

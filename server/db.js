@@ -174,28 +174,37 @@ export function initDb() {
     }
     // Ensure Fluke is the sole house owner & admin (0615678160)
     const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();
+    const flukeRealAvatar = 'https://rvrgpwzxsqjmilnmispj.supabase.co/storage/v1/object/public/homespace/uploads/1793394558996-5g067w6.jpeg';
+    const ziesieRealAvatar = 'https://rvrgpwzxsqjmilnmispj.supabase.co/storage/v1/object/public/homespace/uploads/1793394561496-pvm4b28.jpeg';
+
     if (!fluke) {
       db.prepare(`
         INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId, pin)
-        VALUES ('member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', ?, 1, 'active', 'family-main', '1234')
-      `).run(Date.now() - 30 * 86400000);
+        VALUES ('member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '📷', 'image', ?, '#5F8D75', ?, 1, 'active', 'family-main', '1234')
+      `).run(flukeRealAvatar, Date.now() - 30 * 86400000);
     } else {
+      const flukeImg = (!fluke.avatarImage || fluke.avatarImage.includes('unsplash.com')) ? flukeRealAvatar : fluke.avatarImage;
       db.prepare(`
         UPDATE members
-        SET phone = '0615678160', name = 'Fluke', role = 'เจ้าบ้าน', isAdmin = 1, status = 'active'
+        SET phone = '0615678160', name = 'Fluke', role = 'เจ้าบ้าน', avatar = '📷', avatarType = 'image', avatarImage = ?, isAdmin = 1, status = 'active'
         WHERE id = ?
-      `).run(fluke.id);
+      `).run(flukeImg, fluke.id);
     }
 
     // Ensure Ziesie exists and is active (phone 0615213018, pin 2010)
-    const ziesie = db.prepare("SELECT * FROM members WHERE phone = '0615213018' OR id = 'member-1793392592391'").get();
+    const ziesie = db.prepare("SELECT * FROM members WHERE phone = '0615213018' OR id = 'member-1793394526400'").get();
     if (!ziesie) {
       db.prepare(`
         INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId, pin)
-        VALUES ('member-1793392592391', '0615213018', 'Ziesie', 'สมาชิกในบ้าน', '😊', 'emoji', null, '#9381FF', 1793392592391, 0, 'active', 'family-main', '2010')
-      `).run();
+        VALUES ('member-1793394526400', '0615213018', 'Ziesie', 'สมาชิกในบ้าน', '📷', 'image', ?, '#9381FF', 1793394526400, 0, 'active', 'family-main', '2010')
+      `).run(ziesieRealAvatar);
     } else {
-      db.prepare("UPDATE members SET phone = '0615213018', status = 'active', pin = '2010', name = 'Ziesie' WHERE id = ?").run(ziesie.id);
+      const ziesieImg = (!ziesie.avatarImage || ziesie.avatarImage.includes('unsplash.com')) ? ziesieRealAvatar : ziesie.avatarImage;
+      db.prepare(`
+        UPDATE members
+        SET phone = '0615213018', status = 'active', pin = '2010', name = 'Ziesie', avatar = '📷', avatarType = 'image', avatarImage = ?
+        WHERE id = ?
+      `).run(ziesieImg, ziesie.id);
     }
 
     // Remove old mock members and posts
@@ -242,7 +251,7 @@ function seedInitialData() {
 
     const now = Date.now();
     const defaultMembers = [
-      ['member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '👦', 'image', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', '#5F8D75', now - 30 * 86400000, 1, 'active', 'family-main'],
+      ['member-fluke', '0615678160', 'Fluke', 'เจ้าบ้าน', '📷', 'image', 'https://rvrgpwzxsqjmilnmispj.supabase.co/storage/v1/object/public/homespace/uploads/1793394558996-5g067w6.jpeg', '#5F8D75', now - 30 * 86400000, 1, 'active', 'family-main'],
     ];
 
     const tx = db.transaction(() => {

@@ -21,17 +21,28 @@ function getStoredMembers() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Strip out old mock members (member-dad, member-mom, member-sister, member-little)
         const filtered = parsed.filter(
-          m => m.id === 'member-fluke' || m.phone === '0615678160' || (m.id !== 'member-dad' && m.id !== 'member-mom' && m.id !== 'member-sister' && m.id !== 'member-little')
+          m => !['member-dad', 'member-mom', 'member-sister', 'member-little', 'member-big'].includes(m.id)
         );
         if (filtered.length > 0) {
-          return filtered;
+          // Upgrade any legacy unsplash photo to real photo
+          return filtered.map(m => {
+            if (m.avatarImage?.includes('unsplash.com')) {
+              return {
+                ...m,
+                avatar: '📷',
+                avatarType: 'image',
+                avatarImage: 'https://rvrgpwzxsqjmilnmispj.supabase.co/storage/v1/object/public/homespace/uploads/1793394558996-5g067w6.jpeg',
+              };
+            }
+            return m;
+          });
         }
       }
     }
-    return DEFAULT_FAMILY_MEMBERS;
   } catch {
-    return DEFAULT_FAMILY_MEMBERS;
+    // ignore
   }
+  return DEFAULT_FAMILY_MEMBERS;
 }
 
 function saveMembers(members) {
@@ -141,7 +152,7 @@ export function AuthProvider({ children }) {
 
   // Current active user
   const currentUser = currentPhone
-    ? members.find(m => m.phone === currentPhone) || null
+    ? members.find(m => (m.phone || '').replace(/\D/g, '') === currentPhone.replace(/\D/g, '')) || null
     : null;
 
   // Poll or refresh pending requests if user is Admin
@@ -308,14 +319,34 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.loginWithPin(cleanPhone, cleanPin);
       if (res?.member) {
+        // Guarantee members state contains the authenticated member immediately
+        setMembers(prev => {
+          const cleanMPhone = (p) => (p || '').replace(/\D/g, '');
+          const exists = prev.some(m => m.id === res.member.id || cleanMPhone(m.phone) === cleanPhone);
+          const updated = exists
+            ? prev.map(m => (m.id === res.member.id || cleanMPhone(m.phone) === cleanPhone ? { ...m, ...res.member } : m))
+            : [...prev, res.member];
+          saveMembers(updated);
+          return updated;
+        });
+
         if (res.member.status === 'active') {
           setCurrentPhone(cleanPhone);
+          saveCurrentPhone(cleanPhone);
+          refreshMembers().catch(() => {});
         }
         return res;
       }
     } catch (err) {
       if (err.status === 403 || err.data?.status === 'pending') {
+        if (err.data?.member) {
+          setMembers(prev => {
+            const exists = prev.some(m => m.id === err.data.member.id);
+            return exists ? prev.map(m => m.id === err.data.member.id ? err.data.member : m) : [...prev, err.data.member];
+          });
+        }
         setCurrentPhone(cleanPhone);
+        saveCurrentPhone(cleanPhone);
         return { status: 'pending', member: err.data?.member };
       }
       console.warn('Login via API warning, trying local:', err.message);
@@ -323,24 +354,37 @@ export function AuthProvider({ children }) {
       if (member) {
         if (member.status === 'pending') {
           setCurrentPhone(cleanPhone);
+          saveCurrentPhone(cleanPhone);
           return { status: 'pending', member };
         }
         if (member.pin && member.pin !== cleanPin) {
           throw new Error('รหัส PIN 4 หลักไม่ถูกต้อง กรุณาลองใหม่');
         }
         setCurrentPhone(cleanPhone);
+        saveCurrentPhone(cleanPhone);
         return { success: true, member };
       }
       throw err;
     }
-  }, [members]);
+  }, [members, refreshMembers]);
 
   const login = useCallback(async (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
     try {
       const res = await api.loginWithPhone(cleanPhone);
       if (res?.member) {
+        setMembers(prev => {
+          const cleanMPhone = (p) => (p || '').replace(/\D/g, '');
+          const exists = prev.some(m => m.id === res.member.id || cleanMPhone(m.phone) === cleanPhone);
+          const updated = exists
+            ? prev.map(m => (m.id === res.member.id || cleanMPhone(m.phone) === cleanPhone ? { ...m, ...res.member } : m))
+            : [...prev, res.member];
+          saveMembers(updated);
+          return updated;
+        });
         setCurrentPhone(cleanPhone);
+        saveCurrentPhone(cleanPhone);
+        refreshMembers().catch(() => {});
         return res.member;
       }
     } catch (err) {

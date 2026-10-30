@@ -17,55 +17,8 @@ function getWeekNumber(date) {
 const DEFAULT_FEED_POSTS = [
   {
     id: 'post-1',
-    type: 'routine',
-    memberId: 'member-mom',
-    caption: 'ทำอาหารเช้าเพื่อสุขภาพ สลัดผักไข่ต้มกับผลไม้ให้เด็กๆ กินก่อนไปโรงเรียน สดชื่นพร้อมเริ่มวันใหม่ 🍳🥗',
-    photo: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-    category: 'อาหาร & สุขภาพ',
-    points: 25,
-    likes: 4,
-    timestamp: Date.now() - 3600000 * 1.5,
-    comments: [
-      { id: 'c1', memberId: 'member-dad', text: 'น่ากินมาก ขอบคุณนะครับแม่ ❤️', timestamp: Date.now() - 3600000 * 1.2 },
-      { id: 'c2', memberId: 'member-little', text: 'หนูกินหมดเกลี้ยงเลยยย อร่อยมาก 😋', timestamp: Date.now() - 3600000 * 1.0 },
-    ],
-  },
-  {
-    id: 'post-2',
     type: 'chore',
-    memberId: 'member-little',
-    choreName: 'ปูเตียงจัดห้องนอน',
-    choreEmoji: '🛏️',
-    caption: 'ตื่นมาพับผ้าห่มและจัดเตียงให้ตึงเปรี๊ยะตามที่แม่สอนแล้วครับ สะอาดน่านอนสุดๆ ✨',
-    beforeImage: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80',
-    afterImage: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
-    praise: 'สะอาดเรียบร้อยดีมาก! ✨',
-    praiseEmoji: '✨',
-    points: 25,
-    likes: 5,
-    timestamp: Date.now() - 3600000 * 3,
-    comments: [
-      { id: 'c3', memberId: 'member-mom', text: 'เก่งมากๆ เลยลูก ห้องสะอาดน่านอนที่สุด! 👏', timestamp: Date.now() - 3600000 * 2.8 },
-      { id: 'c4', memberId: 'member-big', text: 'ปรบมือให้น้องบีมคนเก่ง 🎉', timestamp: Date.now() - 3600000 * 2.5 },
-    ],
-  },
-  {
-    id: 'post-3',
-    type: 'routine',
-    memberId: 'member-dad',
-    caption: 'วิ่งออกกำลังกายยามเช้า 5 กิโลเมตร สูดอากาศบริสุทธิ์รอบหมู่บ้าน ร่างกายสดชื่นกระปรี้กระเปร่ามากครับ 🏃‍♂️🌳',
-    photo: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80',
-    points: 25,
-    likes: 3,
-    timestamp: Date.now() - 3600000 * 5,
-    comments: [
-      { id: 'c5', memberId: 'member-mom', text: 'สุดยอดเลยพ่อ วันหลังพาลูกๆ ไปวิ่งด้วยกันนะ 🏃‍♀️', timestamp: Date.now() - 3600000 * 4.8 },
-    ],
-  },
-  {
-    id: 'post-4',
-    type: 'chore',
-    memberId: 'member-big',
+    memberId: 'member-fluke',
     choreName: 'ล้างจานชามในซิงค์',
     choreEmoji: '🧽',
     caption: 'ล้างจานชามในซิงค์เสร็จเรียบร้อยแล้วครับ คว่ำจานเรียบร้อย สะอาดเงาวับ ✨',
@@ -74,36 +27,13 @@ const DEFAULT_FEED_POSTS = [
     praise: 'สะอาดเงาวับ! +25 แต้ม',
     praiseEmoji: '✨',
     points: 25,
-    likes: 6,
-    timestamp: Date.now() - 3600000 * 7,
-    comments: [
-      { id: 'c6', memberId: 'member-dad', text: 'ขอบคุณมากครับลูก จานสะอาดมาก', timestamp: Date.now() - 3600000 * 6.5 },
-    ],
+    likes: 1,
+    timestamp: Date.now() - 3600000 * 2,
+    comments: [],
   },
 ];
 
-const DEFAULT_NOTIFICATIONS = [
-  {
-    id: 'notif-1',
-    recipientId: 'member-big',
-    senderId: 'member-dad',
-    type: 'comment',
-    text: 'พ่อ ได้แสดงความคิดเห็น: "ขอบคุณมากครับลูก จานสะอาดมาก"',
-    postId: 'post-4',
-    timestamp: Date.now() - 3600000 * 6.5,
-    isRead: false,
-  },
-  {
-    id: 'notif-2',
-    recipientId: 'member-mom',
-    senderId: 'member-dad',
-    type: 'like',
-    text: 'พ่อ ได้กดถูกใจโพสต์ของคุณ',
-    postId: 'post-1',
-    timestamp: Date.now() - 3600000 * 1.2,
-    isRead: false,
-  },
-];
+const DEFAULT_NOTIFICATIONS = [];
 
 function reducer(state, action) {
   switch (action.type) {
@@ -320,10 +250,7 @@ function getInitialState() {
     feedPosts: DEFAULT_FEED_POSTS,
     notifications: DEFAULT_NOTIFICATIONS,
     backendVotes: {
-      'member-dad': 1,
-      'member-mom': 1,
-      'member-big': 2,
-      'member-little': 5,
+      'member-fluke': 1,
     },
   };
 }

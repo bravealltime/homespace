@@ -110,7 +110,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
   const handleSendComment = (postId) => {
     const text = commentText[postId]?.trim();
     if (!text) return;
-    addComment(postId, currentUser?.id || 'member-dad', text);
+    addComment(postId, currentUser?.id || 'member-fluke', text);
     setCommentText((prev) => ({ ...prev, [postId]: '' }));
   };
 

@@ -164,7 +164,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const memberId = currentUser?.id || 'member-dad';
+    const memberId = currentUser?.id || 'member-fluke';
 
     if (mode === 'chore') {
       const choreName = isCustomChore

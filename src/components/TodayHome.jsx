@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
 
 const MEMBER_THEMES = {
+  'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
   'member-dad': { bg: 'from-[#F5E6D3] to-[#EBD2B6]', border: 'from-[#E88D67] via-[#D57B56] to-[#5F8D75]' },
   'member-mom': { bg: 'from-[#FCE4DC] to-[#F5C7B8]', border: 'from-[#FF8A00] via-[#E52E71] to-[#FF0077]' },
   'member-big': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -128,7 +129,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
       setViewingStory(null);
       return;
     }
-    addComment(viewingStory.post.id, currentUser?.id || 'member-dad', storyReplyText.trim());
+    addComment(viewingStory.post.id, currentUser?.id || 'member-fluke', storyReplyText.trim());
     setStoryReplyText('');
     setViewingStory(null);
   };
@@ -199,7 +200,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const handleSendComment = (postId) => {
     const text = commentText[postId]?.trim();
     if (!text) return;
-    addComment(postId, currentUser?.id || 'member-dad', text);
+    addComment(postId, currentUser?.id || 'member-fluke', text);
     setCommentText((prev) => ({ ...prev, [postId]: '' }));
   };
 

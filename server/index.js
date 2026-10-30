@@ -311,10 +311,15 @@ app.post('/api/families/:familyId/approve', (req, res) => {
     const approvedMember = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
 
     // Find admin who approved or family admin
-    let senderId = 'member-dad';
+    const family = db.prepare('SELECT adminMemberId FROM families WHERE id = ?').get(familyId);
+    let senderId = family?.adminMemberId;
     if (adminPhone) {
       const adminMember = db.prepare('SELECT id FROM members WHERE phone = ?').get(adminPhone.replace(/\D/g, ''));
       if (adminMember) senderId = adminMember.id;
+    }
+    if (!senderId) {
+      const anyAdmin = db.prepare('SELECT id FROM members WHERE isAdmin = 1 LIMIT 1').get();
+      senderId = anyAdmin?.id || memberId;
     }
 
     // Create notification for the approved member

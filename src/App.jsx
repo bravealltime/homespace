@@ -72,94 +72,10 @@ function AppContent() {
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
-
-  // Auto-hiding floating nav on scroll & touch
-  const [isNavVisible, setIsNavVisible] = useState(true);
   const scrollContainerRef = useRef(null);
-  const lastScrollTopRef = useRef(0);
-  const accumulatedDeltaRef = useRef(0);
 
-  // Scroll event handler on container: smooth, reliable collapse & reveal
-  const handleScroll = (e) => {
-    const currentScrollTop = e.currentTarget.scrollTop;
-    const deltaY = currentScrollTop - lastScrollTopRef.current;
-
-    // 1. If at top of feed (first 35px), ALWAYS show nav
-    if (currentScrollTop <= 35) {
-      setIsNavVisible(true);
-      accumulatedDeltaRef.current = 0;
-      lastScrollTopRef.current = currentScrollTop;
-      return;
-    }
-
-    // 2. Accumulate delta in same direction
-    if ((deltaY > 0 && accumulatedDeltaRef.current < 0) || (deltaY < 0 && accumulatedDeltaRef.current > 0)) {
-      accumulatedDeltaRef.current = 0;
-    }
-    accumulatedDeltaRef.current += deltaY;
-
-    // 3. Scrolling DOWN accumulated > 10px -> collapse/tuck ("ฮุบ") nav
-    if (accumulatedDeltaRef.current > 10 && currentScrollTop > 40) {
-      setIsNavVisible(false);
-    }
-    // 4. Scrolling UP accumulated < -6px -> smoothly reveal nav
-    else if (accumulatedDeltaRef.current < -6) {
-      setIsNavVisible(true);
-    }
-
-    lastScrollTopRef.current = currentScrollTop;
-  };
-
-  // Instantaneous touch & wheel listeners on the container
+  // Reset scroll position when changing tabs or profiles
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    let lastTouchY = 0;
-
-    const handleTouchStart = (e) => {
-      if (e.touches && e.touches[0]) {
-        lastTouchY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (!e.touches || !e.touches[0]) return;
-      const currentY = e.touches[0].clientY;
-      const deltaY = lastTouchY - currentY; // positive = dragged up = scrolling down
-
-      if (Math.abs(deltaY) > 6) {
-        if (deltaY > 6 && container.scrollTop > 30) {
-          setIsNavVisible(false);
-        } else if (deltaY < -6) {
-          setIsNavVisible(true);
-        }
-        lastTouchY = currentY;
-      }
-    };
-
-    const handleWheel = (e) => {
-      if (e.deltaY > 6 && container.scrollTop > 30) {
-        setIsNavVisible(false);
-      } else if (e.deltaY < -6) {
-        setIsNavVisible(true);
-      }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: true });
-    container.addEventListener('wheel', handleWheel, { passive: true });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, []);
-
-  // Reset scroll position and show nav when changing tabs or profiles
-  useEffect(() => {
-    setIsNavVisible(true);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -302,13 +218,12 @@ function AppContent() {
         </div>
       </header>
 
-      {/* Scrollable View Area with Scroll Event Detection */}
+      {/* Scrollable View Area */}
       <div
         ref={scrollContainerRef}
-        onScroll={handleScroll}
         className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain relative"
       >
-        <main className="w-full px-3.5 pt-3 pb-24">
+        <main className="w-full px-3.5 pt-3 pb-28">
           {activeTab === 'home' && (
             <TodayHome
               onNavigateTab={setActiveTab}
@@ -327,16 +242,12 @@ function AppContent() {
         </main>
       </div>
 
-      {/* Floating Mobile Bottom Navigation Island (Auto-hides / collapses gracefully on scroll down) */}
+      {/* Floating Mobile Bottom Navigation Island - Permanently Docked at Bottom of Viewport */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className={`absolute bottom-3 inset-x-0 z-40 max-w-[390px] mx-auto px-3.5 pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isNavVisible
-            ? 'translate-y-0 opacity-100 pointer-events-auto scale-100'
-            : 'translate-y-24 opacity-0 pointer-events-none scale-90'
-        }`}
+        className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 pointer-events-auto"
       >
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -363,16 +274,6 @@ function AppContent() {
           })}
         </div>
       </nav>
-
-      {/* Floating Micro-Pill indicator: Shown when nav is tucked ("ฮุบ"), so user can 1-tap restore instantly */}
-      {!isNavVisible && (
-        <button
-          type="button"
-          onClick={() => setIsNavVisible(true)}
-          className="absolute bottom-1.5 inset-x-0 mx-auto w-16 h-1.5 bg-[#2D2825]/40 hover:bg-[#5F8D75] active:bg-[#5F8D75] rounded-full transition-all z-30 cursor-pointer shadow-2xs animate-pulse"
-          title="แตะเพื่อเปิดแถบเมนู"
-        />
-      )}
 
       {/* Search Modal */}
       <SearchModal

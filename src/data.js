@@ -94,45 +94,7 @@ export const REWARDS = [
   },
 ];
 
-export function generateInitialHistory(membersList = DEFAULT_FAMILY_MEMBERS) {
-  const history = [];
-  const now = new Date();
-  const choreList = [
-    { chore: CHORE_TASKS[0], praise: PRAISE_STICKERS[0] }, // ล้างจาน
-    { chore: CHORE_TASKS[1], praise: PRAISE_STICKERS[1] }, // กวาดบ้าน
-    { chore: CHORE_TASKS[2], praise: PRAISE_STICKERS[2] }, // ถูพื้น
-    { chore: CHORE_TASKS[3], praise: PRAISE_STICKERS[3] }, // ซักผ้า
-    { chore: CHORE_TASKS[5], praise: PRAISE_STICKERS[5] }, // ทำอาหาร
-    { chore: CHORE_TASKS[7], praise: PRAISE_STICKERS[4] }, // รดน้ำต้นไม้
-    { chore: CHORE_TASKS[9], praise: PRAISE_STICKERS[6] }, // เช็ดโต๊ะ
-  ];
-
-  // Generate 14 days of realistic entries
-  for (let dayOffset = 14; dayOffset >= 0; dayOffset--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - dayOffset);
-    const dateStr = d.toISOString().split('T')[0];
-
-    membersList.forEach((member, mIdx) => {
-      // 1 to 2 chores per day
-      const count = dayOffset === 0 ? 1 : (dayOffset % 2 === 0 ? 2 : 1);
-      for (let i = 0; i < count; i++) {
-        const item = choreList[(mIdx + dayOffset + i) % choreList.length];
-        history.push({
-          id: `hist-${dateStr}-${member.id}-${i}`,
-          memberId: member.id,
-          choreName: item.chore.name,
-          choreEmoji: item.chore.emoji,
-          points: item.praise.points,
-          praise: item.praise.text,
-          praiseEmoji: item.praise.emoji,
-          date: dateStr,
-          timestamp: d.getTime() + (i * 3600000),
-          imageUrl: null,
-        });
-      }
-    });
-  }
-
-  return history;
+export function generateInitialHistory() {
+  // Production: no fake/mock history entries, only real completed chores from user
+  return [];
 }

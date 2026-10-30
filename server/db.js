@@ -187,8 +187,16 @@ export function initDb() {
       `).run(fluke.id);
     }
 
-    // Remove old mock members
+    // Remove old mock members and posts
     db.prepare("DELETE FROM members WHERE id IN ('member-dad', 'member-mom', 'member-sister', 'member-little', 'member-big')").run();
+    db.exec(`
+      DELETE FROM comments WHERE postId = 'post-1';
+      DELETE FROM post_likes WHERE postId = 'post-1';
+      DELETE FROM posts WHERE id = 'post-1';
+      DELETE FROM stories WHERE id = 'story-welcome-fluke';
+      DELETE FROM chore_history WHERE id LIKE '%post-1%' OR choreName = 'ล้างจานชามในซิงค์';
+      DELETE FROM chore_history WHERE memberId IN ('member-dad', 'member-mom', 'member-sister', 'member-little', 'member-big');
+    `);
 
     // Ensure family admin is member-fluke
     db.prepare("UPDATE families SET adminMemberId = 'member-fluke' WHERE id = 'family-main'").run();
@@ -258,115 +266,6 @@ function seedInitialData() {
     tx();
   }
 
-  // Seed initial feed posts
-  const postCount = db.prepare('SELECT COUNT(*) as count FROM posts').get().count;
-  if (postCount === 0) {
-    const insertPost = db.prepare(`
-      INSERT INTO posts (id, type, memberId, caption, choreName, choreEmoji, points, praise, praiseEmoji, photo, beforeImage, afterImage, imageUrl, likes, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const insertComment = db.prepare(`
-      INSERT INTO comments (id, postId, memberId, text, timestamp)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const now = Date.now();
-    const defaultPosts = [
-      {
-        id: 'post-1',
-        type: 'chore',
-        memberId: 'member-fluke',
-        choreName: 'ล้างจานชามในซิงค์',
-        choreEmoji: '🧽',
-        caption: 'ล้างจานชามในซิงค์เสร็จเรียบร้อยแล้วครับ คว่ำจานเรียบร้อย สะอาดเงาวับ ✨',
-        beforeImage: 'https://images.unsplash.com/photo-1585837575652-267c041d77d4?auto=format&fit=crop&w=600&q=80',
-        afterImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
-        imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
-        praise: 'สะอาดเงาวับ! +25 แต้ม',
-        praiseEmoji: '✨',
-        points: 25,
-        likes: 6,
-        timestamp: now - 3600000 * 2,
-        comments: [],
-      },
-    ];
-
-    const tx = db.transaction(() => {
-      for (const p of defaultPosts) {
-        insertPost.run(
-          p.id,
-          p.type,
-          p.memberId,
-          p.caption || null,
-          p.choreName || null,
-          p.choreEmoji || null,
-          p.points || 25,
-          p.praise || null,
-          p.praiseEmoji || null,
-          p.photo || null,
-          p.beforeImage || null,
-          p.afterImage || null,
-          p.imageUrl || null,
-          p.likes || 0,
-          p.timestamp
-        );
-
-        if (p.comments) {
-          for (const c of p.comments) {
-            insertComment.run(...c);
-          }
-        }
-      }
-    });
-    tx();
-  }
-
-  // Seed initial chore history for MVP & Charts
-  const historyCount = db.prepare('SELECT COUNT(*) as count FROM chore_history').get().count;
-  if (historyCount === 0) {
-    const insertHistory = db.prepare(`
-      INSERT INTO chore_history (id, memberId, choreName, choreEmoji, points, praise, praiseEmoji, date, timestamp, imageUrl)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const now = new Date();
-    const sampleChores = [
-      { name: 'ล้างจาน', emoji: '🧽', points: 25 },
-      { name: 'กวาดถูบ้าน', emoji: '🧹', points: 25 },
-      { name: 'จัดห้องนอน', emoji: '🛏️', points: 25 },
-      { name: 'ซักผ้า', emoji: '🧺', points: 25 },
-      { name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
-    ];
-    const memberIds = ['member-fluke'];
-
-    const tx = db.transaction(() => {
-      for (let day = 14; day >= 0; day--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - day);
-        const dateStr = d.toISOString().split('T')[0];
-
-        memberIds.forEach((mId, mIdx) => {
-          const chore = sampleChores[(day + mIdx) % sampleChores.length];
-          const histId = `hist-${dateStr}-${mId}`;
-          insertHistory.run(
-            histId,
-            mId,
-            chore.name,
-            chore.emoji,
-            chore.points,
-            'ทำได้ยอดเยี่ยม!',
-            '✨',
-            dateStr,
-            d.getTime() + mIdx * 1000,
-            null
-          );
-        });
-      }
-    });
-    tx();
-  }
-
   // Seed default goal
   const goalSetting = db.prepare('SELECT value FROM system_settings WHERE key = ?').get('monthlyGoal');
   if (!goalSetting) {
@@ -378,24 +277,6 @@ function seedInitialData() {
   if (voteCount === 0) {
     db.prepare('INSERT INTO reward_votes (memberId, rewardId, timestamp) VALUES (?, ?, ?)')
       .run('member-fluke', 'reward-1', Date.now());
-  }
-
-  // Seed initial story
-  const storyCount = db.prepare('SELECT COUNT(*) as count FROM stories').get().count;
-  if (storyCount === 0) {
-    db.prepare(`
-      INSERT INTO stories (id, memberId, photo, caption, bgGradient, textColor, stickers, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      'story-welcome-fluke',
-      'member-fluke',
-      'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80',
-      'ยินดีต้อนรับสู่ไฮไลท์สตอรี่ของครอบครัวเราครับ 🏡✨',
-      'from-rose-500 to-amber-500',
-      '#ffffff',
-      '✨,🏡',
-      Date.now() - 3600000
-    );
   }
 }
 

@@ -14,39 +14,9 @@ function getWeekNumber(date) {
   return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 }
 
-const DEFAULT_FEED_POSTS = [
-  {
-    id: 'post-1',
-    type: 'chore',
-    memberId: 'member-fluke',
-    choreName: 'ล้างจานชามในซิงค์',
-    choreEmoji: '🧽',
-    caption: 'ล้างจานชามในซิงค์เสร็จเรียบร้อยแล้วครับ คว่ำจานเรียบร้อย สะอาดเงาวับ ✨',
-    beforeImage: 'https://images.unsplash.com/photo-1585837575652-267c041d77d4?auto=format&fit=crop&w=600&q=80',
-    afterImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
-    praise: 'สะอาดเงาวับ! +25 แต้ม',
-    praiseEmoji: '✨',
-    points: 25,
-    likes: 1,
-    timestamp: Date.now() - 3600000 * 2,
-    comments: [],
-  },
-];
-
+const DEFAULT_FEED_POSTS = [];
 const DEFAULT_NOTIFICATIONS = [];
-
-const DEFAULT_STORIES = [
-  {
-    id: 'story-welcome-fluke',
-    memberId: 'member-fluke',
-    photo: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80',
-    caption: 'ยินดีต้อนรับสู่ไฮไลท์สตอรี่ของครอบครัวเราครับ 🏡✨',
-    bgGradient: 'from-rose-500 to-amber-500',
-    textColor: '#ffffff',
-    stickers: '✨,🏡',
-    timestamp: Date.now() - 3600000,
-  },
-];
+const DEFAULT_STORIES = [];
 
 function reducer(state, action) {
   switch (action.type) {
@@ -265,24 +235,30 @@ function getInitialState() {
     const saved = localStorage.getItem('homespace-state');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.history && parsed.feedPosts) {
-        return {
-          ...parsed,
-          stories: parsed.stories || DEFAULT_STORIES,
-        };
-      }
+      // Clean out lingering post-1, story-welcome-fluke, or mock generator items from cache
+      const cleanedFeed = (parsed.feedPosts || []).filter((p) => p.id !== 'post-1');
+      const cleanedStories = (parsed.stories || []).filter((s) => s.id !== 'story-welcome-fluke');
+      const cleanedHistory = (parsed.history || []).filter(
+        (h) => !h.id.startsWith('hist-2026') && !h.id.startsWith('hist-2025')
+      );
+      return {
+        ...parsed,
+        history: cleanedHistory,
+        feedPosts: cleanedFeed,
+        stories: cleanedStories,
+      };
     }
   } catch (e) {
     console.warn('Initial state parse error:', e);
   }
 
   return {
-    history: generateInitialHistory(),
-    feedPosts: DEFAULT_FEED_POSTS,
-    stories: DEFAULT_STORIES,
-    notifications: DEFAULT_NOTIFICATIONS,
+    history: [],
+    feedPosts: [],
+    stories: [],
+    notifications: [],
     backendVotes: {
-      'member-fluke': 1,
+      'member-fluke': 'reward-1',
     },
   };
 }
@@ -294,9 +270,9 @@ export function AppProvider({ children }) {
   // 1. Initial & Recurring Sync with SQLite Backend
   const syncWithBackend = useCallback(async () => {
     try {
-      // Sync Posts
+      // Sync Posts (can be empty array if no posts exist yet)
       const backendPosts = await api.fetchPosts(currentUser?.id);
-      if (Array.isArray(backendPosts) && backendPosts.length > 0) {
+      if (Array.isArray(backendPosts)) {
         dispatch({ type: 'SET_POSTS', payload: backendPosts });
       }
 

@@ -73,7 +73,7 @@ function timeAgo(timestamp) {
 }
 
 export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const {
     members,
     totalScoreMonth,
@@ -629,7 +629,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                           <span>{copiedPostId === post.id ? 'คัดลอกแล้ว!' : 'คัดลอกข้อความ'}</span>
                         </button>
                       )}
-                      {(post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
+                      {(isAdmin || post.memberId === currentUser?.id || currentUser?.role?.includes('เจ้าบ้าน') || currentUser?.role?.includes('หัวหน้า') || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
                         <button
                           type="button"
                           onClick={() => handleDeletePost(post.id)}
@@ -647,52 +647,61 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               {/* POST MEDIA / PHOTO */}
               {isChore ? (
                 /* Chore Before & After Proof Display */
-                <div className="px-3.5 space-y-1.5">
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Before Image */}
-                    <div
-                      onClick={() => post.beforeImage && setViewingPhoto(post.beforeImage)}
-                      className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#ECE7DF] cursor-pointer group"
-                      title="แตะเพื่อดูรูปขนาดเต็ม"
-                    >
-                      {post.beforeImage ? (
-                        <img src={post.beforeImage} alt="ก่อนทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">
-                          ก่อนทำ
+                (post.beforeImage || post.afterImage || post.imageUrl) && (
+                  <div className="px-3.5 space-y-1.5">
+                    {post.beforeImage && (post.afterImage || post.imageUrl) ? (
+                      /* Both Before & After are present: show side-by-side comparison */
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Before Image */}
+                        <div
+                          onClick={() => setViewingPhoto(post.beforeImage)}
+                          className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#ECE7DF] cursor-pointer group"
+                          title="แตะเพื่อดูรูปขนาดเต็ม"
+                        >
+                          <img src={post.beforeImage} alt="ก่อนทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
+                          <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                            ก่อนทำ 🔍
+                          </span>
                         </div>
-                      )}
-                      <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
-                        ก่อนทำ 🔍
-                      </span>
-                    </div>
 
-                    {/* After Image */}
-                    <div
-                      onClick={() => (post.afterImage || post.imageUrl) && setViewingPhoto(post.afterImage || post.imageUrl)}
-                      className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#5F8D75]/40 ring-1 ring-[#5F8D75]/20 cursor-pointer group"
-                      title="แตะเพื่อดูรูปขนาดเต็ม"
-                    >
-                      {post.afterImage || post.imageUrl ? (
-                        <img src={post.afterImage || post.imageUrl} alt="หลังทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-[#746C65]">
-                          หลังทำ
+                        {/* After Image */}
+                        <div
+                          onClick={() => setViewingPhoto(post.afterImage || post.imageUrl)}
+                          className="relative rounded-2xl overflow-hidden bg-black/5 aspect-4/3 border border-[#5F8D75]/40 ring-1 ring-[#5F8D75]/20 cursor-pointer group"
+                          title="แตะเพื่อดูรูปขนาดเต็ม"
+                        >
+                          <img src={post.afterImage || post.imageUrl} alt="หลังทำ" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
+                          <span className="absolute bottom-2 left-2 bg-[#5F8D75] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs">
+                            หลังทำ ✨ 🔍
+                          </span>
                         </div>
-                      )}
-                      <span className="absolute bottom-2 left-2 bg-[#5F8D75] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs">
-                        หลังทำ ✨ 🔍
-                      </span>
-                    </div>
+                      </div>
+                    ) : (
+                      /* Only one image is present (e.g. only after or only before) */
+                      <div
+                        onClick={() => setViewingPhoto(post.afterImage || post.imageUrl || post.beforeImage)}
+                        className="w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 cursor-pointer group relative"
+                        title="แตะเพื่อดูรูปขนาดเต็ม"
+                      >
+                        <img
+                          src={post.afterImage || post.imageUrl || post.beforeImage}
+                          alt="รูปงานบ้าน"
+                          className="w-full h-full object-cover group-hover:scale-102 transition-transform"
+                        />
+                        <span className="absolute bottom-2.5 left-2.5 bg-[#5F8D75] text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-sm">
+                          {post.afterImage || post.imageUrl ? 'รูปผลงาน ✨' : 'รูปก่อนทำ 🔍'}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )
               ) : (
                 /* Routine Lifestyle Photo */
                 post.photo && (
                   <div className="px-3.5">
                     <div
                       onClick={() => setViewingPhoto(post.photo)}
-                      className="w-full h-52 sm:h-56 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 cursor-pointer group"
+                      className="w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 cursor-pointer group"
                       title="แตะเพื่อดูรูปขนาดเต็ม"
                     >
                       <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
@@ -837,6 +846,36 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             </article>
           );
         })}
+
+        {filteredPosts.length === 0 && (
+          <div className="bg-white/90 backdrop-blur-xs rounded-3xl p-8 border border-[#ECE7DF] shadow-xs text-center space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#EEF4F0] text-[#5F8D75] flex items-center justify-center text-2xl shadow-inner">
+              🏡
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-black text-[#2D2825] text-base">ยังไม่มีโพสต์ในบ้าน</h3>
+              <p className="text-xs text-[#746C65] max-w-xs mx-auto">
+                มาร่วมแชร์เรื่องราวความสุข หรือส่งภาพงานบ้านที่ทำสำเร็จเป็นคนแรกของบ้านกันเถอะ ✨
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => openCreatePost('chore')}
+                className="px-4 py-2 rounded-xl bg-[#5F8D75] text-white text-xs font-bold shadow-xs hover:bg-[#476E5B] transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🧽 ส่งงานบ้าน (+25 แต้ม)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openCreatePost('routine')}
+                className="px-4 py-2 rounded-xl bg-[#FAF8F5] text-[#2D2825] border border-[#ECE7DF] text-xs font-bold hover:bg-white transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>📸 แชร์เรื่องราว</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Real Instagram Story Fullscreen Viewer Modal */}

@@ -3,13 +3,15 @@ import {
   X,
   Camera,
   Broom,
-  Sparkle,
   PencilSimple,
+  CircleNotch,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import * as api from '../services/api';
+import { compressImage } from '../utils/imageCompressor';
 
-// 5 Common Household Chores + 1 Custom Option
+// 5 Common Household Chores + 1 Custom Option (Production - Clean without mock images)
 const CHORE_OPTIONS = [
   {
     id: 'dishes',
@@ -20,8 +22,6 @@ const CHORE_OPTIONS = [
       'ช่วยพ่อแม่ล้างจานมื้อนี้เรียบร้อย 🍽️',
       'ซิงค์สะอาดวิ้ง คว่ำจานเรียบร้อยแล้ว',
     ],
-    sampleBefore: 'https://images.unsplash.com/photo-1585837575652-267c041d77d4?auto=format&fit=crop&w=600&q=80',
-    sampleAfter: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'clean',
@@ -32,8 +32,6 @@ const CHORE_OPTIONS = [
       'เก็บกวาดห้องนั่งเล่นสะอาดเอี่ยมแล้วครับ',
       'บ้านสะอาด อากาศสดชื่นขึ้นเยอะ 🌿',
     ],
-    sampleBefore: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80',
-    sampleAfter: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'laundry',
@@ -44,8 +42,6 @@ const CHORE_OPTIONS = [
       'ตากผ้าเสร็จแล้ว รับแดดดีมาก ☀️',
       'ช่วยพับผ้าของทุกคนในบ้านเข้าที่แล้วครับ',
     ],
-    sampleBefore: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?auto=format&fit=crop&w=600&q=80',
-    sampleAfter: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'bed',
@@ -56,8 +52,6 @@ const CHORE_OPTIONS = [
       'เก็บโต๊ะทำงานและห้องนอนเรียบร้อยแล้วครับ',
       'ห้องสะอาด สบายตาพร้อมพักผ่อน ✨',
     ],
-    sampleBefore: 'https://images.unsplash.com/photo-1540518614846-7ede433c4ef4?auto=format&fit=crop&w=600&q=80',
-    sampleAfter: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'trash',
@@ -68,17 +62,7 @@ const CHORE_OPTIONS = [
       'เปลี่ยนถุงขยะใหม่ทุกห้องในบ้านแล้ว',
       'เคลียร์ขยะในครัว สะอาดไร้กลิ่นรบกวน ✨',
     ],
-    sampleBefore: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    sampleAfter: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
   },
-];
-
-// Sample routine photos for quick test in general mode
-const ROUTINE_SAMPLES = [
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80', // Cook
-  'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80', // Workout
-  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80', // Coffee
-  'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80', // Plants
 ];
 
 export default function CreatePostModal({ isOpen, onClose, initialMode = 'routine', initialChoreId = 'dishes' }) {
@@ -96,10 +80,13 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
   // Caption text (fully editable by user)
   const [caption, setCaption] = useState('');
 
-  // Photos
+  // Photos (user-uploaded only)
   const [singlePhoto, setSinglePhoto] = useState(null);
   const [beforeImage, setBeforeImage] = useState(null);
   const [afterImage, setAfterImage] = useState(null);
+
+  const [compressing, setCompressing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const singleInputRef = useRef(null);
   const beforeInputRef = useRef(null);
@@ -118,91 +105,140 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
       setSinglePhoto(null);
       setBeforeImage(null);
       setAfterImage(null);
+      setIsSubmitting(false);
+      setCompressing(false);
     }
   }, [isOpen, initialMode, initialChoreId]);
 
-  // Use sample photos (for fast demo/testing)
-  const handleUseSamplePhotos = () => {
-    if (mode === 'chore') {
-      if (currentChore) {
-        setBeforeImage(currentChore.sampleBefore);
-        setAfterImage(currentChore.sampleAfter);
+  // Upload Handlers with Automatic Client-Side Compression
+  const handleSingleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        setCompressing(true);
+        const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 });
+        setSinglePhoto(compressed);
+      } catch (err) {
+        console.warn('Compress single photo warning:', err);
+      } finally {
+        setCompressing(false);
       }
-    } else {
-      const randomSample = ROUTINE_SAMPLES[Math.floor(Math.random() * ROUTINE_SAMPLES.length)];
-      setSinglePhoto(randomSample);
     }
   };
 
-  // Upload Handlers
-  const handleSingleUpload = (e) => {
-    const file = e.target.files[0];
+  const handleBeforeUpload = async (e) => {
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setSinglePhoto(ev.target.result);
-      reader.readAsDataURL(file);
+      try {
+        setCompressing(true);
+        const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 });
+        setBeforeImage(compressed);
+      } catch (err) {
+        console.warn('Compress before image warning:', err);
+      } finally {
+        setCompressing(false);
+      }
     }
   };
 
-  const handleBeforeUpload = (e) => {
-    const file = e.target.files[0];
+  const handleAfterUpload = async (e) => {
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setBeforeImage(ev.target.result);
-      reader.readAsDataURL(file);
+      try {
+        setCompressing(true);
+        const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 });
+        setAfterImage(compressed);
+      } catch (err) {
+        console.warn('Compress after image warning:', err);
+      } finally {
+        setCompressing(false);
+      }
     }
   };
 
-  const handleAfterUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setAfterImage(ev.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     const memberId = currentUser?.id || 'member-fluke';
 
-    if (mode === 'chore') {
-      const choreName = isCustomChore
-        ? customChoreName.trim() || 'งานบ้าน'
-        : currentChore?.name || 'ล้างจานชาม';
+    try {
+      if (mode === 'chore') {
+        const choreName = isCustomChore
+          ? customChoreName.trim() || 'งานบ้าน'
+          : currentChore?.name || 'ล้างจานชาม';
 
-      const choreEmoji = isCustomChore ? '🧹' : currentChore?.emoji || '🧽';
+        const choreEmoji = isCustomChore ? '🧹' : currentChore?.emoji || '🧽';
 
-      const finalCaption =
-        caption.trim() || `${choreName} เสร็จเรียบร้อยแล้วครับ สะอาดน่าอยู่ ✨`;
+        const finalCaption =
+          caption.trim() || `${choreName} เสร็จเรียบร้อยแล้วครับ สะอาดน่าอยู่ ✨`;
 
-      addChoreEntry({
-        memberId,
-        choreName,
-        choreEmoji,
-        points: 25,
-        praise: 'สะอาดเรียบร้อยดีมาก! ✨',
-        praiseEmoji: '✨',
-        beforeImage: beforeImage || currentChore?.sampleBefore || null,
-        afterImage: afterImage || currentChore?.sampleAfter || null,
-        imageUrl: afterImage || currentChore?.sampleAfter || null,
-        caption: finalCaption,
-      });
-    } else {
-      // General Lifestyle / Routine Story
-      const finalCaption = caption.trim() || 'แชร์เรื่องราวดี ๆ ร่วมกับทุกคนในบ้าน 💖';
+        // Upload images directly to Supabase Storage if attached
+        let finalBefore = null;
+        let finalAfter = null;
 
-      addRoutineEntry({
-        memberId,
-        caption: finalCaption,
-        photo: singlePhoto || ROUTINE_SAMPLES[0],
-        category: 'เรื่องราววันนี้',
-        points: 25,
-        exp: 150,
-      });
+        if (beforeImage) {
+          try {
+            const res = await api.uploadBase64Image(beforeImage, 'chore-before');
+            finalBefore = res?.url || beforeImage;
+          } catch {
+            finalBefore = beforeImage;
+          }
+        }
+
+        if (afterImage) {
+          try {
+            const res = await api.uploadBase64Image(afterImage, 'chore-after');
+            finalAfter = res?.url || afterImage;
+          } catch {
+            finalAfter = afterImage;
+          }
+        }
+
+        await addChoreEntry({
+          memberId,
+          choreName,
+          choreEmoji,
+          points: 25,
+          praise: 'สะอาดเรียบร้อยดีมาก! ✨',
+          praiseEmoji: '✨',
+          beforeImage: finalBefore,
+          afterImage: finalAfter,
+          imageUrl: finalAfter || finalBefore || null,
+          caption: finalCaption,
+        });
+      } else {
+        // General Lifestyle / Routine Story
+        const finalCaption = caption.trim() || 'แชร์เรื่องราวดี ๆ ร่วมกับทุกคนในบ้าน 💖';
+
+        let finalPhoto = null;
+        if (singlePhoto) {
+          try {
+            const res = await api.uploadBase64Image(singlePhoto, 'routine');
+            finalPhoto = res?.url || singlePhoto;
+          } catch {
+            finalPhoto = singlePhoto;
+          }
+        }
+
+        await addRoutineEntry({
+          memberId,
+          caption: finalCaption,
+          photo: finalPhoto,
+          category: 'เรื่องราววันนี้',
+          points: 25,
+          exp: 150,
+        });
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Submit post error:', err);
+      alert('เกิดข้อผิดพลาดในการโพสต์ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -284,7 +320,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                 <span className="text-[10px] text-[#5F8D75] font-semibold">แตะเลือกได้ทันที</span>
               </label>
 
-              {/* 3x2 Grid: Always fits completely on phone screen, never cut off! */}
+              {/* 3x2 Grid */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {CHORE_OPTIONS.map((chore) => {
                   const isSelected = selectedChoreId === chore.id && !isCustomChore;
@@ -381,17 +417,11 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-[#746C65]">
-                {mode === 'chore' ? 'รูปก่อนทำ & หลังทำ:' : 'รูปภาพประกอบ:'}
+                {mode === 'chore' ? 'รูปถ่ายผลงาน (ก่อนทำ & หลังทำ):' : 'รูปภาพประกอบ:'}
               </label>
-
-              {/* Quick Sample Button */}
-              <button
-                type="button"
-                onClick={handleUseSamplePhotos}
-                className="text-[10px] font-bold text-[#E88D67] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <span>📷 ใช้รูปตัวอย่าง</span>
-              </button>
+              <span className="text-[10px] text-[#5F8D75] font-semibold">
+                บันทึกลง Supabase Storage ☁️
+              </span>
             </div>
 
             {mode === 'routine' ? (
@@ -414,7 +444,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                           e.stopPropagation();
                           setSinglePhoto(null);
                         }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black cursor-pointer"
                       >
                         ✕
                       </button>
@@ -424,9 +454,13 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <Camera size={28} className="mx-auto text-[#746C65] group-hover:scale-110 transition-transform" />
+                      {compressing ? (
+                        <CircleNotch size={28} className="mx-auto text-[#5F8D75] animate-spin" />
+                      ) : (
+                        <Camera size={28} className="mx-auto text-[#746C65] group-hover:scale-110 transition-transform" />
+                      )}
                       <p className="text-xs font-bold text-[#2D2825]">แตะถ่ายรูป หรือเลือกรูปจากเครื่อง</p>
-                      <p className="text-[10px] text-[#9E958D]">หรือกดปุ่ม "ใช้รูปตัวอย่าง" ด้านบน</p>
+                      <p className="text-[10px] text-[#9E958D]">รองรับทั้งรูปกล้องและแกลเลอรี</p>
                     </div>
                   )}
                 </div>
@@ -460,7 +494,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                             e.stopPropagation();
                             setBeforeImage(null);
                           }}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center text-[10px]"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center text-[10px] cursor-pointer"
                         >
                           ✕
                         </button>
@@ -472,6 +506,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                       <div className="space-y-0.5">
                         <Camera size={20} className="mx-auto text-red-400" />
                         <p className="text-[10px] font-bold text-[#2D2825]">1. รูปก่อนทำ</p>
+                        <p className="text-[9px] text-[#9E958D]">(ไม่ใส่ก็ได้)</p>
                       </div>
                     )}
                   </div>
@@ -503,7 +538,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                             e.stopPropagation();
                             setAfterImage(null);
                           }}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center text-[10px]"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center text-[10px] cursor-pointer"
                         >
                           ✕
                         </button>
@@ -515,6 +550,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                       <div className="space-y-0.5">
                         <Camera size={20} className="mx-auto text-[#5F8D75]" />
                         <p className="text-[10px] font-bold text-[#2D2825]">2. รูปหลังทำ ✨</p>
+                        <p className="text-[9px] text-[#5F8D75] font-semibold">(แนะนำเพื่อโชว์ผลงาน)</p>
                       </div>
                     )}
                   </div>
@@ -544,9 +580,17 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 bg-[#5F8D75] hover:bg-[#476E5B] active:scale-98 text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+            disabled={isSubmitting || compressing}
+            className="w-full py-3 bg-[#5F8D75] hover:bg-[#476E5B] active:scale-98 disabled:opacity-50 text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>{mode === 'chore' ? 'ส่งงานบ้านให้ครอบครัวดูเลย ✨' : 'แชร์เรื่องราวให้ครอบครัวดูเลย 💖'}</span>
+            {isSubmitting ? (
+              <>
+                <CircleNotch size={16} className="animate-spin" />
+                <span>กำลังอัปโหลดรูปภาพไปยัง Supabase... ☁️</span>
+              </>
+            ) : (
+              <span>{mode === 'chore' ? 'ส่งงานบ้านให้ครอบครัวดูเลย ✨' : 'แชร์เรื่องราวให้ครอบครัวดูเลย 💖'}</span>
+            )}
           </button>
         </form>
       </div>

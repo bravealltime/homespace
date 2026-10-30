@@ -8,9 +8,12 @@ import {
   TextT,
   Check,
   Trash,
+  CircleNotch,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import * as api from '../services/api';
+import { compressImage } from '../utils/imageCompressor';
 
 // Aesthetic preset gradients for text/color stories
 const GRADIENTS = [
@@ -20,14 +23,6 @@ const GRADIENTS = [
   { id: 'midnight', name: 'Midnight Violet', class: 'from-[#2B5876] via-[#3B4371] to-[#4E4376]' },
   { id: 'caramel', name: 'Warm Caramel', class: 'from-[#8A5A36] via-[#B87A4C] to-[#E2A76F]' },
   { id: 'dark', name: 'Clean Slate', class: 'from-[#23201D] via-[#36302B] to-[#4A423B]' },
-];
-
-// Quick aesthetic preset sample photos
-const SAMPLE_PHOTOS = [
-  { name: 'ห้องนั่งเล่น', url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80' },
-  { name: 'กาแฟเช้า', url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80' },
-  { name: 'อาหารฝีมือบ้าน', url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80' },
-  { name: 'บรรยากาศอบอุ่น', url: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80' },
 ];
 
 // Quick fun stickers
@@ -45,23 +40,24 @@ export default function CreateStoryModal({ isOpen, onClose }) {
   const [textBadge, setTextBadge] = useState(true);
   const [selectedStickers, setSelectedStickers] = useState(['✨']);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [compressing, setCompressing] = useState(false);
 
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('ไฟล์รูปภาพใหญ่เกินไป กรุณาเลือกไฟล์ขนาดไม่เกิน 5MB');
-        return;
+      try {
+        setCompressing(true);
+        const compressed = await compressImage(file, { maxWidth: 1080, maxHeight: 1920, quality: 0.82 });
+        setPhoto(compressed);
+      } catch (err) {
+        console.warn('Compress story photo warning:', err);
+      } finally {
+        setCompressing(false);
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhoto(ev.target.result);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -89,9 +85,19 @@ export default function CreateStoryModal({ isOpen, onClose }) {
 
     setIsSubmitting(true);
     try {
+      let finalPhoto = null;
+      if (mode === 'photo' && photo) {
+        try {
+          const res = await api.uploadBase64Image(photo, 'story');
+          finalPhoto = res?.url || photo;
+        } catch {
+          finalPhoto = photo;
+        }
+      }
+
       await addStory({
         memberId: currentUser?.id,
-        photo: mode === 'photo' ? photo : null,
+        photo: mode === 'photo' ? finalPhoto : null,
         caption: caption.trim(),
         bgGradient: selectedGradient.class,
         textColor,
@@ -296,28 +302,15 @@ export default function CreateStoryModal({ isOpen, onClose }) {
                 )}
               </div>
 
-              {/* Quick Preset Photos */}
-              <div>
-                <span className="text-[10px] font-bold text-[#746C65] block mb-1.5">
-                  หรือเลือกภาพถ่ายบรรยากาศตัวอย่าง:
+              {/* Supabase Storage Notice */}
+              <div className="p-2.5 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/20 flex items-center justify-between text-[11px] text-[#5F8D75] font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span>☁️</span>
+                  <span>บันทึกรูปลง Supabase Storage คมชัด โหลดเร็ว</span>
                 </span>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {SAMPLE_PHOTOS.map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setPhoto(item.url)}
-                      className={`relative h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                        photo === item.url ? 'border-[#5F8D75] scale-102 shadow-xs' : 'border-[#ECE7DF] opacity-80 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
-                      <span className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[8px] font-bold py-0.5 truncate px-1 text-center">
-                        {item.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <span className="text-[10px] bg-white px-2 py-0.5 rounded-md font-bold shadow-2xs">
+                  ระบบคลาวด์
+                </span>
               </div>
             </div>
           )}

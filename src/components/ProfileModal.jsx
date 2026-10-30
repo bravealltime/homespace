@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Camera, User, Check, Trash, Sparkle, LockKey, Eye, EyeSlash } from '@phosphor-icons/react';
+import { X, Camera, User, Check, Trash, Sparkle, LockKey, Eye, EyeSlash, CircleNotch } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
+import * as api from '../services/api';
+import { compressImage } from '../utils/imageCompressor';
 
 const EMOJI_AVATARS = ['😊', '😎', '🥰', '😄', '🤗', '👨', '👩', '👧', '👦', '👶', '🧑', '👴', '👵', '🐱', '🐶', '🌻', '⭐', '🎈'];
 
@@ -15,6 +17,7 @@ export default function ProfileModal({ isOpen, onClose }) {
   const [avatarImage, setAvatarImage] = useState(null);
   const [useImageAvatar, setUseImageAvatar] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -28,27 +31,25 @@ export default function ProfileModal({ isOpen, onClose }) {
       setAvatarImage(currentUser.avatarImage || null);
       setUseImageAvatar(currentUser.avatarType === 'image');
       setSaved(false);
+      setIsSaving(false);
     }
   }, [currentUser, isOpen]);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('ไฟล์ใหญ่เกินไป กรุณาเลือกรูปขนาดไม่เกิน 5 MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setAvatarImage(ev.target.result);
+      try {
+        const compressed = await compressImage(file, { maxWidth: 500, maxHeight: 500, quality: 0.85 });
+        setAvatarImage(compressed);
         setUseImageAvatar(true);
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.warn('Compress avatar warning:', err);
+      }
     }
   };
 
-  const handleSave = () => {
-    if (!name.trim() || !currentUser) return;
+  const handleSave = async () => {
+    if (!name.trim() || !currentUser || isSaving) return;
 
     const cleanPin = pin.replace(/\D/g, '');
     if (cleanPin.length !== 4) {
@@ -56,20 +57,42 @@ export default function ProfileModal({ isOpen, onClose }) {
       return;
     }
     setPinError('');
+    setIsSaving(true);
 
-    updateProfile(currentUser.phone, {
-      name: name.trim(),
-      role: role.trim() || 'สมาชิกในบ้าน',
-      avatar: useImageAvatar ? '📷' : selectedEmoji,
-      avatarType: useImageAvatar ? 'image' : 'emoji',
-      avatarImage: useImageAvatar ? avatarImage : null,
-      pin: cleanPin,
-    });
+    try {
+      let finalAvatarUrl = null;
+      if (useImageAvatar && avatarImage) {
+        if (avatarImage.startsWith('data:image/')) {
+          try {
+            const res = await api.uploadBase64Image(avatarImage, 'avatar');
+            finalAvatarUrl = res?.url || avatarImage;
+          } catch {
+            finalAvatarUrl = avatarImage;
+          }
+        } else {
+          finalAvatarUrl = avatarImage;
+        }
+      }
 
-    setSaved(true);
-    setTimeout(() => {
-      onClose();
-    }, 500);
+      await updateProfile(currentUser.phone, {
+        name: name.trim(),
+        role: role.trim() || 'สมาชิกในบ้าน',
+        avatar: useImageAvatar ? '📷' : selectedEmoji,
+        avatarType: useImageAvatar ? 'image' : 'emoji',
+        avatarImage: useImageAvatar ? finalAvatarUrl : null,
+        pin: cleanPin,
+      });
+
+      setSaved(true);
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    } catch (err) {
+      console.error('Update profile error:', err);
+      alert('บันทึกโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen || !currentUser) return null;
@@ -270,8 +293,8 @@ export default function ProfileModal({ isOpen, onClose }) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!name.trim()}
-            className={`w-full py-3.5 text-base font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+            disabled={!name.trim() || isSaving}
+            className={`w-full py-3.5 text-base font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${
               saved
                 ? 'bg-[#5F8D75] text-white'
                 : 'bg-[#E88D67] hover:bg-[#CF6E46] text-white disabled:opacity-40'
@@ -281,6 +304,11 @@ export default function ProfileModal({ isOpen, onClose }) {
               <>
                 <Check size={20} weight="bold" />
                 <span>บันทึกเรียบร้อยแล้ว!</span>
+              </>
+            ) : isSaving ? (
+              <>
+                <CircleNotch size={20} className="animate-spin" />
+                <span>กำลังบันทึกและอัปโหลดรูปภาพ...</span>
               </>
             ) : (
               <span>บันทึกการเปลี่ยนแปลง</span>

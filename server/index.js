@@ -23,24 +23,20 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('dev'));
 
-// Static uploads folder
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Uploads directory (Support both local and Vercel)
+const isVercel = process.env.VERCEL === '1';
+const uploadsDir = isVercel ? path.join('/tmp', 'uploads') : path.join(__dirname, 'uploads');
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch {
+  /* ignore on read-only environments */
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Multer Storage Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg';
-    const uniqueName = `upload-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+// Multer Storage: Use memoryStorage for 100% Vercel & Supabase compatibility
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
@@ -60,28 +56,34 @@ app.get('/api/health', (req, res) => {
 });
 
 app.post('/api/upload', upload.single('image'), async (req, res) => {
-  if (!req.file) {
+  if (!req.file || !req.file.buffer) {
     return res.status(400).json({ error: 'ไม่พบไฟล์รูปภาพที่อัปโหลด' });
   }
 
-  // 1. Try uploading to Supabase Storage if configured
+  // 1. Upload to Supabase Storage if configured
   if (isSupabaseConfigured()) {
     try {
-      const buffer = fs.readFileSync(req.file.path);
-      const sbRes = await uploadBufferToSupabase(buffer, req.file.originalname, req.file.mimetype);
+      const sbRes = await uploadBufferToSupabase(req.file.buffer, req.file.originalname, req.file.mimetype);
       if (sbRes && sbRes.url) {
-        // Clean up temporary local file
-        try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
         return res.json({ success: true, url: sbRes.url, provider: 'supabase' });
       }
     } catch (err) {
-      console.warn('Supabase direct upload warning, falling back to disk:', err.message);
+      console.warn('Supabase upload warning, falling back:', err.message);
     }
   }
 
-  // 2. Fallback to local server static URL
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ success: true, url: fileUrl, filename: req.file.filename, provider: 'local' });
+  // 2. Fallback to local server static URL or base64
+  try {
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const filename = `upload-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const filePath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filePath, req.file.buffer);
+    const fileUrl = `/uploads/${filename}`;
+    return res.json({ success: true, url: fileUrl, filename, provider: 'local' });
+  } catch {
+    const base64Data = `data:${req.file.mimetype || 'image/jpeg'};base64,${req.file.buffer.toString('base64')}`;
+    return res.json({ success: true, url: base64Data, provider: 'base64' });
+  }
 });
 
 app.post('/api/upload-base64', async (req, res) => {

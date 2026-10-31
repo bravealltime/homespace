@@ -154,6 +154,29 @@ export function initDb() {
       timestamp INTEGER NOT NULL,
       FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS family_notes (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      memberId TEXT NOT NULL,
+      text TEXT NOT NULL,
+      color TEXT DEFAULT 'yellow',
+      isPinned INTEGER DEFAULT 1,
+      acknowledgments TEXT DEFAULT '[]',
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS family_milestones (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      title TEXT NOT NULL,
+      date TEXT NOT NULL,
+      emoji TEXT DEFAULT '🎂',
+      category TEXT DEFAULT 'event',
+      memberId TEXT,
+      timestamp INTEGER NOT NULL
+    );
   `);
 
   
@@ -298,6 +321,31 @@ function seedInitialData() {
   if (voteCount === 0) {
     db.prepare('INSERT INTO reward_votes (memberId, rewardId, timestamp) VALUES (?, ?, ?)')
       .run('member-fluke', 'reward-1', Date.now());
+  }
+
+  // Seed sample sticky note if empty
+  try {
+    const noteCount = db.prepare('SELECT COUNT(*) as count FROM family_notes').get().count;
+    if (noteCount === 0) {
+      db.prepare(`
+        INSERT INTO family_notes (id, familyId, memberId, text, color, isPinned, acknowledgments, timestamp)
+        VALUES (?, 'family-main', 'member-fluke', ?, 'yellow', 1, '[]', ?)
+      `).run('note-welcome', 'ยินดีต้อนรับสู่กระดานตู้เย็นของบ้าน! 📌 แปะโน้ตหรือฝากบอกกันได้ที่นี่เลย', Date.now());
+    }
+
+    // Seed sample milestones if empty
+    const milestoneCount = db.prepare('SELECT COUNT(*) as count FROM family_milestones').get().count;
+    if (milestoneCount === 0) {
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 7);
+      const dateStr = nextDate.toISOString().split('T')[0];
+      db.prepare(`
+        INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
+        VALUES (?, 'family-main', ?, ?, '🍲', 'event', 'member-fluke', ?)
+      `).run('milestone-sample', 'ปาร์ตี้รวมพลครอบครัวสุดสัปดาห์', dateStr, Date.now());
+    }
+  } catch (err) {
+    console.warn('Seed notes/milestones warning:', err.message);
   }
 }
 

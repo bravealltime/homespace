@@ -40,6 +40,46 @@ function reducer(state, action) {
     case 'SET_NOTIFICATIONS':
       return { ...state, notifications: action.payload };
 
+    case 'SET_NOTES':
+      return { ...state, notes: action.payload };
+
+    case 'ADD_NOTE':
+      return {
+        ...state,
+        notes: [action.payload, ...(state.notes || []).filter((n) => n.id !== action.payload.id)],
+      };
+
+    case 'UPDATE_NOTE_ACK': {
+      const { noteId, acknowledgments } = action.payload;
+      return {
+        ...state,
+        notes: (state.notes || []).map((n) => (n.id === noteId ? { ...n, acknowledgments } : n)),
+      };
+    }
+
+    case 'DELETE_NOTE':
+      return {
+        ...state,
+        notes: (state.notes || []).filter((n) => n.id !== action.payload.noteId),
+      };
+
+    case 'SET_MILESTONES':
+      return { ...state, milestones: action.payload };
+
+    case 'ADD_MILESTONE':
+      return {
+        ...state,
+        milestones: [...(state.milestones || []).filter((m) => m.id !== action.payload.id), action.payload].sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        ),
+      };
+
+    case 'DELETE_MILESTONE':
+      return {
+        ...state,
+        milestones: (state.milestones || []).filter((m) => m.id !== action.payload.milestoneId),
+      };
+
     case 'SET_REWARDS_DATA':
       return {
         ...state,
@@ -277,6 +317,8 @@ function getInitialState() {
     feedPosts: [],
     stories: [],
     notifications: [],
+    notes: [],
+    milestones: [],
     backendVotes: {},
     backendMemberScores: {},
     totalScoreMonth: 0,
@@ -319,6 +361,18 @@ export function AppProvider({ children }) {
       const stats = await api.fetchStatsSummary();
       if (stats) {
         dispatch({ type: 'SET_STATS_DATA', payload: stats });
+      }
+
+      // Sync Digital Fridge Notes (กระดานตู้เย็น)
+      const backendNotes = await api.fetchNotes();
+      if (Array.isArray(backendNotes)) {
+        dispatch({ type: 'SET_NOTES', payload: backendNotes });
+      }
+
+      // Sync Family Milestones (วันสำคัญ & นับถอยหลัง)
+      const backendMilestones = await api.fetchMilestones();
+      if (Array.isArray(backendMilestones)) {
+        dispatch({ type: 'SET_MILESTONES', payload: backendMilestones });
       }
     } catch (err) {
       // Backend momentarily restarting; silent fallback
@@ -593,6 +647,90 @@ export function AppProvider({ children }) {
     }
   };
 
+  // Digital Fridge Notes (กระดานตู้เย็น)
+  const addNote = async (noteData) => {
+    const tempId = `note-${Date.now()}`;
+    const newNote = {
+      id: tempId,
+      familyId: 'family-main',
+      memberId: noteData.memberId || currentUser?.id,
+      text: noteData.text,
+      color: noteData.color || 'yellow',
+      isPinned: 1,
+      acknowledgments: [],
+      timestamp: Date.now(),
+    };
+    dispatch({ type: 'ADD_NOTE', payload: newNote });
+    try {
+      const res = await api.createNote(noteData);
+      if (res?.note) dispatch({ type: 'ADD_NOTE', payload: res.note });
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend create note error:', err.message);
+    }
+  };
+
+  const toggleNoteAck = async (noteId) => {
+    const note = (state.notes || []).find((n) => n.id === noteId);
+    if (!note || !currentUser?.id) return;
+    const currentAcks = note.acknowledgments || [];
+    const nextAcks = currentAcks.includes(currentUser.id)
+      ? currentAcks.filter((m) => m !== currentUser.id)
+      : [...currentAcks, currentUser.id];
+    dispatch({ type: 'UPDATE_NOTE_ACK', payload: { noteId, acknowledgments: nextAcks } });
+    try {
+      await api.toggleNoteAck(noteId, currentUser.id);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend toggle note ack error:', err.message);
+    }
+  };
+
+  const deleteNote = async (noteId) => {
+    dispatch({ type: 'DELETE_NOTE', payload: { noteId } });
+    try {
+      await api.deleteNote(noteId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete note error:', err.message);
+    }
+  };
+
+  // Family Milestones & Countdown (ปฏิทินวันสำคัญ & นับถอยหลัง)
+  const addMilestone = async (milestoneData) => {
+    const tempId = `milestone-${Date.now()}`;
+    const newMilestone = {
+      id: tempId,
+      familyId: 'family-main',
+      title: milestoneData.title,
+      date: milestoneData.date,
+      emoji: milestoneData.emoji || '🎂',
+      category: milestoneData.category || 'event',
+      memberId: milestoneData.memberId || currentUser?.id,
+      timestamp: Date.now(),
+    };
+    dispatch({ type: 'ADD_MILESTONE', payload: newMilestone });
+    try {
+      const res = await api.createMilestone(milestoneData);
+      if (res?.milestone) dispatch({ type: 'ADD_MILESTONE', payload: res.milestone });
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend create milestone error:', err.message);
+    }
+  };
+
+  const deleteMilestone = async (milestoneId) => {
+    dispatch({ type: 'DELETE_MILESTONE', payload: { milestoneId } });
+    try {
+      await api.deleteMilestone(milestoneId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete milestone error:', err.message);
+    }
+  };
+
   const value = {
     state,
     members,
@@ -606,6 +744,13 @@ export function AppProvider({ children }) {
     feedPosts: state.feedPosts || DEFAULT_FEED_POSTS,
     stories: state.stories || DEFAULT_STORIES,
     notifications: state.notifications || DEFAULT_NOTIFICATIONS,
+    notes: state.notes || [],
+    milestones: state.milestones || [],
+    addNote,
+    toggleNoteAck,
+    deleteNote,
+    addMilestone,
+    deleteMilestone,
     markNotificationsRead,
     getWeeklyData,
     getMonthlyData,

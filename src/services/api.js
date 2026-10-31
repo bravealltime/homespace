@@ -253,3 +253,46 @@ export async function replyStory(storyId, { senderId, text, emoji }) {
     body: JSON.stringify({ senderId, text, emoji }),
   });
 }
+
+// 8. Digital Fridge Sticky Notes (กระดานตู้เย็นของบ้าน)
+export async function fetchNotes() {
+  return request('/notes');
+}
+
+export async function createNote(noteData) {
+  return request('/notes', {
+    method: 'POST',
+    body: JSON.stringify(noteData),
+  });
+}
+
+export async function toggleNoteAck(noteId, memberId) {
+  return request(`/notes/${noteId}/ack`, {
+    method: 'POST',
+    body: JSON.stringify({ memberId }),
+  });
+}
+
+export async function deleteNote(noteId) {
+  return request(`/notes/${noteId}`, {
+    method: 'DELETE',
+  });
+}
+
+// 9. Family Milestones & Countdown (ปฏิทินวันสำคัญ & นับถอยหลัง)
+export async function fetchMilestones() {
+  return request('/milestones');
+}
+
+export async function createMilestone(milestoneData) {
+  return request('/milestones', {
+    method: 'POST',
+    body: JSON.stringify(milestoneData),
+  });
+}
+
+export async function deleteMilestone(milestoneId) {
+  return request(`/milestones/${milestoneId}`, {
+    method: 'DELETE',
+  });
+}

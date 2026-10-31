@@ -33,6 +33,8 @@ export function exportDbToJson() {
       reward_votes: db.prepare('SELECT * FROM reward_votes').all(),
       notifications: db.prepare('SELECT * FROM notifications').all(),
       chore_history: db.prepare('SELECT * FROM chore_history').all(),
+      family_notes: db.prepare('SELECT * FROM family_notes').all(),
+      family_milestones: db.prepare('SELECT * FROM family_milestones').all(),
     };
   } catch (err) {
     console.error('[CloudSync] exportDbToJson error:', err.message);
@@ -227,6 +229,46 @@ export function importJsonToDb(data) {
         `);
         for (const s of data.system_settings) {
           stmt.run(s.key, s.value);
+        }
+      }
+
+      // 12. Family Notes (กระดานตู้เย็น)
+      if (Array.isArray(data.family_notes)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO family_notes (id, familyId, memberId, text, color, isPinned, acknowledgments, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const n of data.family_notes) {
+          stmt.run(
+            n.id,
+            n.familyId || 'family-main',
+            n.memberId,
+            n.text,
+            n.color || 'yellow',
+            n.isPinned ?? 1,
+            typeof n.acknowledgments === 'string' ? n.acknowledgments : JSON.stringify(n.acknowledgments || []),
+            n.timestamp || Date.now()
+          );
+        }
+      }
+
+      // 13. Family Milestones (วันสำคัญ & นับถอยหลัง)
+      if (Array.isArray(data.family_milestones)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const m of data.family_milestones) {
+          stmt.run(
+            m.id,
+            m.familyId || 'family-main',
+            m.title,
+            m.date,
+            m.emoji || '🎂',
+            m.category || 'event',
+            m.memberId || null,
+            m.timestamp || Date.now()
+          );
         }
       }
     });

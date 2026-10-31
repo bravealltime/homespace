@@ -1358,6 +1358,133 @@ app.get('/api/stats/summary', (req, res) => {
   }
 });
 
+// ========================================================
+// 12. DIGITAL FRIDGE STICKY NOTES (กระดานตู้เย็นของบ้าน)
+// ========================================================
+app.get('/api/notes', (req, res) => {
+  try {
+    const notes = db.prepare('SELECT * FROM family_notes ORDER BY isPinned DESC, timestamp DESC').all();
+    const parsed = notes.map(n => ({
+      ...n,
+      acknowledgments: typeof n.acknowledgments === 'string' ? JSON.parse(n.acknowledgments || '[]') : (n.acknowledgments || []),
+    }));
+    res.json(parsed);
+  } catch (err) {
+    console.error('Error fetching notes:', err);
+    res.status(500).json({ error: 'Failed to fetch notes' });
+  }
+});
+
+app.post('/api/notes', async (req, res) => {
+  try {
+    const { memberId, text, color = 'yellow', isPinned = 1 } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Note text required' });
+    }
+    const id = `note-${Date.now()}`;
+    const timestamp = Date.now();
+    db.prepare(`
+      INSERT INTO family_notes (id, familyId, memberId, text, color, isPinned, acknowledgments, timestamp)
+      VALUES (?, 'family-main', ?, ?, ?, ?, '[]', ?)
+    `).run(id, memberId || 'member-fluke', text.trim(), color, isPinned ? 1 : 0, timestamp);
+
+    await pushToCloud().catch(err => console.warn('Push cloud after note:', err.message));
+    const created = db.prepare('SELECT * FROM family_notes WHERE id = ?').get(id);
+    res.json({
+      success: true,
+      note: {
+        ...created,
+        acknowledgments: [],
+      },
+    });
+  } catch (err) {
+    console.error('Error creating note:', err);
+    res.status(500).json({ error: 'Failed to create note' });
+  }
+});
+
+app.post('/api/notes/:id/ack', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { memberId } = req.body;
+    const note = db.prepare('SELECT * FROM family_notes WHERE id = ?').get(id);
+    if (!note) return res.status(404).json({ error: 'Note not found' });
+
+    let acks = typeof note.acknowledgments === 'string' ? JSON.parse(note.acknowledgments || '[]') : (note.acknowledgments || []);
+    if (acks.includes(memberId)) {
+      acks = acks.filter(m => m !== memberId);
+    } else {
+      acks.push(memberId);
+    }
+
+    db.prepare('UPDATE family_notes SET acknowledgments = ? WHERE id = ?').run(JSON.stringify(acks), id);
+    await pushToCloud().catch(err => console.warn('Push cloud after note ack:', err.message));
+    res.json({ success: true, acknowledgments: acks });
+  } catch (err) {
+    console.error('Error toggling note ack:', err);
+    res.status(500).json({ error: 'Failed to update note acknowledgment' });
+  }
+});
+
+app.delete('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM family_notes WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete note:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting note:', err);
+    res.status(500).json({ error: 'Failed to delete note' });
+  }
+});
+
+// ========================================================
+// 13. FAMILY MILESTONES & COUNTDOWN (ปฏิทินวันสำคัญ & นับถอยหลัง)
+// ========================================================
+app.get('/api/milestones', (req, res) => {
+  try {
+    const milestones = db.prepare('SELECT * FROM family_milestones ORDER BY date ASC').all();
+    res.json(milestones);
+  } catch (err) {
+    console.error('Error fetching milestones:', err);
+    res.status(500).json({ error: 'Failed to fetch milestones' });
+  }
+});
+
+app.post('/api/milestones', async (req, res) => {
+  try {
+    const { title, date, emoji = '🎂', category = 'event', memberId } = req.body;
+    if (!title || !title.trim() || !date) {
+      return res.status(400).json({ error: 'Title and date required' });
+    }
+    const id = `milestone-${Date.now()}`;
+    const timestamp = Date.now();
+    db.prepare(`
+      INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
+      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?)
+    `).run(id, title.trim(), date, emoji, category, memberId || null, timestamp);
+
+    await pushToCloud().catch(err => console.warn('Push cloud after milestone:', err.message));
+    const created = db.prepare('SELECT * FROM family_milestones WHERE id = ?').get(id);
+    res.json({ success: true, milestone: created });
+  } catch (err) {
+    console.error('Error creating milestone:', err);
+    res.status(500).json({ error: 'Failed to create milestone' });
+  }
+});
+
+app.delete('/api/milestones/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM family_milestones WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete milestone:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting milestone:', err);
+    res.status(500).json({ error: 'Failed to delete milestone' });
+  }
+});
+
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {

@@ -29,6 +29,8 @@ import {
 } from '../utils/speechHelper';
 import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
+import DigitalFridgeBoard from './DigitalFridgeBoard';
+import FamilyMilestonesModal, { getCountdownInfo } from './FamilyMilestonesModal';
 
 const MEMBER_THEMES = {
   'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -96,6 +98,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     deletePost,
     deleteComment,
     unlockedRewards,
+    milestones,
   } = useApp();
 
   const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
@@ -104,6 +107,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentText, setCommentText] = useState({});
+  const [milestonesModalOpen, setMilestonesModalOpen] = useState(false);
 
   // IG Story / Highlight States
   const [createStoryModalOpen, setCreateStoryModalOpen] = useState(false);
@@ -381,6 +385,13 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     }
   };
 
+  // Find the closest upcoming milestone for banner countdown
+  const sortedUpcomingMilestones = (milestones || [])
+    .map((m) => ({ ...m, info: getCountdownInfo(m.date) }))
+    .filter((m) => !m.info.isPast || m.info.isToday)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const closestMilestone = sortedUpcomingMilestones[0] || null;
+
   return (
     <div className="space-y-3 pb-24 relative">
       {/* Floating Accessibility Toast (Feedback when elderly send blessings) */}
@@ -531,7 +542,49 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         </div>
       </section>
 
-      {/* 2. Mini Clean Jar Bar (แถบโหลคะแนนย่อแบบคลีน) */}
+      {/* 2. Family Milestones & Countdown Widget (วันสำคัญ & นับถอยหลัง) */}
+      {closestMilestone ? (
+        <section
+          onClick={() => setMilestonesModalOpen(true)}
+          className="bg-gradient-to-r from-[#FFF5EB] via-[#FFF9F5] to-white hover:bg-[#FFF5EB] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#E88D67]/30 shadow-2xs flex items-center justify-between gap-3 transition-colors"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xl shrink-0">{closestMilestone.emoji || '🎂'}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black text-[#2D2825] truncate">{closestMilestone.title}</span>
+                <span className="text-[10px] text-[#746C65]">
+                  ({new Date(closestMilestone.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})
+                </span>
+              </div>
+              <p className="text-[10px] text-[#E88D67] font-black truncate">
+                {closestMilestone.info?.text}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-bold text-[#E88D67] shrink-0">
+            <span>วันสำคัญ</span>
+            <CaretRight size={13} weight="bold" />
+          </div>
+        </section>
+      ) : (
+        <section
+          onClick={() => setMilestonesModalOpen(true)}
+          className="bg-white hover:bg-[#FAF8F5] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-3 transition-colors"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xl shrink-0">🎂</span>
+            <div className="min-w-0">
+              <span className="text-xs font-black text-[#2D2825]">วันสำคัญของบ้าน</span>
+              <p className="text-[10px] text-[#746C65]">แตะเพิ่มวันเกิด นัดหาหมอ หรือทริปเที่ยว</p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-[#5F8D75] shrink-0">+ เพิ่มวัน</span>
+        </section>
+      )}
+
+      {/* 2.1 Mini Clean Jar Bar (แถบโหลคะแนนย่อแบบคลีน) */}
       <section
         onClick={() => onNavigateTab && onNavigateTab('rewards')}
         className="bg-white hover:bg-[#FAF8F5] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-3 transition-colors"
@@ -599,6 +652,9 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
           </div>
         )}
       </section>
+
+      {/* 2.3 Digital Fridge Sticky Notes Board (กระดานตู้เย็นของบ้าน) */}
+      <DigitalFridgeBoard />
 
       {/* 3. Sleek Mobile Create Post Bar (แถบโพสต์เร็วแบบมินิมอล) */}
       <section className="bg-white rounded-2xl p-2 px-3 border border-[#ECE7DF] shadow-2xs flex items-center gap-2.5">
@@ -1303,6 +1359,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
       <CreateStoryModal
         isOpen={createStoryModalOpen}
         onClose={() => setCreateStoryModalOpen(false)}
+      />
+
+      {/* Family Milestones & Countdown Modal (วันสำคัญ & นับถอยหลัง) */}
+      <FamilyMilestonesModal
+        isOpen={milestonesModalOpen}
+        onClose={() => setMilestonesModalOpen(false)}
       />
     </div>
   );

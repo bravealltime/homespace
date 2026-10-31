@@ -13,10 +13,12 @@ import {
   Clock,
   Heart,
   CalendarCheck,
+  Globe,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { getCountdownInfo } from './FamilyMilestonesModal';
+import { translateText, hasThaiCharacters } from '../utils/translator';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
@@ -41,7 +43,7 @@ const CATEGORIES = [
 ];
 
 export default function FamilyCalendarView({ onNavigateTab }) {
-  const { milestones, addMilestone, deleteMilestone, members } = useApp();
+  const { milestones, addMilestone, deleteMilestone, members, autoTranslate } = useApp();
   const { currentUser, isAdmin } = useAuth();
 
   const today = new Date();
@@ -51,6 +53,41 @@ export default function FamilyCalendarView({ onNavigateTab }) {
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [translations, setTranslations] = useState({});
+
+  const handleTranslate = async (id, text) => {
+    if (!text) return;
+    if (translations[id]?.isVisible) {
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], isVisible: false },
+      }));
+      return;
+    }
+    if (translations[id]?.text) {
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], isVisible: true },
+      }));
+      return;
+    }
+    setTranslations((prev) => ({
+      ...prev,
+      [id]: { isTranslating: true, isVisible: true, text: '' },
+    }));
+    try {
+      const translated = await translateText(text);
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: { isTranslating: false, isVisible: true, text: translated },
+      }));
+    } catch {
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: { isTranslating: false, isVisible: false, text },
+      }));
+    }
+  };
 
   // Form states
   const [formTitle, setFormTitle] = useState('');
@@ -497,6 +534,15 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-xs font-black text-[#2D2825]">{m.title}</h3>
+                          <button
+                            type="button"
+                            onClick={() => handleTranslate(`mile-${m.id}`, m.title)}
+                            className="text-[10px] text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer font-bold"
+                            title="แปลภาษาระหว่างไทย ↔ อังกฤษ"
+                          >
+                            <Globe size={11} />
+                            <span>{translations[`mile-${m.id}`]?.isVisible || autoTranslate ? 'แปลแล้ว' : 'แปล'}</span>
+                          </button>
                           <span
                             className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                               isToday
@@ -509,6 +555,18 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                             {m.info?.text}
                           </span>
                         </div>
+
+                        {/* Translated Title Box */}
+                        {(translations[`mile-${m.id}`]?.isVisible || autoTranslate) && (
+                          <div className="mt-1 p-1.5 px-2 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[11px] text-[#1E3A8A] flex items-center gap-1.5 animate-enter-rise">
+                            <Globe size={11} className="text-[#3B82F6] shrink-0" />
+                            <span className="font-semibold">
+                              {translations[`mile-${m.id}`]?.isTranslating
+                                ? 'กำลังแปล...'
+                                : translations[`mile-${m.id}`]?.text || m.title}
+                            </span>
+                          </div>
+                        )}
 
                         <p className="text-[11px] text-[#746C65] mt-0.5">
                           📅 {new Date(m.date).toLocaleDateString('th-TH', {

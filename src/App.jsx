@@ -18,6 +18,7 @@ import {
   TextAa,
   PushPin,
   CalendarBlank,
+  Globe,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -69,7 +70,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
 
 function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
-  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead } = useApp();
+  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead, autoTranslate, toggleAutoTranslate } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
@@ -156,6 +157,21 @@ function AppContent() {
           >
             <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
             <span className="text-[10px] font-bold">{seniorMode ? 'สบายตา' : 'ตัวใหญ่'}</span>
+          </button>
+
+          {/* Auto Translate Toggle (แปลภาษาสำหรับคนต่างชาติ 🌐) */}
+          <button
+            type="button"
+            onClick={toggleAutoTranslate}
+            className={`h-7 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border ${
+              autoTranslate
+                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs font-black'
+                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
+            }`}
+            title={autoTranslate ? 'ปิดการแปลอัตโนมัติ (กำลังเปิดโหมดแปลภาษาอัตโนมัติ)' : 'เปิดการแปลภาษาอัตโนมัติ (Auto-Translate for foreigners)'}
+          >
+            <Globe size={13} weight={autoTranslate ? 'bold' : 'regular'} />
+            <span className="text-[10px] font-bold">{autoTranslate ? 'EN/ไทย' : 'แปล'}</span>
           </button>
           {/* Admin Family Requests & Invite Link Button */}
           {isAdmin && (

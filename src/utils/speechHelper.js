@@ -15,16 +15,22 @@ export function speakThai(text, onStart, onEnd) {
   if (!text || !text.trim()) return false;
 
   try {
-    const utterance = new SpeechSynthesisUtterance(text.trim());
-    utterance.lang = 'th-TH';
-    utterance.rate = 0.92; // Slightly slower, calm and easy for seniors to listen to
+    const clean = text.trim();
+    const hasThai = /[\u0E00-\u0E7F]/.test(clean);
+    const targetLang = hasThai ? 'th-TH' : 'en-US';
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = targetLang;
+    utterance.rate = 0.95;
     utterance.pitch = 1.0;
 
-    // Try finding a natural Thai voice if installed
+    // Try finding matching voice
     const voices = window.speechSynthesis.getVoices();
-    const thaiVoice = voices.find((v) => v.lang === 'th-TH' || v.lang.startsWith('th'));
-    if (thaiVoice) {
-      utterance.voice = thaiVoice;
+    const matchingVoice = voices.find((v) =>
+      hasThai ? (v.lang === 'th-TH' || v.lang.startsWith('th')) : (v.lang === 'en-US' || v.lang.startsWith('en'))
+    );
+    if (matchingVoice) {
+      utterance.voice = matchingVoice;
     }
 
     utterance.onstart = () => {

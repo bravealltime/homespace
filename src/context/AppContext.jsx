@@ -760,6 +760,24 @@ export function AppProvider({ children }) {
     }
   };
 
+  const [autoTranslate, setAutoTranslate] = useState(() => {
+    try {
+      return localStorage.getItem('hs_auto_translate') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleAutoTranslate = () => {
+    setAutoTranslate((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('hs_auto_translate', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const value = {
     state,
     members,
@@ -803,6 +821,8 @@ export function AppProvider({ children }) {
     seniorMode: Boolean(state.seniorMode),
     toggleSeniorMode: () => dispatch({ type: 'TOGGLE_SENIOR_MODE' }),
     setSeniorMode: (val) => dispatch({ type: 'SET_SENIOR_MODE', payload: val }),
+    autoTranslate,
+    toggleAutoTranslate,
     syncWithBackend,
   };
 

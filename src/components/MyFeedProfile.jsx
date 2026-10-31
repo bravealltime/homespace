@@ -14,9 +14,11 @@ import {
   PencilSimple,
   SpeakerHigh,
   Microphone,
+  Globe,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { translateText, hasThaiCharacters, getTargetLanguage } from '../utils/translator';
 import {
   speakThai,
   stopSpeaking,
@@ -69,7 +71,7 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment } = useApp();
+  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment, autoTranslate } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
@@ -79,6 +81,41 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
   const [commentText, setCommentText] = useState({});
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedGridPost, setSelectedGridPost] = useState(null);
+  const [translations, setTranslations] = useState({});
+
+  const handleTranslate = async (key, text) => {
+    if (!text) return;
+    if (translations[key]?.isVisible) {
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], isVisible: false },
+      }));
+      return;
+    }
+    if (translations[key]?.text) {
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], isVisible: true },
+      }));
+      return;
+    }
+    setTranslations((prev) => ({
+      ...prev,
+      [key]: { isTranslating: true, isVisible: true, text: '' },
+    }));
+    try {
+      const translated = await translateText(text);
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: { isTranslating: false, isVisible: true, text: translated },
+      }));
+    } catch {
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: { isTranslating: false, isVisible: false, text },
+      }));
+    }
+  };
 
   // Senior & Voice States (ระบบอ่านออกเสียง & คำตอบด่วนสำหรับผู้สูงวัย)
   const [speakingPostId, setSpeakingPostId] = useState(null);
@@ -636,28 +673,64 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                   )}
                 </div>
 
-                {/* Caption with Audio Speaker */}
+                {/* Caption with Audio Speaker & Translate Buttons */}
                 {post.caption && (
-                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825] flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold mr-1.5">{activeMember?.name}:</span>
-                      <span>{post.caption}</span>
+                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825] space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold mr-1.5">{activeMember?.name}:</span>
+                        <span>{post.caption}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Translate Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleTranslate(`post-${post.id}`, post.caption)}
+                          className={`px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
+                            translations[`post-${post.id}`]?.isVisible || autoTranslate
+                              ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'
+                              : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#2563EB] border-[#ECE7DF]'
+                          }`}
+                          title="แปลภาษาไทย ↔ อังกฤษ"
+                        >
+                          <Globe size={12} weight="bold" />
+                          <span>{translations[`post-${post.id}`]?.isVisible || autoTranslate ? 'แปลแล้ว' : 'แปล'}</span>
+                        </button>
+
+                        {/* Audio Read Button (🔊) */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSpeakPost(post.id, `${activeMember?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
+                          className={`shrink-0 px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
+                            speakingPostId === post.id
+                              ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
+                              : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#5F8D75] border-[#ECE7DF]'
+                          }`}
+                          title="ฟังเสียงอ่านข้อความนี้"
+                        >
+                          <SpeakerHigh size={12} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
+                          <span>{speakingPostId === post.id ? 'หยุด' : 'ฟัง'}</span>
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Audio Read Button (🔊) */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleSpeakPost(post.id, `${activeMember?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
-                      className={`shrink-0 px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
-                        speakingPostId === post.id
-                          ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
-                          : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#5F8D75] border-[#ECE7DF]'
-                      }`}
-                      title="ฟังเสียงอ่านข้อความนี้"
-                    >
-                      <SpeakerHigh size={13} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
-                      <span>{speakingPostId === post.id ? 'หยุดอ่าน' : 'ฟังเสียง'}</span>
-                    </button>
+                    {/* Translated Box */}
+                    {(translations[`post-${post.id}`]?.isVisible || autoTranslate) && (
+                      <div className="p-2 px-2.5 rounded-xl bg-[#F0F7FF] border border-[#BFDBFE] text-xs flex items-start gap-2 animate-enter-rise">
+                        <Globe size={14} className="text-[#3B82F6] shrink-0 mt-0.5" weight="bold" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between text-[10px] text-[#3B82F6] mb-0.5 font-bold">
+                            <span>{hasThaiCharacters(post.caption) ? 'แปลเป็น English 🇬🇧' : 'แปลเป็น ภาษาไทย 🇹🇭'}</span>
+                          </div>
+                          <p className="text-[#1E3A8A] font-medium leading-relaxed">
+                            {translations[`post-${post.id}`]?.isTranslating
+                              ? 'กำลังแปลภาษา...'
+                              : translations[`post-${post.id}`]?.text || 'กำลังโหลดคำแปล...'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

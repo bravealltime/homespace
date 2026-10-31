@@ -1538,6 +1538,45 @@ app.delete('/api/milestones/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// 14. TRANSLATION (Auto Translate for Foreign Family Members)
+// ==========================================
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, targetLang } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const cleanText = text.trim();
+    const hasThai = /[\u0E00-\u0E7F]/.test(cleanText);
+    const resolvedTarget = targetLang || (hasThai ? 'en' : 'th');
+
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(resolvedTarget)}&dt=t&q=${encodeURIComponent(cleanText)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Translation service returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const translatedText = Array.isArray(data[0])
+      ? data[0].map(segment => segment[0]).join('')
+      : cleanText;
+    const detectedSource = data[2] || (hasThai ? 'th' : 'en');
+
+    res.json({
+      success: true,
+      original: cleanText,
+      translated: translatedText,
+      sourceLang: detectedSource,
+      targetLang: resolvedTarget,
+    });
+  } catch (err) {
+    console.error('Translation error:', err.message);
+    res.status(500).json({ error: 'Failed to translate', details: err.message });
+  }
+});
+
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {

@@ -512,45 +512,83 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Avatar Selection */}
-              <div>
-                <label className="block text-xs font-bold text-[#2D2825] mb-1">
-                  5. รูปโปรไฟล์
-                </label>
-                <div className="flex items-center gap-2.5">
+              {/* 5. Prominent Profile Photo Upload Recommendation */}
+              <div className="p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-[#2D2825] flex items-center gap-1.5">
+                    <span>5. รูปโปรไฟล์ของคุณ</span>
+                    <span className="text-[10px] font-bold text-[#E88D67] bg-[#FFF5EB] px-2 py-0.5 rounded-full border border-[#E88D67]/30">
+                      แนะนำมากที่สุด ⭐
+                    </span>
+                  </label>
+                </div>
+                <p className="text-[11px] text-[#746C65] leading-relaxed">
+                  แนะนำให้ถ่ายรูปตัวเองหรือเลือกรูปจากเครื่อง เพื่อให้ลูกหลานและคนในบ้านเห็นหน้าชัดเจน จำได้ทันที ❤️
+                </p>
+
+                {/* Big Avatar & Upload Trigger */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-12 h-12 rounded-2xl border-2 border-[#5F8D75] bg-[#FAF8F5] flex items-center justify-center cursor-pointer overflow-hidden shadow-2xs hover:scale-105 transition-all shrink-0"
-                    title="แตะเพื่อเลือกรูปภาพ"
+                    className="relative w-20 h-20 rounded-3xl border-3 border-[#5F8D75] bg-white flex items-center justify-center cursor-pointer overflow-hidden shadow-md hover:scale-105 transition-all shrink-0 group"
+                    title="แตะเพื่อถ่ายรูป หรือเลือกรูปโปรไฟล์"
                   >
                     {useImageAvatar && avatarImage ? (
-                      <img src={avatarImage} alt="" className="w-full h-full object-cover" />
+                      <img src={avatarImage} alt="รูปโปรไฟล์ของคุณ" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-2xl">{selectedEmoji}</span>
+                      <div className="flex flex-col items-center justify-center text-[#5F8D75]">
+                        <span className="text-3xl mb-0.5">{selectedEmoji}</span>
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                          <Camera size={24} weight="bold" />
+                        </div>
+                      </div>
+                    )}
+                    <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#5F8D75] text-white flex items-center justify-center text-xs shadow-xs border-2 border-white">
+                      <Camera size={13} weight="bold" />
+                    </span>
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-left space-y-1.5 w-full">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2.5 px-3 rounded-xl bg-[#5F8D75] hover:bg-[#476E5B] active:scale-98 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                    >
+                      <Camera size={16} weight="bold" />
+                      <span>{useImageAvatar && avatarImage ? 'เปลี่ยนรูปถ่ายใหม่ 📸' : 'แตะถ่ายรูป หรือเลือกรูปจากมือถือ 📸'}</span>
+                    </button>
+                    {useImageAvatar && avatarImage && (
+                      <p className="text-[10px] text-[#5F8D75] font-bold text-center sm:text-left">
+                        ✓ เลือกรูปถ่ายเรียบร้อย สวยงามมากครับ
+                      </p>
                     )}
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
 
-                  <div className="flex-1 overflow-x-auto no-scrollbar py-1">
-                    <div className="flex gap-1">
-                      {EMOJI_AVATARS.slice(0, 8).map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => {
-                            setSelectedEmoji(emoji);
-                            setUseImageAvatar(false);
-                          }}
-                          className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border transition-all cursor-pointer ${
-                            selectedEmoji === emoji && !useImageAvatar
-                              ? 'bg-[#EEF4F0] border-[#5F8D75] scale-110 shadow-2xs'
-                              : 'bg-[#FAF8F5] border-transparent'
-                          }`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
+                {/* Alternative Emojis for Seniors / Family */}
+                <div className="pt-2 border-t border-[#ECE7DF]/80">
+                  <p className="text-[10px] text-[#9E958D] font-bold mb-1.5">
+                    หรือเลือกใช้อีโมจิน่ารักแทน (แตะเลือกได้เลย):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EMOJI_AVATARS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmoji(emoji);
+                          setUseImageAvatar(false);
+                        }}
+                        className={`w-8 h-8 rounded-xl text-base flex items-center justify-center border transition-all cursor-pointer ${
+                          selectedEmoji === emoji && !useImageAvatar
+                            ? 'bg-[#EEF4F0] border-[#5F8D75] scale-110 shadow-2xs font-bold ring-2 ring-[#5F8D75]/30'
+                            : 'bg-white border-[#ECE7DF] hover:bg-[#FAF8F5]'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

@@ -97,7 +97,7 @@ function timeAgo(timestamp, lang = 'th') {
   return `${days} วันที่แล้ว`;
 }
 
-export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden, onOpenSos }) {
+export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden, onOpenSos, onOpenProfile }) {
   const { currentUser, isAdmin } = useAuth();
   const {
     members,
@@ -193,6 +193,8 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
   const [viewingPhoto, setViewingPhoto] = useState(null);
   const [copiedPostId, setCopiedPostId] = useState(null);
   const [showQuests, setShowQuests] = useState(false);
+  const [seniorHelpModalOpen, setSeniorHelpModalOpen] = useState(false);
+  const [profilePromptDismissed, setProfilePromptDismissed] = useState(false);
 
   // Sync fullscreen viewing state with global AppContext for auto-hiding navigation bars
   useEffect(() => {
@@ -876,33 +878,124 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
         </section>
       )}
 
-      {/* 3. Sleek Mobile Create Post Bar (แถบโพสต์เร็วแบบมินิมอล) */}
-      <section className="bg-white rounded-2xl p-2 px-3 border border-[#ECE7DF] shadow-2xs flex items-center gap-2.5">
-        <div
-          onClick={() => onViewMemberProfile && onViewMemberProfile(currentUser)}
-          className="cursor-pointer hover:scale-105 transition-transform shrink-0"
-          title="ดูโปรไฟล์ของฉัน"
-        >
-          <MemberAvatar member={currentUser} size="sm" />
+      {/* First-Time Profile Photo Reminder (แนะนำอัปโหลดรูปโปรไฟล์) */}
+      {(!currentUser?.avatarImage || currentUser?.avatarType !== 'image') && !profilePromptDismissed && (
+        <section className="p-3.5 bg-gradient-to-r from-[#FFF5EB] to-[#FAF8F5] rounded-3xl border border-[#E88D67]/30 shadow-xs flex items-center justify-between gap-3 animate-enter-rise">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-xl shrink-0 shadow-2xs">
+              📸
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-[#2D2825] truncate">
+                ใส่รูปถ่ายของคุณ เพื่อให้ลูกหลานจำได้ง่ายๆ ❤️
+              </p>
+              <p className="text-[10px] text-[#746C65] truncate">
+                แตะปุ่มนี้เพื่อถ่ายรูปตัวเอง หรือเลือกรูปจากมือถือได้ทันที
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenProfile) onOpenProfile();
+              }}
+              className="px-3 py-1.5 bg-[#E88D67] hover:bg-[#CF6E46] text-white text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+            >
+              ใส่รูปเลย 📸
+            </button>
+            <button
+              type="button"
+              onClick={() => setProfilePromptDismissed(true)}
+              className="w-6 h-6 rounded-full text-[#9E958D] hover:text-[#2D2825] flex items-center justify-center text-xs cursor-pointer"
+              title="ปิดการแจ้งเตือน"
+            >
+              ✕
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* 3. Elder-Friendly Family Action Hub (ส่งรูป & ทักทายคนในบ้าน) */}
+      <section className="bg-white rounded-3xl p-3 sm:p-4 border border-[#ECE7DF] shadow-xs space-y-3">
+        {/* Header with User Avatar & Warm Invitation */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              onClick={() => onViewMemberProfile && onViewMemberProfile(currentUser)}
+              className="cursor-pointer hover:scale-105 transition-transform shrink-0"
+              title="ดูโปรไฟล์ของฉัน"
+            >
+              <MemberAvatar member={currentUser} size="md" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight truncate">
+                {currentUser?.name ? `สวัสดีครับ ${currentUser.name}` : 'ส่งเรื่องราวให้คนในบ้าน'} ✨
+              </h3>
+              <p className="text-[10px] text-[#746C65] truncate">
+                {seniorMode ? 'แตะปุ่มด้านล่างเพื่อส่งรูป หรือพูดทักทายลูกหลานจ้า' : 'แชร์รูปกิจกรรม ส่งงานบ้าน หรือทักทายคนในครอบครัว'}
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Help Guide Pill for Seniors */}
+          <button
+            type="button"
+            onClick={() => setSeniorHelpModalOpen(true)}
+            className="px-2.5 py-1 rounded-full bg-[#FFF5EB] hover:bg-[#FDE7D3] text-[#E88D67] text-[10px] sm:text-xs font-bold border border-[#E88D67]/30 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+            title="วิธีเล่นง่ายๆ สำหรับผู้สูงวัย"
+          >
+            <span>💡 วิธีใช้งาน</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => openCreatePost('routine')}
-          className="flex-1 bg-[#FAF8F5] hover:bg-[#F2EFEA] text-[#746C65] text-xs font-medium px-3.5 py-2 rounded-full border border-[#ECE7DF] text-left transition-colors cursor-pointer truncate"
-        >
-          {t('shareStoryPrompt', 'แชร์รูปหรือเรื่องราววันนี้...')}
-        </button>
+        {/* 3 Big, Clear, High-Contrast Action Buttons for Elderly & Family */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Button 1: ส่งรูปภาพให้ลูกหลานดู */}
+          <button
+            type="button"
+            onClick={() => openCreatePost('routine')}
+            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/30 hover:border-[#5F8D75] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
+              <Camera size={22} weight="bold" />
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-black text-[#2D2825] leading-tight">ส่งรูปภาพ 📸</p>
+              <p className="text-[9px] text-[#5F8D75] font-bold">อวดลูกหลาน</p>
+            </div>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => openCreatePost('chore')}
-          className="flex items-center gap-1 py-1.5 px-2.5 rounded-full bg-[#EEF4F0] hover:bg-[#E3EEE6] text-[#5F8D75] text-[11px] font-black transition-colors cursor-pointer shrink-0"
-          title="ส่งงานบ้าน"
-        >
-          <Broom size={14} weight="bold" />
-          <span>{t('choreBtn', 'งานบ้าน')}</span>
-        </button>
+          {/* Button 2: พูดทักทายคนในบ้าน (Voice Greeting) */}
+          <button
+            type="button"
+            onClick={() => openCreatePost('routine')}
+            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/30 hover:border-[#E88D67] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
+              <Microphone size={22} weight="bold" />
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-black text-[#2D2825] leading-tight">พูดทักทาย 🎙️</p>
+              <p className="text-[9px] text-[#E88D67] font-bold">ไม่ต้องพิมพ์</p>
+            </div>
+          </button>
+
+          {/* Button 3: ส่งงานบ้าน (Chore Completion) */}
+          <button
+            type="button"
+            onClick={() => openCreatePost('chore')}
+            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#EEF2F6] hover:from-[#EEF2F6] hover:to-[#DEE7F0] border border-[#3B82F6]/30 hover:border-[#3B82F6] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-[#3B82F6] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
+              <Broom size={22} weight="bold" />
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-black text-[#2D2825] leading-tight">ส่งงานบ้าน 🧹</p>
+              <p className="text-[9px] text-[#3B82F6] font-bold">+25 แต้มโหล</p>
+            </div>
+          </button>
+        </div>
       </section>
 
       {/* 4. Filter Pills */}
@@ -1606,6 +1699,102 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
         isOpen={createStoryModalOpen}
         onClose={() => setCreateStoryModalOpen(false)}
       />
+
+      {/* Senior Help Modal (วิธีใช้งานง่ายๆ สำหรับคุณตาคุณยายและทุกคนในบ้าน) */}
+      {seniorHelpModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs select-none animate-fadeIn"
+          onClick={() => setSeniorHelpModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-hidden flex flex-col animate-enter-rise"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-[#ECE7DF] bg-[#FAF8F5] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏡</span>
+                <div>
+                  <h3 className="text-sm font-black text-[#2D2825]">วิธีใช้งานแอปแบบง่ายๆ</h3>
+                  <p className="text-[10px] text-[#746C65]">คู่มือภาพสำหรับคุณตาคุณยายและคนในบ้าน</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSeniorHelpModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-white hover:bg-[#ECE7DF] text-[#746C65] flex items-center justify-center text-xs font-bold border border-[#ECE7DF] cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+              {/* Step 1 */}
+              <div className="p-3 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/30 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#5F8D75] text-white flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                  📸
+                </div>
+                <div>
+                  <h4 className="font-black text-[#2D2825] text-xs">1. ส่งรูปให้ลูกหลานดู</h4>
+                  <p className="text-[11px] text-[#5F8D75] font-semibold mt-0.5 leading-relaxed">
+                    แตะปุ่ม "ส่งรูปภาพ" ถ่ายภาพอาหาร กับข้าว หรือต้นไม้ แล้วกดส่ง ลูกหลานทุกคนในบ้านจะเห็นทันที
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-3 rounded-2xl bg-[#FFF5EB] border border-[#E88D67]/30 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E88D67] text-white flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                  🎙️
+                </div>
+                <div>
+                  <h4 className="font-black text-[#2D2825] text-xs">2. พูดแทนการพิมพ์ (ไม่ต้องพิมพ์)</h4>
+                  <p className="text-[11px] text-[#E88D67] font-semibold mt-0.5 leading-relaxed">
+                    แตะปุ่มไมค์ 🎤 แล้วพูดภาษาไทยได้เลย มือถือจะพิมพ์ข้อความให้อัตโนมัติ ไม่ต้องเมื่อยนิ้วพิมพ์
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-3 rounded-2xl bg-[#EEF2F6] border border-[#3B82F6]/30 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#3B82F6] text-white flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                  🧹
+                </div>
+                <div>
+                  <h4 className="font-black text-[#2D2825] text-xs">3. ทำงานบ้าน ช่วยกันเติมโหล</h4>
+                  <p className="text-[11px] text-[#3B82F6] font-semibold mt-0.5 leading-relaxed">
+                    กวาดบ้าน ล้างจาน หรือรดน้ำต้นไม้ แตะส่งงานบ้าน รับ +25 แต้ม ช่วยกันปลดล็อกของรางวัล
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                  🚨
+                </div>
+                <div>
+                  <h4 className="font-black text-rose-950 text-xs">4. ปุ่มฉุกเฉิน SOS (มุมบนขวา)</h4>
+                  <p className="text-[11px] text-rose-700 font-semibold mt-0.5 leading-relaxed">
+                    ถ้าหกล้ม หน้ามืด หรือเกิดเหตุฉุกเฉิน แตะปุ่มแดง SOS เพื่อโทรหาลูกหลานและส่งพิกัดบ้านทันที
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-[#ECE7DF] bg-[#FAF8F5] shrink-0">
+              <button
+                type="button"
+                onClick={() => setSeniorHelpModalOpen(false)}
+                className="w-full py-2.5 bg-[#5F8D75] hover:bg-[#476E5B] text-white font-black text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                เข้าใจแล้ว เริ่มใช้งานเลย ✨
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Family Milestones & Countdown Modal (วันสำคัญ & นับถอยหลัง) */}
       <FamilyMilestonesModal

@@ -7,11 +7,25 @@ import {
   CircleNotch,
   Plus,
   Images,
+  Microphone,
+  Sparkle,
+  Heart,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
 import { compressImage } from '../utils/imageCompressor';
+import { createThaiSpeechRecognition } from '../utils/speechHelper';
+
+// Quick 1-Tap Greetings for Seniors & Family
+const SENIOR_GREETINGS = [
+  'สวัสดีตอนเช้า ขอให้มีความสุขนะจ๊ะ 🌸',
+  'กินข้าวกันหรือยังลูก ดูแลสุขภาพด้วยนะ 🍲',
+  'คิดถึงลูกหลานทุกคนในบ้านนะจ้ะ 💖',
+  'วันนี้สบายดี สดชื่นแจ่มใสจ้า ☀️',
+  'กินยาเรียบร้อยแล้ว ไม่ต้องเป็นห่วงนะ 💊',
+  'วันนี้ออกกำลังกายแล้ว แข็งแรงดีจ้า 🏃',
+];
 
 // 5 Common Household Chores + 1 Custom Option (Production - Clean without mock images)
 const CHORE_OPTIONS = [
@@ -89,6 +103,8 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
 
   const [compressing, setCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
 
   const photosInputRef = useRef(null);
   const beforeInputRef = useRef(null);
@@ -96,6 +112,52 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
 
   // Current active chore
   const currentChore = CHORE_OPTIONS.find((c) => c.id === selectedChoreId);
+
+  // Voice-to-Text Recognition for Seniors
+  const handleToggleVoiceInput = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = createThaiSpeechRecognition({
+      onResult: (transcript) => {
+        setCaption((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      },
+      onError: () => {
+        setIsListening(false);
+      },
+      onEnd: () => {
+        setIsListening(false);
+      },
+    });
+
+    if (recognition) {
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (err) {
+        console.warn('Start voice recognition failed:', err);
+        setIsListening(false);
+      }
+    } else {
+      alert('เบราว์เซอร์นี้ยังไม่รองรับการพูดด้วยเสียง สามารถพิมพ์หรือแตะเลือกคำทักทายด่วนแทนได้ครับ');
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -272,7 +334,13 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
       >
         {/* Modal Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-md z-30 px-4 py-3 border-b border-[#ECE7DF] flex items-center justify-between">
-          <h2 className="text-sm font-black text-[#2D2825]">สร้างโพสต์ใหม่</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📸</span>
+            <div>
+              <h2 className="text-sm font-black text-[#2D2825]">ส่งรูป & ทักทายคนในบ้าน</h2>
+              <p className="text-[10px] text-[#746C65]">พูดใส่ไมค์ หรือแตะเลือกคำทักทายได้เลยจ้า</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -414,8 +482,24 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
             </div>
           )}
 
-          {/* Caption Textarea (พิมพ์ข้อความอิสระ) */}
-          <div className="space-y-1">
+          {/* Caption & Voice Input Section (Elder-Friendly) */}
+          <div className="space-y-2">
+            {/* Voice Dictation Button for Seniors */}
+            <button
+              type="button"
+              onClick={handleToggleVoiceInput}
+              className={`w-full py-2.5 px-3 rounded-2xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                isListening
+                  ? 'bg-rose-500 text-white border-rose-500 animate-pulse shadow-md'
+                  : 'bg-[#EEF4F0] hover:bg-[#E2EEE6] text-[#5F8D75] border-[#5F8D75]/40 shadow-2xs'
+              }`}
+            >
+              <Microphone size={18} weight={isListening ? 'fill' : 'bold'} />
+              <span>
+                {isListening ? '🎙️ กำลังฟังคุณตาคุณยายพูด... พูดได้เลยจ้า (แตะเพื่อหยุด)' : '🎤 แตะปุ่มนี้แล้วพูดได้เลย (ระบบจะพิมพ์ให้อัตโนมัติ)'}
+              </span>
+            </button>
+
             <textarea
               rows={2}
               value={caption}
@@ -423,10 +507,29 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
               placeholder={
                 mode === 'chore'
                   ? 'เล่าเรื่องงานบ้าน เช่น ล้างสะอาดหมดจด พร้อมใช้งานแล้วครับ 😊'
-                  : 'วันนี้ทำอะไรมาบ้าง? เขียนเล่าให้คนในบ้านฟัง...'
+                  : 'เขียนข้อความ หรือแตะปุ่มไมค์ด้านบนเพื่อพูดเล่าให้คนในบ้านฟัง...'
               }
               className="w-full p-2.5 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none focus:border-[#5F8D75] focus:bg-white resize-none leading-relaxed"
             />
+
+            {/* Quick Greetings for Seniors (คำทักทายด่วน แตะแล้วส่งได้เลย) */}
+            <div className="space-y-1.5 pt-0.5">
+              <span className="text-[10px] font-bold text-[#746C65] block">
+                🌸 แตะเลือกคำทักทายด่วน (ไม่ต้องพิมพ์):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {SENIOR_GREETINGS.map((phrase, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCaption(phrase)}
+                    className="text-[10.5px] font-bold text-[#5F8D75] bg-[#FAF8F5] hover:bg-[#EEF4F0] px-2.5 py-1 rounded-xl border border-[#ECE7DF] hover:border-[#5F8D75]/40 transition-colors text-left active:scale-95 cursor-pointer shadow-2xs"
+                  >
+                    {phrase}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Photos Upload Section */}

@@ -222,6 +222,7 @@ function AppContent() {
             setSosInitialCountdown(!activeSosAlert);
             setSosModalOpen(true);
           }}
+          onOpenProfile={() => setProfileOpen(true)}
         />
       )}
       {activeTab === 'fridge' && (
@@ -270,6 +271,7 @@ function AppContent() {
             setSosInitialCountdown(!activeSosAlert);
             setSosModalOpen(true);
           }}
+          onOpenProfile={() => setProfileOpen(true)}
         />
       </div>
 

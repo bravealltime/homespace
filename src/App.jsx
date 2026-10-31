@@ -15,6 +15,7 @@ import {
   Plus,
   ShieldCheck,
   Trash,
+  TextAa,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -63,7 +64,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
 
 function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
-  const { notifications } = useApp();
+  const { notifications, seniorMode, toggleSeniorMode } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
@@ -116,9 +117,9 @@ function AppContent() {
 
   // Phone App View (Rendered inside Phone Mockup or Centered on Desktop)
   return (
-    <div className="relative w-full h-full min-h-full flex flex-col overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text">
+    <div className={`relative w-full h-full min-h-full flex flex-col overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text ${seniorMode ? 'senior-mode' : ''}`}>
       {/* Mobile Top Header - Ultra Clean & Elegant */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3.5 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
         <div
           onClick={() => {
             setViewingMember(null);
@@ -135,8 +136,22 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right Actions: Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Right Actions: Senior Mode (🔤) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Senior & Easy-Reading Mode Toggle (โหมดสบายตา / ตัวหนังสือใหญ่) */}
+          <button
+            type="button"
+            onClick={toggleSeniorMode}
+            className={`h-7 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border ${
+              seniorMode
+                ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
+                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
+            }`}
+            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่ (กลับสู่ขนาดปกติ)' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตาสำหรับผู้ใหญ่)'}
+          >
+            <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
+            <span className="text-[10px] font-bold">{seniorMode ? 'สบายตา' : 'ตัวใหญ่'}</span>
+          </button>
           {/* Admin Family Requests & Invite Link Button */}
           {isAdmin && (
             <button

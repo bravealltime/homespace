@@ -232,6 +232,28 @@ function reducer(state, action) {
       };
     }
 
+    case 'TOGGLE_SENIOR_MODE': {
+      const nextVal = !state.seniorMode;
+      try {
+        localStorage.setItem('homespace_senior_mode', String(nextVal));
+      } catch {}
+      return {
+        ...state,
+        seniorMode: nextVal,
+      };
+    }
+
+    case 'SET_SENIOR_MODE': {
+      const nextVal = Boolean(action.payload);
+      try {
+        localStorage.setItem('homespace_senior_mode', String(nextVal));
+      } catch {}
+      return {
+        ...state,
+        seniorMode: nextVal,
+      };
+    }
+
     default:
       return state;
   }
@@ -245,6 +267,11 @@ function getInitialState() {
     // ignore
   }
 
+  let initialSeniorMode = false;
+  try {
+    initialSeniorMode = localStorage.getItem('homespace_senior_mode') === 'true';
+  } catch (e) {}
+
   return {
     history: [],
     feedPosts: [],
@@ -253,6 +280,7 @@ function getInitialState() {
     backendVotes: {},
     backendMemberScores: {},
     totalScoreMonth: 0,
+    seniorMode: initialSeniorMode,
   };
 }
 
@@ -597,6 +625,9 @@ export function AppProvider({ children }) {
     getMemberVote,
     unlockedRewards,
     rewards: [...REWARDS, ...(state.customRewards || [])],
+    seniorMode: Boolean(state.seniorMode),
+    toggleSeniorMode: () => dispatch({ type: 'TOGGLE_SENIOR_MODE' }),
+    setSeniorMode: (val) => dispatch({ type: 'SET_SENIOR_MODE', payload: val }),
     syncWithBackend,
   };
 

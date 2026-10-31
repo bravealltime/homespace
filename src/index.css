@@ -117,3 +117,65 @@ p, span, label {
 .safe-area-bottom {
   padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
 }
+
+/* ======================================================== */
+/* SENIOR & EASY-READING ACCESSIBILITY MODE (โหมดสบายตา) */
+/* ======================================================== */
+.senior-mode {
+  --color-text-main: #1C1917;
+  font-size: 1.05rem;
+}
+
+.senior-mode p,
+.senior-mode span,
+.senior-mode label,
+.senior-mode input,
+.senior-mode textarea {
+  letter-spacing: 0.015em;
+}
+
+/* Scaled up font classes */
+.senior-mode .text-\[9px\] {
+  font-size: 0.8125rem !important; /* ~13px */
+  line-height: 1.4 !important;
+}
+
+.senior-mode .text-\[10px\] {
+  font-size: 0.875rem !important; /* ~14px */
+  line-height: 1.45 !important;
+}
+
+.senior-mode .text-\[11px\] {
+  font-size: 0.9375rem !important; /* ~15px */
+  line-height: 1.5 !important;
+}
+
+.senior-mode .text-xs {
+  font-size: 1.0625rem !important; /* ~17px */
+  line-height: 1.6 !important;
+}
+
+.senior-mode .text-sm {
+  font-size: 1.1875rem !important; /* ~19px */
+  line-height: 1.65 !important;
+}
+
+.senior-mode .text-base {
+  font-size: 1.3125rem !important; /* ~21px */
+  line-height: 1.65 !important;
+}
+
+/* High contrast and larger touch targets for seniors */
+.senior-mode button,
+.senior-mode a,
+.senior-mode [role="button"] {
+  min-height: 44px;
+}
+
+.senior-mode input,
+.senior-mode textarea {
+  font-size: 1.0625rem !important;
+  line-height: 1.55 !important;
+  border-width: 1.5px !important;
+}
+

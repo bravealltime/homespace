@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Camera, User, Check, Trash, Sparkle, LockKey, Eye, EyeSlash, CircleNotch } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import * as api from '../services/api';
 import { compressImage } from '../utils/imageCompressor';
 
@@ -8,6 +9,7 @@ const EMOJI_AVATARS = ['😊', '😎', '🥰', '😄', '🤗', '👨', '👩', '
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { currentUser, updateProfile } = useAuth();
+  const { seniorMode, toggleSeniorMode } = useApp();
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [pin, setPin] = useState('');
@@ -287,6 +289,30 @@ export default function ProfileModal({ isOpen, onClose }) {
             ) : (
               <p className="text-[10px] text-[#9E9589] mt-1">ใช้ตัวเลข 4 หลักเพื่อความสะดวกรวดเร็วในการเข้าสู่ระบบครั้งถัดไป</p>
             )}
+          </div>
+
+          {/* Senior & Easy-Reading Mode Toggle in Profile */}
+          <div className="p-3 bg-[#EEF4F0]/60 rounded-2xl border border-[#5F8D75]/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">👓</span>
+              <div>
+                <p className="text-xs font-bold text-[#2D2825]">โหมดสบายตา (ตัวหนังสือใหญ่)</p>
+                <p className="text-[10px] text-[#746C65]">ขยายตัวหนังสือและปุ่มกดให้อ่านง่ายสำหรับผู้ใหญ่</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSeniorMode}
+              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                seniorMode ? 'bg-[#5F8D75]' : 'bg-[#ECE7DF]'
+              }`}
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                  seniorMode ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
 
           {/* Save Button */}

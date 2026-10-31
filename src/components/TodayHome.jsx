@@ -16,9 +16,17 @@ import {
   Flame,
   Target,
   Plus,
+  SpeakerHigh,
+  Microphone,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import {
+  speakThai,
+  stopSpeaking,
+  createThaiSpeechRecognition,
+  SENIOR_QUICK_BLESSINGS,
+} from '../utils/speechHelper';
 import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
 
@@ -102,6 +110,13 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const [storyViewer, setStoryViewer] = useState(null); // { member, stories, currentIndex }
   const [storyReplyText, setStoryReplyText] = useState('');
   const [storyToast, setStoryToast] = useState('');
+
+  // Senior & Voice States (ระบบอ่านออกเสียง & คำตอบด่วนสำหรับผู้สูงวัย)
+  const [speakingPostId, setSpeakingPostId] = useState(null);
+  const [speakingCommentId, setSpeakingCommentId] = useState(null);
+  const [recordingPostId, setRecordingPostId] = useState(null);
+  const [seniorToast, setSeniorToast] = useState('');
+  const activeRecognitionRef = useRef(null);
 
   const [activePostMenuId, setActivePostMenuId] = useState(null);
   const [viewingPhoto, setViewingPhoto] = useState(null);
@@ -285,8 +300,97 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     setCommentText((prev) => ({ ...prev, [postId]: '' }));
   };
 
+  const handleToggleSpeakPost = (postId, text) => {
+    if (speakingPostId === postId) {
+      stopSpeaking();
+      setSpeakingPostId(null);
+      return;
+    }
+    setSpeakingCommentId(null);
+    setSpeakingPostId(postId);
+    speakThai(
+      text,
+      () => setSpeakingPostId(postId),
+      () => setSpeakingPostId(null)
+    );
+  };
+
+  const handleToggleSpeakComment = (commentId, text) => {
+    if (speakingCommentId === commentId) {
+      stopSpeaking();
+      setSpeakingCommentId(null);
+      return;
+    }
+    setSpeakingPostId(null);
+    setSpeakingCommentId(commentId);
+    speakThai(
+      text,
+      () => setSpeakingCommentId(commentId),
+      () => setSpeakingCommentId(null)
+    );
+  };
+
+  const handleSendQuickBlessing = (postId, text) => {
+    addComment(postId, currentUser?.id || 'member-fluke', text);
+    setSeniorToast(`ส่ง "${text}" ให้กำลังใจแล้ว 💖`);
+    setTimeout(() => setSeniorToast(''), 2500);
+  };
+
+  const handleToggleVoiceRecord = (postId) => {
+    if (recordingPostId === postId) {
+      if (activeRecognitionRef.current) {
+        activeRecognitionRef.current.stop();
+        activeRecognitionRef.current = null;
+      }
+      setRecordingPostId(null);
+      return;
+    }
+
+    if (activeRecognitionRef.current) {
+      activeRecognitionRef.current.stop();
+      activeRecognitionRef.current = null;
+    }
+
+    const recognition = createThaiSpeechRecognition({
+      onResult: (transcript) => {
+        setCommentText((prev) => ({
+          ...prev,
+          [postId]: transcript,
+        }));
+      },
+      onError: () => {
+        setRecordingPostId(null);
+        activeRecognitionRef.current = null;
+      },
+      onEnd: () => {
+        setRecordingPostId(null);
+        activeRecognitionRef.current = null;
+      },
+    });
+
+    if (recognition) {
+      try {
+        recognition.start();
+        activeRecognitionRef.current = recognition;
+        setRecordingPostId(postId);
+      } catch (err) {
+        console.warn('Voice record start error:', err);
+      }
+    } else {
+      alert('เบราว์เซอร์นี้ยังไม่รองรับระบบสั่งการด้วยเสียง กรุณาใช้ปุ่มคำตอบด่วนด้านล่างแทนครับ');
+    }
+  };
+
   return (
-    <div className="space-y-3 pb-24">
+    <div className="space-y-3 pb-24 relative">
+      {/* Floating Accessibility Toast (Feedback when elderly send blessings) */}
+      {seniorToast && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#2D2825] text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl border border-white/20 animate-enter-rise flex items-center gap-2 pointer-events-none">
+          <span>✨</span>
+          <span>{seniorToast}</span>
+        </div>
+      )}
+
       {/* 1. Ultra-Clean Instagram Stories / Highlights Bar (แยกกับโพสต์ฟีด) */}
       <section className="bg-white rounded-3xl p-3 sm:p-3.5 border border-[#ECE7DF] shadow-2xs space-y-2.5 select-none">
         {/* Story Bar Subheader */}
@@ -765,11 +869,28 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 )}
               </div>
 
-              {/* Caption (Instagram Format: Username + Text) */}
+              {/* Caption (Instagram Format: Username + Text) with Audio Read Button */}
               {post.caption && (
-                <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825]">
-                  <span className="font-bold mr-1.5">{author?.name || 'สมาชิก'}</span>
-                  <span>{post.caption}</span>
+                <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825] flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold mr-1.5">{author?.name || 'สมาชิก'}</span>
+                    <span>{post.caption}</span>
+                  </div>
+
+                  {/* Audio Read Button (🔊 ฟังเสียงอ่านภาษาไทยสำหรับผู้ใหญ่) */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSpeakPost(post.id, `${author?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
+                    className={`shrink-0 px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
+                      speakingPostId === post.id
+                        ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
+                        : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#5F8D75] border-[#ECE7DF]'
+                    }`}
+                    title={speakingPostId === post.id ? 'แตะเพื่อหยุดอ่าน' : 'แตะเพื่อให้มือถืออ่านข้อความให้ฟัง'}
+                  >
+                    <SpeakerHigh size={13} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
+                    <span>{speakingPostId === post.id ? 'หยุดอ่าน' : 'ฟังเสียง'}</span>
+                  </button>
                 </div>
               )}
 
@@ -807,6 +928,17 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5">
+                                {/* Comment Audio Speaker */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
+                                  className={`p-0.5 rounded-full transition-colors cursor-pointer ${
+                                    speakingCommentId === c.id ? 'text-[#5F8D75] animate-pulse font-bold' : 'text-[#B0A79E] hover:text-[#5F8D75]'
+                                  }`}
+                                  title="ฟังเสียงคอมเมนต์นี้"
+                                >
+                                  <SpeakerHigh size={13} weight={speakingCommentId === c.id ? 'fill' : 'regular'} />
+                                </button>
                                 {c.timestamp && (
                                   <span className="text-[9px] text-[#B0A79E]">
                                     {timeAgo(c.timestamp)}
@@ -836,27 +968,84 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   <p className="text-[11px] text-[#9E958D] py-1 text-center">ยังไม่มีความคิดเห็น มาเป็นคนแรกที่ส่งกำลังใจกันเลย ✨</p>
                 )}
 
-                {/* Inline Comment Input Box with Current User Avatar */}
-                <div className="pt-1 flex items-center gap-2">
-                  <MemberAvatar member={currentUser} size="comment" />
-                  <div className="flex-1 relative flex items-center">
-                    <input
-                      type="text"
-                      value={commentText[post.id] || ''}
-                      onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendComment(post.id)}
-                      placeholder="เขียนความคิดเห็นให้กำลังใจ..."
-                      className="w-full pl-3.5 pr-14 py-2 bg-[#FAF8F5] focus:bg-white rounded-full border border-[#ECE7DF] focus:border-[#5F8D75] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none transition-all shadow-2xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSendComment(post.id)}
-                      disabled={!commentText[post.id]?.trim()}
-                      className="absolute right-1.5 px-3 py-1 text-xs font-bold text-white bg-[#5F8D75] hover:bg-[#476E5B] disabled:bg-[#ECE7DF] disabled:text-[#9E958D] rounded-full disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
-                    >
-                      ส่ง
-                    </button>
+                {/* 1-Tap Quick Blessings / Praise for Seniors & Family (ปุ่มตอบด่วนสำหรับผู้สูงวัย) */}
+                <div className="pt-1 pb-0.5 space-y-1">
+                  <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-[#746C65]">
+                    <span className="flex items-center gap-1">
+                      <span>💬</span>
+                      <span>คำตอบด่วนความรัก:</span>
+                    </span>
+                    <span className="text-[10px] text-[#5F8D75] font-bold">แตะ 1 ครั้งส่งทันที</span>
                   </div>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    {SENIOR_QUICK_BLESSINGS.map((blessing, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSendQuickBlessing(post.id, blessing.text)}
+                        className="px-3 py-1.5 rounded-full bg-[#FAF8F5] hover:bg-[#EEF4F0] active:scale-95 text-[#2D2825] hover:text-[#5F8D75] border border-[#ECE7DF] hover:border-[#5F8D75]/40 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
+                      >
+                        {blessing.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Inline Comment Input Box with Voice-to-Text Button */}
+                <div className="pt-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <MemberAvatar member={currentUser} size="comment" />
+                    <div className="flex-1 relative flex items-center">
+                      <input
+                        type="text"
+                        value={commentText[post.id] || ''}
+                        onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendComment(post.id)}
+                        placeholder="พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด..."
+                        className="w-full pl-3.5 pr-22 py-2 bg-[#FAF8F5] focus:bg-white rounded-full border border-[#ECE7DF] focus:border-[#5F8D75] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none transition-all shadow-2xs"
+                      />
+                      <div className="absolute right-1.5 flex items-center gap-1">
+                        {/* Voice to Text Microphone Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVoiceRecord(post.id)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                            recordingPostId === post.id
+                              ? 'bg-red-500 text-white animate-pulse shadow-xs'
+                              : 'text-[#746C65] hover:text-[#5F8D75] hover:bg-black/5'
+                          }`}
+                          title={recordingPostId === post.id ? 'กำลังฟังเสียง... แตะเพื่อหยุด' : 'แตะแล้วพูดแทนการพิมพ์'}
+                        >
+                          <Microphone size={15} weight={recordingPostId === post.id ? 'fill' : 'bold'} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendComment(post.id)}
+                          disabled={!commentText[post.id]?.trim()}
+                          className="px-3 py-1 text-xs font-bold text-white bg-[#5F8D75] hover:bg-[#476E5B] disabled:bg-[#ECE7DF] disabled:text-[#9E958D] rounded-full disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
+                        >
+                          ส่ง
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {recordingPostId === post.id && (
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold animate-pulse border border-red-200">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                        <span>กำลังฟังเสียงพูดภาษาไทย... พูดใส่ไมค์ได้เลยครับ</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleVoiceRecord(post.id)}
+                        className="text-[10px] underline cursor-pointer"
+                      >
+                        เสร็จแล้ว
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </article>

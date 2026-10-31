@@ -34,6 +34,7 @@ import FamilyAdminModal from './components/FamilyAdminModal';
 import DigitalFridgeBoard from './components/DigitalFridgeBoard';
 import FamilyCalendarView from './components/FamilyCalendarView';
 import ErrorBoundary from './components/ErrorBoundary';
+import InstallAppModal from './components/InstallAppModal';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -78,6 +79,7 @@ function AppContent() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
+  const [installAppOpen, setInstallAppOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
   const scrollContainerRef = useRef(null);
@@ -348,6 +350,7 @@ function AppContent() {
       {/* Edit Profile Modal */}
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
+      <InstallAppModal isOpen={installAppOpen} onClose={() => setInstallAppOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}
         {familyMembersOpen && (
@@ -514,6 +517,27 @@ function AppContent() {
                       </div>
                     );
                   })}
+              </div>
+
+              {/* Install App on Phone Banner */}
+              <div className="px-3.5 py-2.5 bg-[#FAF8F5] border-t border-[#ECE7DF] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFamilyMembersOpen(false);
+                    setInstallAppOpen(true);
+                  }}
+                  className="w-full py-2 px-3 rounded-2xl bg-gradient-to-r from-[#5F8D75] to-[#4E7661] text-white flex items-center justify-between shadow-xs hover:opacity-95 transition-transform active:scale-98 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📲</span>
+                    <div className="text-left leading-tight">
+                      <p className="text-xs font-black">ติดตั้งแอปลงมือถือ</p>
+                      <p className="text-[10px] text-white/80">iPhone & Android เปิดเต็มจอเหมือนแอปแท้</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">วิธีลง ↗</span>
+                </button>
               </div>
 
               {/* Footer with Logout & Close */}

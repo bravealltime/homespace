@@ -115,6 +115,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
     milestones,
     notes,
     homeMaintenance,
+    seniorMode,
     language,
     t,
     isStandalone,

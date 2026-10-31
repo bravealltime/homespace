@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Heart,
   ChatCircle,
@@ -120,6 +121,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
     t,
     isStandalone,
     promptInstallApp,
+    setIsViewingContent,
   } = useApp();
 
   const [pwaBannerDismissed, setPwaBannerDismissed] = useState(() => {
@@ -131,6 +133,16 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
   });
 
   const [translations, setTranslations] = useState({});
+
+  useEffect(() => {
+    const isViewing = Boolean(storyViewer || viewingPhoto);
+    if (setIsViewingContent) {
+      setIsViewingContent(isViewing);
+    }
+    return () => {
+      if (setIsViewingContent) setIsViewingContent(false);
+    };
+  }, [storyViewer, viewingPhoto, setIsViewingContent]);
 
   const handleTranslate = async (key, text) => {
     if (!text) return;
@@ -1371,8 +1383,8 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
         )}
       </div>
 
-      {/* Real Instagram Story Fullscreen Viewer Modal */}
-      {storyViewer && storyViewer.stories && storyViewer.stories.length > 0 && (() => {
+      {/* Real Instagram Story Fullscreen Viewer Modal via Portal */}
+      {storyViewer && storyViewer.stories && storyViewer.stories.length > 0 && typeof document !== 'undefined' && createPortal((() => {
         const currentStory = storyViewer.stories[storyViewer.currentIndex] || storyViewer.stories[0];
         const isOwner = currentStory.memberId === currentUser?.id;
         const stickersArray = currentStory.stickers ? currentStory.stickers.split(',').filter(Boolean) : [];
@@ -1381,7 +1393,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           <div
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-3 sm:p-5 animate-enter-rise text-white backdrop-blur-md select-none"
+            className="fixed inset-0 z-[9999] bg-black/95 flex flex-col justify-between p-3 sm:p-5 animate-enter-rise text-white backdrop-blur-md select-none safe-area-top safe-area-bottom"
             onClick={() => setStoryViewer(null)}
           >
             {/* Top Segmented Progress Bars & Header */}
@@ -1551,14 +1563,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
 
-      {/* Fullscreen Photo Zoom Preview Modal */}
-      {viewingPhoto && (
+      {/* Fullscreen Photo Zoom Preview Modal via Portal */}
+      {viewingPhoto && typeof document !== 'undefined' && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-enter-rise"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 bg-black/92 backdrop-blur-md animate-enter-rise select-none safe-area-top safe-area-bottom"
           onClick={() => setViewingPhoto(null)}
         >
           <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col items-center">
@@ -1576,7 +1588,8 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Fast & Clean Social Media Post Modal (Instagram / Facebook Style) */}

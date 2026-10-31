@@ -989,6 +989,7 @@ export function AppProvider({ children }) {
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [isViewingContent, setIsViewingContent] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1101,6 +1102,8 @@ export function AppProvider({ children }) {
     activeSosAlert: state.activeSosAlert || null,
     triggerSos,
     resolveSos,
+    isViewingContent,
+    setIsViewingContent,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

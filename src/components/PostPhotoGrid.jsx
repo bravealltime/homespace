@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react';
+import { useApp } from '../context/AppContext';
 
 /**
  * Facebook-style Post Photo Grid
  * Supports 1, 2, 3, 4, and 5+ photos with responsive grid layout and interactive full-screen lightbox.
  */
 export default function PostPhotoGrid({ photos = [], singlePhoto = null, alt = 'รูปกิจกรรม' }) {
+  const { setIsViewingContent } = useApp();
+
   // Normalize photo array
   const photoList = Array.isArray(photos) && photos.length > 0
     ? photos.filter(Boolean)
@@ -15,11 +19,22 @@ export default function PostPhotoGrid({ photos = [], singlePhoto = null, alt = '
 
   const openLightbox = (index) => {
     setLightboxIndex(index);
+    if (setIsViewingContent) setIsViewingContent(true);
   };
 
   const closeLightbox = () => {
     setLightboxIndex(null);
+    if (setIsViewingContent) setIsViewingContent(false);
   };
+
+  useEffect(() => {
+    if (lightboxIndex !== null) {
+      if (setIsViewingContent) setIsViewingContent(true);
+    }
+    return () => {
+      if (setIsViewingContent) setIsViewingContent(false);
+    };
+  }, [lightboxIndex, setIsViewingContent]);
 
   const prevPhoto = useCallback((e) => {
     e?.stopPropagation?.();
@@ -191,17 +206,17 @@ export default function PostPhotoGrid({ photos = [], singlePhoto = null, alt = '
         </div>
       )}
 
-      {/* Full-Screen Interactive Lightbox */}
-      {lightboxIndex !== null && (
+      {/* Full-Screen Interactive Lightbox via Portal */}
+      {lightboxIndex !== null && typeof document !== 'undefined' && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/92 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-fadeIn select-none"
           onClick={closeLightbox}
         >
           {/* Top Bar: Counter & Close */}
           <div
-            className="absolute top-4 left-4 right-4 flex items-center justify-between text-white z-20"
+            className="absolute top-4 left-4 right-4 flex items-center justify-between text-white z-20 safe-area-top"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-black/50 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold border border-white/10">
@@ -256,7 +271,7 @@ export default function PostPhotoGrid({ photos = [], singlePhoto = null, alt = '
           {/* Bottom Thumbnails Strip (if multiple photos) */}
           {photoList.length > 1 && (
             <div
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 max-w-[90vw] overflow-x-auto no-scrollbar p-2 bg-black/50 backdrop-blur-md rounded-2xl border border-white/10 z-20"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 max-w-[90vw] overflow-x-auto no-scrollbar p-2 bg-black/50 backdrop-blur-md rounded-2xl border border-white/10 z-20 safe-area-bottom"
               onClick={(e) => e.stopPropagation()}
             >
               {photoList.map((src, idx) => (
@@ -275,7 +290,8 @@ export default function PostPhotoGrid({ photos = [], singlePhoto = null, alt = '
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

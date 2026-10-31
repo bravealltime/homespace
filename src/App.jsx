@@ -92,6 +92,7 @@ function AppContent() {
     setInstallModalOpen,
     promptInstallApp,
     isStandalone,
+    isViewingContent,
   } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -106,7 +107,12 @@ function AppContent() {
   const [quickHouseMenuOpen, setQuickHouseMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
+
+  // Dynamic Navigation Auto-Hide on Scroll & Content View
+  const [isNavVisible, setIsNavVisible] = useState(true);
   const scrollContainerRef = useRef(null);
+  const mobileScrollContainerRef = useRef(null);
+  const lastScrollYRef = useRef(0);
 
   const tabs = [
     { id: 'home', label: t('tabHome', 'หน้าหลัก'), icon: House, subtitle: t('tabHomeSub', 'โหลคะแนน & งานบ้าน') },
@@ -116,12 +122,60 @@ function AppContent() {
     { id: 'rewards', label: t('tabRewards', 'ของรางวัล'), icon: Gift, subtitle: t('tabRewardsSub', 'ปลดล็อก & โหวตของกิน') },
   ];
 
-  // Reset scroll position when changing tabs or profiles
+  // Mobile Scroll Handler: Auto-hide bars when scrolling DOWN, reveal when scrolling UP
+  const handleMobileScroll = (e) => {
+    if (isViewingContent) return;
+    const currentScrollY = e.currentTarget.scrollTop;
+
+    // Always reveal near the top
+    if (currentScrollY <= 25) {
+      setIsNavVisible(true);
+      lastScrollYRef.current = currentScrollY;
+      return;
+    }
+
+    const diff = currentScrollY - lastScrollYRef.current;
+    if (Math.abs(diff) > 8) {
+      if (diff > 0 && currentScrollY > 60) {
+        // Scrolling DOWN -> Hide bars for immersion
+        setIsNavVisible(false);
+      } else if (diff < 0) {
+        // Scrolling UP -> Reveal bars
+        setIsNavVisible(true);
+      }
+      lastScrollYRef.current = currentScrollY;
+    }
+  };
+
+  // Reset scroll position and restore nav bars when changing tabs or profiles
   useEffect(() => {
+    setIsNavVisible(true);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
+    if (mobileScrollContainerRef.current) {
+      mobileScrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }, [activeTab, viewingMember]);
+
+  // Check if any modal or fullscreen content is open
+  const isAnyModalOpen = Boolean(
+    searchOpen ||
+    notificationOpen ||
+    profileOpen ||
+    familyAdminOpen ||
+    homeHandbookOpen ||
+    familyGardenOpen ||
+    sosModalOpen ||
+    quickHouseMenuOpen ||
+    installModalOpen ||
+    familyMembersOpen ||
+    showLogoutConfirm ||
+    isViewingContent
+  );
+
+  const isHeaderHidden = !isNavVisible || isViewingContent;
+  const isBottomNavHidden = !isNavVisible || isAnyModalOpen;
 
   const myNotifications = (notifications || []).filter(
     (n) => n.recipientId === currentUser?.id
@@ -220,7 +274,13 @@ function AppContent() {
       </div>
 
       {/* 2. Mobile Top Header - Ultra Clean & Elegant (< 1024px) */}
-      <header className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
+      <header
+        className={`lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0 transition-all duration-300 ease-in-out ${
+          isHeaderHidden
+            ? '-translate-y-full opacity-0 pointer-events-none -mb-14'
+            : 'translate-y-0 opacity-100 mb-0'
+        }`}
+      >
         <div
           onClick={() => {
             setViewingMember(null);
@@ -358,6 +418,8 @@ function AppContent() {
 
       {/* 4. Mobile Single-Column Scrollable View (< 1024px) */}
       <div
+        ref={mobileScrollContainerRef}
+        onScroll={handleMobileScroll}
         className="lg:hidden flex-1 min-h-0 w-full max-w-md mx-auto overflow-y-auto overflow-x-hidden no-scrollbar relative scroll-area"
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -372,7 +434,11 @@ function AppContent() {
       {/* 5. Floating Mobile Bottom Navigation Island (< 1024px) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 pointer-events-auto"
+        className={`lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 transition-all duration-300 ease-in-out ${
+          isBottomNavHidden
+            ? 'translate-y-28 opacity-0 pointer-events-none'
+            : 'translate-y-0 opacity-100 pointer-events-auto'
+        }`}
       >
         <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around">
           {tabs.map((tab) => {

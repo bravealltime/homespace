@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p android/app/src/main/assets/public
           npm run cap -- telemetry off || true
-          npm run cap -- sync android --verbose
+          npm run cap -- sync android
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew

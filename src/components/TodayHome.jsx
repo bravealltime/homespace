@@ -543,97 +543,117 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         </div>
       </section>
 
-      {/* 2. Family Milestones & Countdown Widget (วันสำคัญ & นับถอยหลัง) */}
-      {closestMilestone ? (
-        <section
-          onClick={() => onNavigateTab && onNavigateTab('calendar')}
-          className="bg-gradient-to-r from-[#FFF5EB] via-[#FFF9F5] to-white hover:bg-[#FFF5EB] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#E88D67]/30 shadow-2xs flex items-center justify-between gap-3 transition-colors"
+      {/* 2. Unified Family Hub Dashboard (การ์ดสรุปบ้านแบบ All-in-One ไม่เกะกะ จัดวางคลีน) */}
+      <section className="bg-white rounded-3xl p-3.5 sm:p-4 border border-[#ECE7DF] shadow-2xs space-y-3">
+        {/* Top: Jar Points & Reward Goal */}
+        <div
+          onClick={() => onNavigateTab && onNavigateTab('rewards')}
+          className="cursor-pointer group"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xl shrink-0">{closestMilestone.emoji || '🎂'}</span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-black text-[#2D2825] truncate">{closestMilestone.title}</span>
-                <span className="text-[10px] text-[#746C65]">
-                  ({new Date(closestMilestone.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})
-                </span>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🍯</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-[#2D2825]">โหลของบ้าน</span>
+                  <span className="text-[10px] font-bold text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full">
+                    {progress}%
+                  </span>
+                </div>
               </div>
-              <p className="text-[10px] text-[#E88D67] font-black truncate">
-                {closestMilestone.info?.text}
-              </p>
+            </div>
+
+            <div className="flex items-center gap-1 text-[11px] font-bold text-[#5F8D75] group-hover:text-[#476E5B] transition-colors">
+              <span className="font-black">{totalScoreMonth}</span>
+              <span className="text-[#9E958D]">/ {monthlyGoal} แต้ม</span>
+              <CaretRight size={13} weight="bold" />
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#E88D67] shrink-0">
-            <span>ดูปฏิทิน</span>
-            <CaretRight size={13} weight="bold" />
+          {/* Smooth Progress Bar */}
+          <div className="w-full h-2 rounded-full bg-[#FAF8F5] border border-[#ECE7DF]/60 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#5F8D75] to-[#88B09A] transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
           </div>
-        </section>
-      ) : (
-        <section
-          onClick={() => onNavigateTab && onNavigateTab('calendar')}
-          className="bg-white hover:bg-[#FAF8F5] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-3 transition-colors"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xl shrink-0">📅</span>
-            <div className="min-w-0">
-              <span className="text-xs font-black text-[#2D2825]">ปฏิทินวันสำคัญของบ้าน</span>
-              <p className="text-[10px] text-[#746C65]">แตะดูปฏิทิน นัดหมาย และแท็กคนในบ้าน</p>
-            </div>
-          </div>
-          <span className="text-[11px] font-bold text-[#5F8D75] shrink-0">ดูปฏิทิน</span>
-        </section>
-      )}
 
-      {/* 2.1 Mini Clean Jar Bar (แถบโหลคะแนนย่อแบบคลีน) */}
-      <section
-        onClick={() => onNavigateTab && onNavigateTab('rewards')}
-        className="bg-white hover:bg-[#FAF8F5] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-3 transition-colors"
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-xl shrink-0">🍯</span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-black text-[#2D2825]">โหลของบ้าน:</span>
-              <span className="text-xs font-black text-[#5F8D75]">{totalScoreMonth}</span>
-              <span className="text-[10px] text-[#746C65]">/ {monthlyGoal} แต้ม ({progress}%)</span>
+          {/* Unlocked Reward Hint / Goal Subtitle */}
+          <div className="flex items-center justify-between mt-1.5 text-[10px]">
+            <span className="text-[#E88D67] font-bold truncate">
+              {unlockedRewards.length > 0
+                ? `🎉 ปลดล็อก ${unlockedRewards[0].emoji} ${unlockedRewards[0].name} แล้ว!`
+                : `สะสมอีก ${Math.max(0, monthlyGoal - totalScoreMonth)} แต้ม เพื่อปลดล็อกรางวัล`}
+            </span>
+            <span className="text-[#9E958D] font-medium shrink-0">รางวัลครอบครัว →</span>
+          </div>
+        </div>
+
+        {/* Middle: 2 Quick-Glance Tiles Side-by-Side (ปฏิทินบ้าน & ตู้เย็นโน้ต) */}
+        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#ECE7DF]/80">
+          {/* Tile 1: 📅 ปฏิทินวันสำคัญ */}
+          <div
+            onClick={() => onNavigateTab && onNavigateTab('calendar')}
+            className="p-2.5 rounded-2xl bg-[#FFF9F5] hover:bg-[#FFF2EA] border border-[#E88D67]/25 transition-all cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-base shrink-0">{closestMilestone?.emoji || '📅'}</span>
+                <span className="text-[11px] font-black text-[#E88D67]">ปฏิทินบ้าน</span>
+              </div>
+              <CaretRight size={12} weight="bold" className="text-[#E88D67]" />
             </div>
-            <p className="text-[10px] text-[#E88D67] font-bold truncate">
-              {unlockedRewards.length > 0 ? `🎉 ปลดล็อก ${unlockedRewards[0].emoji} ${unlockedRewards[0].name} แล้ว!` : 'สะสมเพื่อปลดล็อกชาบู'}
+
+            <p className="text-xs font-black text-[#2D2825] truncate">
+              {closestMilestone ? closestMilestone.title : 'ยังไม่มีนัดหมาย'}
+            </p>
+            <p className="text-[10px] text-[#746C65] font-semibold truncate mt-0.5">
+              {closestMilestone ? closestMilestone.info?.text : 'แตะเพิ่มวันสำคัญ'}
+            </p>
+          </div>
+
+          {/* Tile 2: 📌 ตู้เย็นโน้ต */}
+          <div
+            onClick={() => onNavigateTab && onNavigateTab('fridge')}
+            className="p-2.5 rounded-2xl bg-[#FFFBEB] hover:bg-[#FEF7D6] border border-[#FDE047]/60 transition-all cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-base shrink-0">📌</span>
+                <span className="text-[11px] font-black text-[#CA8A04]">ตู้เย็นโน้ต</span>
+                {(notes || []).length > 0 && (
+                  <span className="text-[9px] bg-[#FEF08A] text-[#854D0E] font-bold px-1.5 rounded-full">
+                    {(notes || []).length}
+                  </span>
+                )}
+              </div>
+              <CaretRight size={12} weight="bold" className="text-[#CA8A04]" />
+            </div>
+
+            <p className="text-xs font-bold text-[#2D2825] truncate">
+              {(notes || [])[0] ? (notes || [])[0].text : 'แปะโน้ตบอกกัน'}
+            </p>
+            <p className="text-[10px] text-[#746C65] font-semibold truncate mt-0.5">
+              {(notes || [])[0] ? 'แตะดูทั้งหมด' : 'แตะเพื่อแปะโน้ต'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-bold text-[#5F8D75] shrink-0">
-          <span>รางวัล</span>
-          <CaretRight size={13} weight="bold" />
-        </div>
-      </section>
-
-      {/* 2.1 Daily Quests Card (เควสต์งานบ้านประจำวัน แตะเลือกทำได้ทันที) */}
-      <section className="bg-white rounded-2xl p-3 border border-[#ECE7DF] shadow-2xs space-y-2">
-        <div
-          onClick={() => setShowQuests(!showQuests)}
-          className="flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-base">🎯</span>
-            <span className="text-xs font-black text-[#2D2825]">เควสต์งานบ้านวันนี้</span>
-            <span className="text-[10px] text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full font-bold">
-              รับสูงสุด +120 แต้ม
+        {/* Bottom: Quick Daily Chores Pills (ทำงานบ้านรับแต้มได้ทันที ไม่เกะกะ) */}
+        <div className="pt-2 border-t border-[#ECE7DF]/80">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-black text-[#746C65] flex items-center gap-1">
+              <span>🎯 เควสต์ด่วนวันนี้:</span>
+              <span className="text-[#5F8D75] font-bold">(แตะส่งรับแต้ม)</span>
             </span>
+            <span className="text-[10px] text-[#5F8D75] font-bold">รับสูงสุด +120</span>
           </div>
-          <span className="text-xs font-bold text-[#5F8D75]">
-            {showQuests ? 'ซ่อน ▲' : 'ดูเควสต์ทั้งหมด ▼'}
-          </span>
-        </div>
 
-        {showQuests && (
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#ECE7DF]">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {[
-              { id: 'dishes', name: 'ล้างจานชาม', emoji: '🧽', points: 25 },
+              { id: 'dishes', name: 'ล้างจาน', emoji: '🧽', points: 25 },
               { id: 'clean', name: 'กวาดถูบ้าน', emoji: '🧹', points: 20 },
-              { id: 'laundry', name: 'ซักผ้า-พับผ้า', emoji: '🧺', points: 25 },
+              { id: 'laundry', name: 'ซักผ้า', emoji: '🧺', points: 25 },
               { id: 'bed', name: 'จัดห้องนอน', emoji: '🛏️', points: 20 },
               { id: 'trash', name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
             ].map((q) => (
@@ -641,42 +661,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 key={q.id}
                 type="button"
                 onClick={() => openCreatePost('chore', q.id)}
-                className="flex items-center justify-between p-2 rounded-xl bg-[#FAF8F5] hover:bg-[#EEF4F0] border border-[#ECE7DF] hover:border-[#5F8D75]/40 transition-all text-left cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[#FAF8F5] hover:bg-[#EEF4F0] border border-[#ECE7DF] hover:border-[#5F8D75]/40 text-[#2D2825] text-[11px] font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer active:scale-95"
               >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-lg">{q.emoji}</span>
-                  <span className="text-[11px] font-bold text-[#2D2825] truncate">{q.name}</span>
-                </div>
-                <span className="text-[10px] font-black text-[#5F8D75] shrink-0">+{q.points}</span>
+                <span>{q.emoji}</span>
+                <span>{q.name}</span>
+                <span className="text-[9px] text-[#5F8D75] font-black">+{q.points}</span>
               </button>
             ))}
           </div>
-        )}
-      </section>
-
-      {/* 2.3 Fridge Sticky Note Glance Widget */}
-      <section
-        onClick={() => onNavigateTab && onNavigateTab('fridge')}
-        className="bg-gradient-to-r from-[#FFFBEB] via-[#FEF9C3]/40 to-white hover:bg-[#FFFBEB] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#FDE047]/60 shadow-2xs flex items-center justify-between gap-3 transition-colors"
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-xl shrink-0">📌</span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-black text-[#2D2825]">ตู้เย็นโน้ตของบ้าน</span>
-              <span className="text-[10px] bg-[#FEF08A] text-[#854D0E] font-bold px-1.5 py-0.5 rounded-full">
-                {(notes || []).length} โน้ต
-              </span>
-            </div>
-            <p className="text-[10px] text-[#746C65] truncate mt-0.5">
-              {(notes || [])[0] ? `"${(notes || [])[0].text}"` : 'แตะเพื่อเปิดตู้เย็น และแปะโพสต์อิทบอกคนในบ้าน'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 text-[11px] font-bold text-[#CA8A04] shrink-0">
-          <span>เปิดตู้เย็น</span>
-          <CaretRight size={13} weight="bold" />
         </div>
       </section>
 

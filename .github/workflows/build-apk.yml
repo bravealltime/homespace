@@ -63,9 +63,15 @@ jobs:
       - name: Prepare APK Output
         run: |
           mkdir -p output
-          APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" | head -n 1)
-          echo "Found APK at: $APK_PATH"
+          echo "=== Searching for APK ==="
+          APK_PATH=$(find . -name "*.apk" | head -n 1)
+          echo "Found APK: $APK_PATH"
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK generated"
+            exit 1
+          fi
           cp "$APK_PATH" output/HomeSpace.apk
+          ls -lh output/HomeSpace.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

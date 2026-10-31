@@ -227,6 +227,25 @@ export function initDb() {
       timestamp INTEGER NOT NULL,
       FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS family_sos_alerts (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      memberId TEXT NOT NULL,
+      memberName TEXT NOT NULL,
+      memberAvatar TEXT,
+      memberPhone TEXT,
+      latitude REAL,
+      longitude REAL,
+      mapsUrl TEXT,
+      address TEXT,
+      note TEXT,
+      status TEXT DEFAULT 'active',
+      resolvedBy TEXT,
+      resolvedAt INTEGER,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
   `);
 
   

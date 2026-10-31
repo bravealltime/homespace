@@ -1965,6 +1965,155 @@ app.post('/api/tree/add-drops', async (req, res) => {
   }
 });
 
+// ==========================================
+// 17. ONE-TAP FAMILY SOS (ปุ่มขอความช่วยเหลือด่วนประจำบ้าน)
+// ==========================================
+app.post('/api/sos/trigger', async (req, res) => {
+  try {
+    const {
+      memberId = 'member-fluke',
+      latitude,
+      longitude,
+      address = 'บ้านสุขใจ',
+      note = 'ต้องการความช่วยเหลือด่วน',
+    } = req.body;
+
+    const member = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
+    const memberName = member ? member.name : 'สมาชิกในบ้าน';
+    const memberAvatar = member ? (member.avatarType === 'image' ? member.avatarImage : member.avatar) : '🚨';
+    const memberPhone = member ? member.phone : '';
+
+    const timestamp = Date.now();
+    const alertId = `sos-${timestamp}-${Math.round(Math.random() * 1000)}`;
+
+    let mapsUrl = null;
+    if (latitude && longitude) {
+      mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    }
+
+    const tx = db.transaction(() => {
+      // 1. Insert into family_sos_alerts
+      db.prepare(`
+        INSERT INTO family_sos_alerts (id, familyId, memberId, memberName, memberAvatar, memberPhone, latitude, longitude, mapsUrl, address, note, status, timestamp)
+        VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+      `).run(
+        alertId,
+        memberId,
+        memberName,
+        memberAvatar,
+        memberPhone,
+        latitude || null,
+        longitude || null,
+        mapsUrl,
+        address,
+        note,
+        timestamp
+      );
+
+      // 2. Broadcast urgent notification to all OTHER members in the family
+      const otherMembers = db.prepare('SELECT id FROM members WHERE id != ?').all(memberId);
+      const insertNotif = db.prepare(`
+        INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+        VALUES (?, ?, ?, 'sos', ?, 0, ?)
+      `);
+
+      for (const m of otherMembers) {
+        const notifId = `notif-sos-${timestamp}-${m.id}`;
+        insertNotif.run(
+          notifId,
+          m.id,
+          memberId,
+          `🚨 ด่วนที่สุด! ${memberName} กดขอความช่วยเหลือ SOS! ตรวจสอบพิกัดและโทรกลับทันที`,
+          timestamp
+        );
+      }
+
+      // 3. Post to family feed so everyone sees it on their feed
+      const postId = `sos-post-${timestamp}`;
+      const caption = `🚨 สัญญาณขอความช่วยเหลือฉุกเฉิน (SOS) จาก ${memberName}!\nพิกัด: ${mapsUrl || address}\nกรุณาติดต่อหรือช่วยเหลือด่วน โทร 1669 หรือโทรกลับทันที`;
+      db.prepare(`
+        INSERT INTO posts (id, type, memberId, caption, photo, points, likes, timestamp)
+        VALUES (?, 'routine', ?, ?, NULL, 0, 0, ?)
+      `).run(postId, memberId, caption, timestamp);
+    });
+
+    tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after SOS alert:', err.message));
+
+    const created = db.prepare('SELECT * FROM family_sos_alerts WHERE id = ?').get(alertId);
+    res.json({ success: true, alert: created });
+  } catch (err) {
+    console.error('Error triggering SOS:', err);
+    res.status(500).json({ error: 'Failed to trigger SOS alert' });
+  }
+});
+
+app.get('/api/sos/active', (req, res) => {
+  try {
+    const alert = db.prepare(`
+      SELECT * FROM family_sos_alerts
+      WHERE status = 'active'
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `).get();
+
+    res.json({ activeAlert: alert || null });
+  } catch (err) {
+    console.error('Error fetching active SOS:', err);
+    res.status(500).json({ error: 'Failed to fetch active SOS alert' });
+  }
+});
+
+app.post('/api/sos/:id/resolve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { resolvedBy = 'member-fluke', note = 'ปลอดภัยแล้ว' } = req.body;
+
+    const alert = db.prepare('SELECT * FROM family_sos_alerts WHERE id = ?').get(id);
+    if (!alert) {
+      return res.status(404).json({ error: 'Alert not found' });
+    }
+
+    const timestamp = Date.now();
+    const resolver = db.prepare('SELECT name FROM members WHERE id = ?').get(resolvedBy);
+    const resolverName = resolver ? resolver.name : 'สมาชิกในบ้าน';
+
+    const tx = db.transaction(() => {
+      db.prepare(`
+        UPDATE family_sos_alerts
+        SET status = 'resolved', resolvedBy = ?, resolvedAt = ?, note = ?
+        WHERE id = ?
+      `).run(resolvedBy, timestamp, note, id);
+
+      // Notify family that situation is safe
+      const allMembers = db.prepare('SELECT id FROM members').all();
+      const insertNotif = db.prepare(`
+        INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+        VALUES (?, ?, ?, 'sos_resolved', ?, 0, ?)
+      `);
+
+      for (const m of allMembers) {
+        const notifId = `notif-safe-${timestamp}-${m.id}`;
+        insertNotif.run(
+          notifId,
+          m.id,
+          resolvedBy,
+          `✅ สัญญาณ SOS ได้รับการดูแลและยกเลิกแล้ว (${resolverName} แจ้งว่าปลอดภัยแล้ว)`,
+          timestamp
+        );
+      }
+    });
+
+    tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after resolve SOS:', err.message));
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error resolving SOS:', err);
+    res.status(500).json({ error: 'Failed to resolve SOS alert' });
+  }
+});
+
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {

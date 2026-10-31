@@ -41,6 +41,7 @@ import DesktopLeftSidebar from './components/DesktopLeftSidebar';
 import DesktopRightSidebar from './components/DesktopRightSidebar';
 import HomeHandbookModal from './components/HomeHandbookModal';
 import { FamilyGardenModal } from './components/FamilyTreeGarden';
+import EmergencySosModal, { EmergencySosBanner } from './components/EmergencySosModal';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -96,6 +97,8 @@ function AppContent() {
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
   const [homeHandbookOpen, setHomeHandbookOpen] = useState(false);
   const [familyGardenOpen, setFamilyGardenOpen] = useState(false);
+  const [sosModalOpen, setSosModalOpen] = useState(false);
+  const [sosInitialCountdown, setSosInitialCountdown] = useState(true);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
@@ -159,6 +162,10 @@ function AppContent() {
           onViewMemberProfile={handleViewMember}
           onOpenHandbook={() => setHomeHandbookOpen(true)}
           onOpenGarden={() => setFamilyGardenOpen(true)}
+          onOpenSos={() => {
+            setSosInitialCountdown(!activeSosAlert);
+            setSosModalOpen(true);
+          }}
         />
       )}
       {activeTab === 'fridge' && (
@@ -202,6 +209,10 @@ function AppContent() {
           onOpenAdmin={() => setFamilyAdminOpen(true)}
           onOpenMembers={() => setFamilyMembersOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
+          onOpenSos={() => {
+            setSosInitialCountdown(!activeSosAlert);
+            setSosModalOpen(true);
+          }}
         />
       </div>
 
@@ -221,8 +232,22 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right Actions: Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Members (👥) */}
+        {/* Right Actions: SOS (🚨) + Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Members (👥) */}
         <div className="flex items-center gap-1 shrink-0">
+          {/* Emergency SOS Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setSosInitialCountdown(!activeSosAlert);
+              setSosModalOpen(true);
+            }}
+            className="h-7.5 px-2 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+            title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
+          >
+            <span className="text-xs">🚨</span>
+            <span className="font-mono">SOS</span>
+          </button>
+
           {/* Senior & Easy-Reading Mode Toggle */}
           <button
             type="button"
@@ -338,6 +363,14 @@ function AppContent() {
         </div>
       </header>
 
+      {/* Persistent SOS Emergency Alert Banner (Active when SOS is triggered) */}
+      <EmergencySosBanner
+        onOpenSosModal={() => {
+          setSosInitialCountdown(false);
+          setSosModalOpen(true);
+        }}
+      />
+
       {/* 3. Facebook 3-Column Desktop View (Screens >= 1024px) */}
       <div className="hidden lg:flex flex-1 min-h-0 w-full max-w-[1440px] mx-auto justify-between px-3 xl:px-6 overflow-hidden">
         {/* Left Sidebar */}
@@ -446,6 +479,11 @@ function AppContent() {
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
       <HomeHandbookModal isOpen={homeHandbookOpen} onClose={() => setHomeHandbookOpen(false)} />
       <FamilyGardenModal isOpen={familyGardenOpen} onClose={() => setFamilyGardenOpen(false)} />
+      <EmergencySosModal
+        isOpen={sosModalOpen}
+        onClose={() => setSosModalOpen(false)}
+        initialCountdown={sosInitialCountdown}
+      />
       <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}

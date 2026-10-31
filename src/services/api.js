@@ -364,3 +364,22 @@ export async function addWaterDrops(amount = 1) {
     body: JSON.stringify({ amount }),
   });
 }
+
+// 12. One-Tap Family SOS (ปุ่มขอความช่วยเหลือด่วนประจำบ้าน)
+export async function triggerSos(sosData) {
+  return request('/sos/trigger', {
+    method: 'POST',
+    body: JSON.stringify(sosData),
+  });
+}
+
+export async function fetchActiveSos() {
+  return request('/sos/active');
+}
+
+export async function resolveSos(alertId, resolvedBy, note) {
+  return request(`/sos/${alertId}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ resolvedBy, note }),
+  });
+}

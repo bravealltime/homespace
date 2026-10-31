@@ -35,6 +35,11 @@ export function exportDbToJson() {
       chore_history: db.prepare('SELECT * FROM chore_history').all(),
       family_notes: db.prepare('SELECT * FROM family_notes').all(),
       family_milestones: db.prepare('SELECT * FROM family_milestones').all(),
+      home_contacts: db.prepare('SELECT * FROM home_contacts').all(),
+      home_maintenance: db.prepare('SELECT * FROM home_maintenance').all(),
+      family_tree: db.prepare('SELECT * FROM family_tree').all(),
+      tree_watering_log: db.prepare('SELECT * FROM tree_watering_log').all(),
+      family_sos_alerts: db.prepare('SELECT * FROM family_sos_alerts').all(),
     };
   } catch (err) {
     console.error('[CloudSync] exportDbToJson error:', err.message);
@@ -284,6 +289,61 @@ export function importJsonToDb(data) {
             typeof m.taggedMemberIds === 'string' ? m.taggedMemberIds : JSON.stringify(m.taggedMemberIds || []),
             m.timestamp || Date.now()
           );
+        }
+      }
+
+      // 14. Home Contacts
+      if (Array.isArray(data.home_contacts)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO home_contacts (id, familyId, name, phone, category, emoji, note, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const c of data.home_contacts) {
+          stmt.run(c.id, c.familyId || 'family-main', c.name, c.phone, c.category || 'technician', c.emoji || '📞', c.note || null, c.createdAt || Date.now());
+        }
+      }
+
+      // 15. Home Maintenance
+      if (Array.isArray(data.home_maintenance)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO home_maintenance (id, familyId, title, category, emoji, frequencyMonths, lastServicedDate, nextDueDate, cost, technicianPhone, note, updatedAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const m of data.home_maintenance) {
+          stmt.run(m.id, m.familyId || 'family-main', m.title, m.category || 'air', m.emoji || '❄️', m.frequencyMonths || 6, m.lastServicedDate || null, m.nextDueDate || null, m.cost || null, m.technicianPhone || null, m.note || null, m.updatedAt || Date.now());
+        }
+      }
+
+      // 16. Family Tree
+      if (Array.isArray(data.family_tree) && data.family_tree.length > 0) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO family_tree (id, familyId, waterDrops, exp, maxExp, level, stage, totalWatered, updatedAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const t of data.family_tree) {
+          stmt.run(t.id, t.familyId || 'family-main', t.waterDrops || 0, t.exp || 0, t.maxExp || 20, t.level || 1, t.stage || 'sprout', t.totalWatered || 0, t.updatedAt || Date.now());
+        }
+      }
+
+      // 17. Tree Watering Log
+      if (Array.isArray(data.tree_watering_log)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO tree_watering_log (id, treeId, memberId, amount, message, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        for (const l of data.tree_watering_log) {
+          stmt.run(l.id, l.treeId || 'tree-main', l.memberId, l.amount || 1, l.message || null, l.timestamp || Date.now());
+        }
+      }
+
+      // 18. Family SOS Alerts
+      if (Array.isArray(data.family_sos_alerts)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO family_sos_alerts (id, familyId, memberId, memberName, memberAvatar, memberPhone, latitude, longitude, mapsUrl, address, note, status, resolvedBy, resolvedAt, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const a of data.family_sos_alerts) {
+          stmt.run(a.id, a.familyId || 'family-main', a.memberId, a.memberName, a.memberAvatar || null, a.memberPhone || null, a.latitude || null, a.longitude || null, a.mapsUrl || null, a.address || null, a.note || null, a.status || 'active', a.resolvedBy || null, a.resolvedAt || null, a.timestamp || Date.now());
         }
       }
     });

@@ -113,6 +113,9 @@ function reducer(state, action) {
     case 'SET_TREE_STATE':
       return { ...state, treeState: action.payload };
 
+    case 'SET_ACTIVE_SOS':
+      return { ...state, activeSosAlert: action.payload };
+
     case 'SET_REWARDS_DATA':
       return {
         ...state,
@@ -385,6 +388,7 @@ function getInitialState() {
       totalWatered: 0,
       recentLogs: [],
     },
+    activeSosAlert: null,
     backendVotes: {},
     backendMemberScores: {},
     totalScoreMonth: 0,
@@ -458,6 +462,10 @@ export function AppProvider({ children }) {
       if (backendTree && backendTree.level !== undefined) {
         dispatch({ type: 'SET_TREE_STATE', payload: backendTree });
       }
+
+      // Sync Active Family SOS Alert (สัญญาณขอความช่วยเหลือฉุกเฉิน)
+      const sosRes = await api.fetchActiveSos().catch(() => null);
+      dispatch({ type: 'SET_ACTIVE_SOS', payload: sosRes?.activeAlert || null });
     } catch (err) {
       // Backend momentarily restarting; silent fallback
     }
@@ -909,6 +917,34 @@ export function AppProvider({ children }) {
     }
   };
 
+  const triggerSos = async (data = {}) => {
+    try {
+      const res = await api.triggerSos({
+        memberId: currentUser?.id || 'member-fluke',
+        ...data,
+      });
+      if (res?.alert) {
+        dispatch({ type: 'SET_ACTIVE_SOS', payload: res.alert });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend trigger SOS error:', err.message);
+      throw err;
+    }
+  };
+
+  const resolveSos = async (alertId, note = 'ปลอดภัยแล้ว') => {
+    try {
+      await api.resolveSos(alertId, currentUser?.id || 'member-fluke', note);
+      dispatch({ type: 'SET_ACTIVE_SOS', payload: null });
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend resolve SOS error:', err.message);
+      throw err;
+    }
+  };
+
   const [language, setLanguage] = useState(() => {
     try {
       return localStorage.getItem('hs_language') || 'th';
@@ -1062,6 +1098,9 @@ export function AppProvider({ children }) {
     },
     waterTree,
     addWaterDrops,
+    activeSosAlert: state.activeSosAlert || null,
+    triggerSos,
+    resolveSos,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

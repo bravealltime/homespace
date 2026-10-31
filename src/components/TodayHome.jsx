@@ -96,7 +96,7 @@ function timeAgo(timestamp, lang = 'th') {
   return `${days} วันที่แล้ว`;
 }
 
-export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden }) {
+export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden, onOpenSos }) {
   const { currentUser, isAdmin } = useAuth();
   const {
     members,
@@ -789,9 +789,49 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               <span>🏡</span>
               <span>คู่มือบ้าน & เบอร์ช่าง</span>
             </button>
+
+            {/* Quick SOS Emergency Button */}
+            <button
+              type="button"
+              onClick={onOpenSos}
+              className="px-2.5 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-[11px] font-black flex items-center gap-1 shrink-0 transition-all cursor-pointer active:scale-95 animate-pulse"
+              title="ขอความช่วยเหลือฉุกเฉิน (SOS)"
+            >
+              <span>🚨</span>
+              <span>ขอความช่วยเหลือ SOS</span>
+            </button>
           </div>
         </div>
       </section>
+
+      {/* Senior Mode Prominent SOS Card */}
+      {seniorMode && (
+        <section
+          onClick={onOpenSos}
+          className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-md flex items-center justify-between cursor-pointer group hover:opacity-95 transition-all select-none active:scale-98"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-2xl border border-white/30 shrink-0 animate-bounce">
+              🚨
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-black truncate flex items-center gap-2">
+                <span>ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)</span>
+                <span className="text-[10px] bg-white text-red-600 px-2 py-0.5 rounded-full font-black">1-Tap</span>
+              </h3>
+              <p className="text-xs text-rose-100 truncate">
+                โทร 1669 กู้ชีพ และส่งพิกัด GPS ถึงทุกคนในบ้านทันที
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="px-3.5 py-2 rounded-xl bg-white text-red-600 font-black text-xs sm:text-sm shrink-0 shadow-xs group-hover:scale-105 transition-transform"
+          >
+            ขอความช่วยเหลือ →
+          </button>
+        </section>
+      )}
 
       {/* 2.5 Family Happiness Garden (ต้นไม้ความสุขของบ้าน) */}
       <FamilyTreeCard onOpenGarden={onOpenGarden} />

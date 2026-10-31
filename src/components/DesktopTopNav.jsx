@@ -24,6 +24,7 @@ export default function DesktopTopNav({
   onOpenAdmin,
   onOpenMembers,
   onOpenProfile,
+  onOpenSos,
 }) {
   const { currentUser, currentFamily, isAdmin, pendingRequests } = useAuth();
   const {
@@ -181,6 +182,17 @@ export default function DesktopTopNav({
               {unreadCount}
             </span>
           )}
+        </button>
+
+        {/* Red Emergency SOS Button */}
+        <button
+          type="button"
+          onClick={onOpenSos}
+          className="h-8 px-3 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+          title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
+        >
+          <span className="text-sm">🚨</span>
+          <span className="tracking-wide">SOS</span>
         </button>
 
         {/* User Profile Pill (Avatar + Name) */}

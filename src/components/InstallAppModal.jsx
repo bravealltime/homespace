@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, DeviceMobile, ShareNetwork, PlusSquare, DotsThreeVertical, CheckCircle, ArrowSquareOut, DownloadSimple } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
+import HomeSpaceLogo from './HomeSpaceLogo';
 
 export default function InstallAppModal({ isOpen, onClose }) {
   const { deferredInstallPrompt, isStandalone, language, t } = useApp();
@@ -47,9 +48,7 @@ export default function InstallAppModal({ isOpen, onClose }) {
         {/* Header */}
         <div className="p-4 border-b border-[#ECE7DF] flex items-center justify-between bg-[#FAF8F5]">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#5F8D75] text-white flex items-center justify-center text-base shadow-xs">
-              📲
-            </div>
+            <HomeSpaceLogo size={32} rounded="rounded-xl" className="shadow-xs" />
             <div>
               <h2 className="text-sm font-black text-[#2D2825]">ติดตั้ง HomeSpace ลงมือถือ</h2>
               <p className="text-[10px] text-[#746C65]">เปิดแบบเต็มจอ ไม่ต้องโหลดผ่าน Store</p>

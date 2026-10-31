@@ -35,6 +35,7 @@ import DigitalFridgeBoard from './components/DigitalFridgeBoard';
 import FamilyCalendarView from './components/FamilyCalendarView';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstallAppModal from './components/InstallAppModal';
+import HomeSpaceLogo from './components/HomeSpaceLogo';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -155,9 +156,7 @@ function AppContent() {
           }}
           className="flex items-center gap-2 cursor-pointer shrink-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-[#5F8D75] text-white flex items-center justify-center text-base shadow-xs">
-            🏡
-          </div>
+          <HomeSpaceLogo size={34} rounded="rounded-xl" className="shadow-xs" />
           <div>
             <h1 className="text-sm font-black text-[#2D2825] leading-tight tracking-tight">HomeSpace</h1>
             <p className="text-[9px] text-[#746C65]">{t('appSubtitle', 'บันทึกความสุขของบ้าน')}</p>

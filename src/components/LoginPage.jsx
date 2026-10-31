@@ -18,6 +18,7 @@ import {
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
+import HomeSpaceLogo from './HomeSpaceLogo';
 
 const EMOJI_AVATARS = ['😊', '😎', '🥰', '😄', '🤗', '👨', '👩', '👧', '👦', '👶', '🧑', '👴', '👵', '🐱', '🐶', '🌻', '⭐'];
 
@@ -225,8 +226,8 @@ export default function LoginPage() {
     >
       {/* Brand Header */}
       <header className="pt-5 pb-2 text-center max-w-sm mx-auto w-full">
-        <div className="w-14 h-14 rounded-3xl bg-[#5F8D75] text-white mx-auto flex items-center justify-center text-3xl shadow-xs mb-2">
-          🏡
+        <div className="mx-auto flex items-center justify-center mb-2.5">
+          <HomeSpaceLogo size={62} rounded="rounded-3xl" className="shadow-md" />
         </div>
         <h1 className="text-xl font-black tracking-tight text-[#2D2825]">HomeSpace</h1>
         <p className="text-xs text-[#746C65] mt-0.5">บันทึกความสุขและงานบ้านครอบครัว</p>

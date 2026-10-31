@@ -1,4 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#5F8D75"/>
-  <text x="16" y="23" text-anchor="middle" font-size="18">🏠</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Warm Radiant Sunset Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9371"/>
+      <stop offset="45%" stop-color="#FA7850"/>
+      <stop offset="100%" stop-color="#D95432"/>
+    </linearGradient>
+
+    <!-- Warm Golden Hearth Glow -->
+    <radialGradient id="sunGlow" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FFF9EE" stop-opacity="0.38"/>
+      <stop offset="60%" stop-color="#FFE7C4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FFE7C4" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Soft Ambient Warm Hearth Doorway -->
+    <linearGradient id="hearthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3E0"/>
+      <stop offset="100%" stop-color="#FFE0B2"/>
+    </linearGradient>
+
+    <!-- Loving Heart Gradient -->
+    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5E62"/>
+      <stop offset="100%" stop-color="#E8304C"/>
+    </linearGradient>
+
+    <!-- Drop Shadow for Cottage -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#7A2209" flood-opacity="0.22"/>
+    </filter>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect x="12" y="12" width="488" height="488" rx="112" fill="url(#bgGrad)" />
+
+  
+  <!-- Ambient Sun Glow Overlay -->
+  <circle cx="256" cy="200" r="230" fill="url(#sunGlow)"/>
+
+  <!-- Subtle Rim Light -->
+  <rect x="14" y="14" width="484" height="484" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="4"/>
+  
+
+  <!-- MAIN ILLUSTRATION (Grouped with soft shadow) -->
+  <g filter="url(#softShadow)">
+
+    <!-- Cozy Chimney -->
+    <path d="M 334 145 L 372 145 L 372 215 L 334 190 Z" fill="#FFF8F0" />
+    <rect x="330" y="138" width="46" height="10" rx="4" fill="#FFEFE2" />
+
+    <!-- Cute Heart-shaped Chimney Smoke -->
+    <path d="M 353 118 C 353 118, 345 109, 340 105 C 334 100, 334 92, 340 86 C 346 81, 353 87, 353 88 C 353 87, 360 81, 366 86 C 372 92, 372 100, 366 105 Z"
+          fill="#FFF9F5" opacity="0.92" />
+    <path d="M 368 76 C 368 76, 363 70, 360 67 C 356 63, 356 58, 360 54 C 364 51, 368 55, 368 56 C 368 55, 372 51, 376 54 C 380 58, 380 63, 376 67 Z"
+          fill="#FFF9F5" opacity="0.75" />
+
+    <!-- Cottage House Base -->
+    <rect x="136" y="222" width="240" height="188" rx="28" fill="#FFFDF8" />
+
+    <!-- Roof Eaves (Cozy Overhang with Rounded Caps) -->
+    <path d="M 96 238 L 256 112 L 416 238"
+          fill="none"
+          stroke="#FFFFFF"
+          stroke-width="32"
+          stroke-linecap="round"
+          stroke-linejoin="round" />
+
+    <!-- Roof Inner Warm Trim -->
+    <path d="M 116 235 L 256 126 L 396 235"
+          fill="none"
+          stroke="#FFEFE6"
+          stroke-width="12"
+          stroke-linecap="round"
+          stroke-linejoin="round" />
+
+    <!-- Warm Hearth Arch Doorway (Light and Safety) -->
+    <path d="M 194 410 L 194 316 C 194 282, 318 282, 318 316 L 318 410 Z"
+          fill="url(#hearthGrad)" />
+
+    <!-- FAMILY MEMBERS (Warm, Loving Embrace) -->
+    <g filter="url(#subtleShadow)">
+      <!-- Left Parent (Mother/Father) -->
+      <!-- Head -->
+      <circle cx="222" cy="302" r="16" fill="#5A2E1F" />
+      <!-- Torso / Arm leaning lovingly inward -->
+      <path d="M 194 410 C 194 346, 238 340, 240 410 Z" fill="#5A2E1F" />
+
+      <!-- Right Parent (Father/Mother) -->
+      <!-- Head -->
+      <circle cx="290" cy="302" r="16" fill="#5A2E1F" />
+      <!-- Torso / Arm leaning lovingly inward -->
+      <path d="M 272 410 C 274 340, 318 346, 318 410 Z" fill="#5A2E1F" />
+
+      <!-- Center Child / Little One (Nestled safely in the middle) -->
+      <!-- Head -->
+      <circle cx="256" cy="326" r="13" fill="#E25C37" />
+      <!-- Torso -->
+      <path d="M 234 410 C 235 362, 277 362, 278 410 Z" fill="#E25C37" />
+
+      <!-- Little Heart floating right above family center -->
+      <path d="M 256 285 C 256 285, 244 272, 237 266 C 230 259, 230 248, 238 241 C 246 234, 256 242, 256 244 C 256 242, 266 234, 274 241 C 282 248, 282 259, 275 266 Z"
+            fill="url(#heartGrad)" />
+    </g>
+
+    <!-- HomeSpace Brand Nature Sprout Accent (#5F8D75 Sage Green) -->
+    <g transform="translate(108, 376)">
+      <!-- Little Stem -->
+      <path d="M 12 34 Q 10 18, 16 10" fill="none" stroke="#5F8D75" stroke-width="4" stroke-linecap="round"/>
+      <!-- Left Leaf -->
+      <path d="M 14 14 C 4 11, 2 1, 14 6 C 16 11, 16 13, 14 14 Z" fill="#5F8D75"/>
+      <!-- Right Leaf -->
+      <path d="M 16 20 C 27 17, 28 8, 18 12 C 16 16, 16 19, 16 20 Z" fill="#78A68E"/>
+    </g>
+
+    <!-- Warm Ambient Sparkles (Family Joy) -->
+    <!-- Top-left sparkle -->
+    <path d="M 142 165 Q 142 177, 130 177 Q 142 177, 142 189 Q 142 177, 154 177 Q 142 177, 142 165 Z" fill="#FFF2B8" opacity="0.95"/>
+    <circle cx="158" cy="162" r="3" fill="#FFF2B8" opacity="0.8"/>
+
+    <!-- Right sparkle -->
+    <path d="M 388 270 Q 388 280, 378 280 Q 388 280, 388 290 Q 388 280, 398 280 Q 388 280, 388 270 Z" fill="#FFF2B8" opacity="0.9"/>
+  </g>
 </svg>

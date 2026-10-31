@@ -1463,7 +1463,16 @@ app.delete('/api/notes/:id', async (req, res) => {
 app.get('/api/milestones', (req, res) => {
   try {
     const milestones = db.prepare('SELECT * FROM family_milestones ORDER BY date ASC').all();
-    res.json(milestones);
+    const parsed = milestones.map((m) => {
+      let tags = [];
+      try {
+        tags = JSON.parse(m.taggedMemberIds || '[]');
+      } catch {
+        tags = [];
+      }
+      return { ...m, taggedMemberIds: tags };
+    });
+    res.json(parsed);
   } catch (err) {
     console.error('Error fetching milestones:', err);
     res.status(500).json({ error: 'Failed to fetch milestones' });
@@ -1472,20 +1481,45 @@ app.get('/api/milestones', (req, res) => {
 
 app.post('/api/milestones', async (req, res) => {
   try {
-    const { title, date, emoji = '🎂', category = 'event', memberId } = req.body;
+    const { title, date, emoji = '🎂', category = 'event', memberId, taggedMemberIds = [] } = req.body;
     if (!title || !title.trim() || !date) {
       return res.status(400).json({ error: 'Title and date required' });
     }
     const id = `milestone-${Date.now()}`;
     const timestamp = Date.now();
+    const taggedStr = typeof taggedMemberIds === 'string' ? taggedMemberIds : JSON.stringify(taggedMemberIds);
+
     db.prepare(`
-      INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
-      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?)
-    `).run(id, title.trim(), date, emoji, category, memberId || null, timestamp);
+      INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, taggedMemberIds, timestamp)
+      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, title.trim(), date, emoji, category, memberId || null, taggedStr, timestamp);
+
+    // Send notifications to all tagged family members (except creator)
+    if (Array.isArray(taggedMemberIds) && taggedMemberIds.length > 0) {
+      const creator = memberId ? db.prepare('SELECT name FROM members WHERE id = ?').get(memberId) : null;
+      const creatorName = creator?.name || 'สมาชิกในบ้าน';
+      const formattedDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      for (const taggedId of taggedMemberIds) {
+        if (taggedId !== memberId) {
+          db.prepare(`
+            INSERT INTO notifications (id, recipientId, senderId, type, text, isRead, timestamp)
+            VALUES (?, ?, ?, 'milestone_tag', ?, 0, ?)
+          `).run(
+            `notif-tag-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            taggedId,
+            memberId || 'system',
+            `📅 ${creatorName} ได้แท็กคุณในนัดหมาย: "${title.trim()}" (${formattedDate})`,
+            Date.now()
+          );
+        }
+      }
+    }
 
     await pushToCloud().catch(err => console.warn('Push cloud after milestone:', err.message));
     const created = db.prepare('SELECT * FROM family_milestones WHERE id = ?').get(id);
-    res.json({ success: true, milestone: created });
+    let tags = [];
+    try { tags = JSON.parse(created.taggedMemberIds || '[]'); } catch { tags = []; }
+    res.json({ success: true, milestone: { ...created, taggedMemberIds: tags } });
   } catch (err) {
     console.error('Error creating milestone:', err);
     res.status(500).json({ error: 'Failed to create milestone' });

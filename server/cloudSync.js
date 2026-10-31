@@ -261,9 +261,16 @@ export function importJsonToDb(data) {
 
       // 13. Family Milestones (วันสำคัญ & นับถอยหลัง)
       if (Array.isArray(data.family_milestones)) {
+        if (data.family_milestones.length > 0) {
+          const ids = data.family_milestones.map(m => m.id);
+          const q = ids.map(() => '?').join(',');
+          db.prepare(`DELETE FROM family_milestones WHERE id NOT IN (${q})`).run(...ids);
+        } else {
+          db.prepare('DELETE FROM family_milestones').run();
+        }
         const stmt = db.prepare(`
-          INSERT OR REPLACE INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO family_milestones (id, familyId, title, date, emoji, category, memberId, taggedMemberIds, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const m of data.family_milestones) {
           stmt.run(
@@ -274,6 +281,7 @@ export function importJsonToDb(data) {
             m.emoji || '🎂',
             m.category || 'event',
             m.memberId || null,
+            typeof m.taggedMemberIds === 'string' ? m.taggedMemberIds : JSON.stringify(m.taggedMemberIds || []),
             m.timestamp || Date.now()
           );
         }

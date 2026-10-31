@@ -736,6 +736,7 @@ export function AppProvider({ children }) {
       emoji: milestoneData.emoji || '🎂',
       category: milestoneData.category || 'event',
       memberId: milestoneData.memberId || currentUser?.id,
+      taggedMemberIds: milestoneData.taggedMemberIds || [],
       timestamp: Date.now(),
     };
     dispatch({ type: 'ADD_MILESTONE', payload: newMilestone });

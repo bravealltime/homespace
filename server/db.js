@@ -175,6 +175,7 @@ export function initDb() {
       emoji TEXT DEFAULT '🎂',
       category TEXT DEFAULT 'event',
       memberId TEXT,
+      taggedMemberIds TEXT DEFAULT '[]',
       timestamp INTEGER NOT NULL
     );
   `);
@@ -246,6 +247,12 @@ export function initDb() {
     db.prepare("UPDATE families SET adminMemberId = 'member-fluke' WHERE id = 'family-main'").run();
     db.exec("UPDATE members SET familyId = 'family-main' WHERE familyId IS NULL");
     db.exec("UPDATE members SET status = 'active' WHERE status IS NULL");
+
+    // Ensure family_milestones has taggedMemberIds
+    const milestoneCols = db.prepare('PRAGMA table_info(family_milestones)').all().map(c => c.name);
+    if (!milestoneCols.includes('taggedMemberIds')) {
+      db.exec("ALTER TABLE family_milestones ADD COLUMN taggedMemberIds TEXT DEFAULT '[]'");
+    }
   } catch (err) {
     console.warn('Migration warning:', err.message);
   }

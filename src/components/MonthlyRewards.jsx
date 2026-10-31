@@ -13,6 +13,7 @@ import {
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import FamilySummary from './FamilySummary';
 
 function MemberAvatar({ member, size = 'sm' }) {
   const sizeMap = {
@@ -54,6 +55,7 @@ export default function MonthlyRewards() {
     addReward,
   } = useApp();
 
+  const [subTab, setSubTab] = useState('rewards');
   const [votedRewardId, setVotedRewardId] = useState(null);
   const [isProposeOpen, setIsProposeOpen] = useState(false);
   const [proposeName, setProposeName] = useState('');
@@ -108,8 +110,38 @@ export default function MonthlyRewards() {
 
   return (
     <div className="space-y-4 pb-24">
-      {/* 1. Header Card */}
-      <section className="bg-white rounded-3xl p-4 sm:p-5 border border-[#ECE7DF] shadow-xs space-y-3.5">
+      {/* Subtab Switcher: Rewards vs Family Stats */}
+      <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-[#ECE7DF] shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setSubTab('rewards')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            subTab === 'rewards'
+              ? 'bg-[#5F8D75] text-white shadow-xs'
+              : 'text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5]'
+          }`}
+        >
+          🎁 ของรางวัลครอบครัว
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubTab('summary')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            subTab === 'summary'
+              ? 'bg-[#5F8D75] text-white shadow-xs'
+              : 'text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5]'
+          }`}
+        >
+          📊 สถิติบ้าน & กราฟ MVP
+        </button>
+      </div>
+
+      {subTab === 'summary' ? (
+        <FamilySummary />
+      ) : (
+        <>
+          {/* 1. Header Card */}
+          <section className="bg-white rounded-3xl p-4 sm:p-5 border border-[#ECE7DF] shadow-xs space-y-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-[#FDF1EB] text-[#E88D67] flex items-center justify-center text-xl shadow-2xs shrink-0">
@@ -418,6 +450,8 @@ export default function MonthlyRewards() {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

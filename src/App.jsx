@@ -16,6 +16,8 @@ import {
   ShieldCheck,
   Trash,
   TextAa,
+  PushPin,
+  CalendarBlank,
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
@@ -28,11 +30,14 @@ import SearchModal from './components/SearchModal';
 import FamilySummary from './components/FamilySummary';
 import MonthlyRewards from './components/MonthlyRewards';
 import FamilyAdminModal from './components/FamilyAdminModal';
+import DigitalFridgeBoard from './components/DigitalFridgeBoard';
+import FamilyCalendarView from './components/FamilyCalendarView';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
-  { id: 'my-feed', label: 'โพสต์ของฉัน', icon: UserCircle, subtitle: 'ฟีดและคอมเมนต์ของฉัน' },
-  { id: 'summary', label: 'สถิติบ้าน', icon: ChartBar, subtitle: 'อันดับ MVP & กราฟ' },
+  { id: 'fridge', label: 'ตู้เย็น', icon: PushPin, subtitle: 'กระดานโน้ตตู้เย็น' },
+  { id: 'calendar', label: 'ปฏิทิน', icon: CalendarBlank, subtitle: 'วันสำคัญ & แท็กคน' },
+  { id: 'my-feed', label: 'โพสต์ฉัน', icon: UserCircle, subtitle: 'ฟีดและคอมเมนต์ของฉัน' },
   { id: 'rewards', label: 'ของรางวัล', icon: Gift, subtitle: 'ปลดล็อก & โหวตของกิน' },
 ];
 
@@ -248,6 +253,17 @@ function AppContent() {
             <TodayHome
               onNavigateTab={setActiveTab}
               onViewMemberProfile={handleViewMember}
+            />
+          )}
+          {activeTab === 'fridge' && (
+            <DigitalFridgeBoard
+              isFullPage={true}
+              onNavigateTab={setActiveTab}
+            />
+          )}
+          {activeTab === 'calendar' && (
+            <FamilyCalendarView
+              onNavigateTab={setActiveTab}
             />
           )}
           {activeTab === 'my-feed' && (

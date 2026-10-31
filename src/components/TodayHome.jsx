@@ -99,6 +99,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     deleteComment,
     unlockedRewards,
     milestones,
+    notes,
   } = useApp();
 
   const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
@@ -545,7 +546,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
       {/* 2. Family Milestones & Countdown Widget (วันสำคัญ & นับถอยหลัง) */}
       {closestMilestone ? (
         <section
-          onClick={() => setMilestonesModalOpen(true)}
+          onClick={() => onNavigateTab && onNavigateTab('calendar')}
           className="bg-gradient-to-r from-[#FFF5EB] via-[#FFF9F5] to-white hover:bg-[#FFF5EB] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#E88D67]/30 shadow-2xs flex items-center justify-between gap-3 transition-colors"
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -564,23 +565,23 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
           </div>
 
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#E88D67] shrink-0">
-            <span>วันสำคัญ</span>
+            <span>ดูปฏิทิน</span>
             <CaretRight size={13} weight="bold" />
           </div>
         </section>
       ) : (
         <section
-          onClick={() => setMilestonesModalOpen(true)}
+          onClick={() => onNavigateTab && onNavigateTab('calendar')}
           className="bg-white hover:bg-[#FAF8F5] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-3 transition-colors"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xl shrink-0">🎂</span>
+            <span className="text-xl shrink-0">📅</span>
             <div className="min-w-0">
-              <span className="text-xs font-black text-[#2D2825]">วันสำคัญของบ้าน</span>
-              <p className="text-[10px] text-[#746C65]">แตะเพิ่มวันเกิด นัดหาหมอ หรือทริปเที่ยว</p>
+              <span className="text-xs font-black text-[#2D2825]">ปฏิทินวันสำคัญของบ้าน</span>
+              <p className="text-[10px] text-[#746C65]">แตะดูปฏิทิน นัดหมาย และแท็กคนในบ้าน</p>
             </div>
           </div>
-          <span className="text-[11px] font-bold text-[#5F8D75] shrink-0">+ เพิ่มวัน</span>
+          <span className="text-[11px] font-bold text-[#5F8D75] shrink-0">ดูปฏิทิน</span>
         </section>
       )}
 
@@ -653,8 +654,31 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         )}
       </section>
 
-      {/* 2.3 Digital Fridge Sticky Notes Board (กระดานตู้เย็นของบ้าน) */}
-      <DigitalFridgeBoard />
+      {/* 2.3 Fridge Sticky Note Glance Widget */}
+      <section
+        onClick={() => onNavigateTab && onNavigateTab('fridge')}
+        className="bg-gradient-to-r from-[#FFFBEB] via-[#FEF9C3]/40 to-white hover:bg-[#FFFBEB] cursor-pointer rounded-2xl p-2.5 px-3.5 border border-[#FDE047]/60 shadow-2xs flex items-center justify-between gap-3 transition-colors"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-xl shrink-0">📌</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-black text-[#2D2825]">ตู้เย็นโน้ตของบ้าน</span>
+              <span className="text-[10px] bg-[#FEF08A] text-[#854D0E] font-bold px-1.5 py-0.5 rounded-full">
+                {(notes || []).length} โน้ต
+              </span>
+            </div>
+            <p className="text-[10px] text-[#746C65] truncate mt-0.5">
+              {(notes || [])[0] ? `"${(notes || [])[0].text}"` : 'แตะเพื่อเปิดตู้เย็น และแปะโพสต์อิทบอกคนในบ้าน'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 text-[11px] font-bold text-[#CA8A04] shrink-0">
+          <span>เปิดตู้เย็น</span>
+          <CaretRight size={13} weight="bold" />
+        </div>
+      </section>
 
       {/* 3. Sleek Mobile Create Post Bar (แถบโพสต์เร็วแบบมินิมอล) */}
       <section className="bg-white rounded-2xl p-2 px-3 border border-[#ECE7DF] shadow-2xs flex items-center gap-2.5">

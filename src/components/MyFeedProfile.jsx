@@ -257,7 +257,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
   };
 
   return (
-    <div className="space-y-3.5 pb-24 animate-enter-rise select-none relative">
+    <div className="space-y-3.5 pb-24 animate-enter-rise relative">
       {/* Accessibility Toast */}
       {seniorToast && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#2D2825] text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl border border-white/20 animate-enter-rise flex items-center gap-2 pointer-events-none">

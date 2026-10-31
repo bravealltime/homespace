@@ -145,7 +145,7 @@ function AppContent() {
 
   // Phone App View (Rendered inside Phone Mockup or Centered on Desktop)
   return (
-    <div className={`relative w-full h-full min-h-full flex flex-col overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text ${seniorMode ? 'senior-mode' : ''}`}>
+    <div className={`relative w-full h-full flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text ${seniorMode ? 'senior-mode' : ''}`}>
       {/* Mobile Top Header - Ultra Clean & Elegant */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
         <div
@@ -284,7 +284,12 @@ function AppContent() {
       {/* Scrollable View Area */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain relative"
+        data-scrollable="true"
+        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden no-scrollbar relative scroll-area"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+        }}
       >
         <main className="w-full px-3.5 pt-3 pb-28">
           {activeTab === 'home' && (
@@ -638,8 +643,8 @@ function AppRouter() {
   );
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#EDE7DF] flex justify-center">
-      <div className="w-full max-w-md min-h-[100dvh] bg-[#FAF8F5] flex flex-col relative sm:border-x sm:border-[#ECE7DF] sm:shadow-xl overflow-hidden">
+    <div className="h-full h-[100dvh] w-full bg-[#EDE7DF] flex justify-center overflow-hidden">
+      <div className="w-full max-w-md h-full h-[100dvh] bg-[#FAF8F5] flex flex-col relative sm:border-x sm:border-[#ECE7DF] sm:shadow-xl overflow-hidden">
         {!isLoggedIn || isPending || hasInviteLink ? (
           <LoginPage />
         ) : (

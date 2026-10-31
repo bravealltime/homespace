@@ -25,6 +25,41 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Native fluid touch scrolling for Android & iOS WebViews */
+.scroll-area, [data-scrollable="true"] {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent button taps from capturing touch-drag gestures on Android */
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
 /* Smooth fluid animation system */
 :root {
   --ease-base: cubic-bezier(0.22, 1, 0.36, 1);

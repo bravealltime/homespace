@@ -215,7 +215,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full h-full bg-[#FAF8F5] flex flex-col justify-between p-4 text-[#2D2825] overflow-y-auto no-scrollbar select-none">
+    <div
+      data-scrollable="true"
+      className="w-full h-full flex-1 min-h-0 bg-[#FAF8F5] flex flex-col justify-between p-4 text-[#2D2825] overflow-y-auto no-scrollbar scroll-area"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+      }}
+    >
       {/* Brand Header */}
       <header className="pt-5 pb-2 text-center max-w-sm mx-auto w-full">
         <div className="w-14 h-14 rounded-3xl bg-[#5F8D75] text-white mx-auto flex items-center justify-center text-3xl shadow-xs mb-2">

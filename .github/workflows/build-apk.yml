@@ -35,12 +35,15 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Sync Capacitor Android
+      - name: Configure Android SDK
         run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           mkdir -p android/app/src/main/assets/public
           mkdir -p android/capacitor-cordova-android-plugins
-          npm run cap -- telemetry off || true
-          npm run cap -- sync android
+
+      - name: Sync Capacitor Android
+        run: |
+          node node_modules/@capacitor/cli/bin/capacitor sync android
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew

@@ -134,16 +134,6 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
 
   const [translations, setTranslations] = useState({});
 
-  useEffect(() => {
-    const isViewing = Boolean(storyViewer || viewingPhoto);
-    if (setIsViewingContent) {
-      setIsViewingContent(isViewing);
-    }
-    return () => {
-      if (setIsViewingContent) setIsViewingContent(false);
-    };
-  }, [storyViewer, viewingPhoto, setIsViewingContent]);
-
   const handleTranslate = async (key, text) => {
     if (!text) return;
     if (translations[key]?.isVisible) {
@@ -203,6 +193,17 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
   const [viewingPhoto, setViewingPhoto] = useState(null);
   const [copiedPostId, setCopiedPostId] = useState(null);
   const [showQuests, setShowQuests] = useState(false);
+
+  // Sync fullscreen viewing state with global AppContext for auto-hiding navigation bars
+  useEffect(() => {
+    const isViewing = Boolean(storyViewer || viewingPhoto);
+    if (setIsViewingContent) {
+      setIsViewingContent(isViewing);
+    }
+    return () => {
+      if (setIsViewingContent) setIsViewingContent(false);
+    };
+  }, [storyViewer, viewingPhoto, setIsViewingContent]);
 
   const storiesContainerRef = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);

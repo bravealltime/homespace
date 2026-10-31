@@ -150,9 +150,11 @@ function reducer(state, action) {
     }
 
     case 'ADD_ROUTINE_ENTRY': {
-      const { memberId, caption, photo, category, points } = action.payload;
+      const { memberId, caption, photo, photos, category, points } = action.payload;
       const today = new Date().toISOString().split('T')[0];
       const routineId = `routine-${Date.now()}`;
+      const postPhotos = Array.isArray(photos) && photos.length > 0 ? photos : (photo ? [photo] : []);
+      const primaryPhoto = postPhotos[0] || null;
 
       const historyEntry = {
         id: `hist-${routineId}`,
@@ -164,7 +166,7 @@ function reducer(state, action) {
         praiseEmoji: '⭐',
         date: today,
         timestamp: Date.now(),
-        imageUrl: photo || null,
+        imageUrl: primaryPhoto,
       };
 
       const newFeedPost = {
@@ -172,7 +174,8 @@ function reducer(state, action) {
         type: 'routine',
         memberId,
         caption,
-        photo,
+        photo: primaryPhoto,
+        photos: postPhotos,
         category: category || 'เรื่องราววันนี้',
         points: points || 25,
         timestamp: Date.now(),

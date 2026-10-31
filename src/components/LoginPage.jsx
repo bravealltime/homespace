@@ -224,8 +224,8 @@ export default function LoginPage() {
         touchAction: 'pan-y',
       }}
     >
-      {/* Brand Header */}
-      <header className="pt-5 pb-2 text-center max-w-sm mx-auto w-full">
+      {/* Mobile Brand Header (< 1024px) */}
+      <header className="lg:hidden pt-5 pb-2 text-center max-w-sm mx-auto w-full">
         <div className="mx-auto flex items-center justify-center mb-2.5">
           <HomeSpaceLogo size={62} rounded="rounded-3xl" className="shadow-md" />
         </div>
@@ -248,8 +248,49 @@ export default function LoginPage() {
         )}
       </header>
 
-      {/* Main Form Area */}
-      <main className="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center py-2">
+      {/* Main Container: 2-Column on Desktop (Facebook Style) & Centered on Mobile */}
+      <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-14 py-4">
+        {/* Desktop Left Hero (Hidden on Mobile) */}
+        <div className="hidden lg:flex flex-col max-w-md space-y-5 select-none">
+          <div className="flex items-center gap-3.5">
+            <HomeSpaceLogo size={74} rounded="rounded-3xl" className="shadow-md" />
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-[#2D2825]">HomeSpace</h1>
+              <p className="text-sm font-bold text-[#5F8D75]">Our Family Space · บันทึกความสุขของบ้าน</p>
+            </div>
+          </div>
+
+          <p className="text-base text-[#746C65] font-medium leading-relaxed">
+            พื้นที่สื่อสาร บันทึกเรื่องราวความร่วมมือ และงานบ้านของทุกคนในครอบครัว ให้ทุกวันในบ้านเต็มไปด้วยรอยยิ้มและความอบอุ่น
+          </p>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#ECE7DF] shadow-2xs">
+              <span className="text-2xl">🍯</span>
+              <div>
+                <p className="text-xs font-black text-[#2D2825]">สะสมแต้มงานบ้าน ปลดล็อกรางวัล</p>
+                <p className="text-[11px] text-[#746C65]">ส่งภาพผลงานก่อน-หลังทำ สะสมแต้มลงโหลรวมของบ้าน</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#ECE7DF] shadow-2xs">
+              <span className="text-2xl">📌</span>
+              <div>
+                <p className="text-xs font-black text-[#2D2825]">กระดานตู้เย็นดิจิทัล</p>
+                <p className="text-[11px] text-[#746C65]">แปะโน้ตเตือนความจำ ฝากข้อความถึงทุกคนในบ้านได้ทันที</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#ECE7DF] shadow-2xs">
+              <span className="text-2xl">📅</span>
+              <div>
+                <p className="text-xs font-black text-[#2D2825]">ปฏิทินครอบครัว & วันสำคัญ</p>
+                <p className="text-[11px] text-[#746C65]">นับถอยหลังวันเกิด กิจกรรมครอบครัว และนัดหมายสำคัญ</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Form Area */}
+        <main className="w-full max-w-sm flex flex-col justify-center py-2">
         {/* ==================================================== */}
         {/* 1. LOGIN MODE: เข้าสู่ระบบ (Phone + PIN 4 หลัก)       */}
         {/* ==================================================== */}
@@ -641,6 +682,7 @@ export default function LoginPage() {
           </div>
         )}
       </main>
+      </div>
 
       {/* Footer */}
       <footer className="py-2 text-center text-xs text-[#746C65]">

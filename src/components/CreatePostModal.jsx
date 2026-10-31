@@ -5,6 +5,8 @@ import {
   Broom,
   PencilSimple,
   CircleNotch,
+  Plus,
+  Images,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -80,15 +82,15 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
   // Caption text (fully editable by user)
   const [caption, setCaption] = useState('');
 
-  // Photos (user-uploaded only)
-  const [singlePhoto, setSinglePhoto] = useState(null);
+  // Photos (user-uploaded only - supports multiple photos)
+  const [photos, setPhotos] = useState([]);
   const [beforeImage, setBeforeImage] = useState(null);
   const [afterImage, setAfterImage] = useState(null);
 
   const [compressing, setCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const singleInputRef = useRef(null);
+  const photosInputRef = useRef(null);
   const beforeInputRef = useRef(null);
   const afterInputRef = useRef(null);
 
@@ -102,7 +104,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
       setIsCustomChore(false);
       setCustomChoreName('');
       setCaption('');
-      setSinglePhoto(null);
+      setPhotos([]);
       setBeforeImage(null);
       setAfterImage(null);
       setIsSubmitting(false);
@@ -111,19 +113,28 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
   }, [isOpen, initialMode, initialChoreId]);
 
   // Upload Handlers with Automatic Client-Side Compression
-  const handleSingleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handlePhotosUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
       try {
         setCompressing(true);
-        const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 });
-        setSinglePhoto(compressed);
+        const compressedList = await Promise.all(
+          files.map((file) =>
+            compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 })
+          )
+        );
+        setPhotos((prev) => [...prev, ...compressedList].slice(0, 10)); // max 10 photos
       } catch (err) {
-        console.warn('Compress single photo warning:', err);
+        console.warn('Compress photos warning:', err);
       } finally {
         setCompressing(false);
+        if (photosInputRef.current) photosInputRef.current.value = '';
       }
     }
+  };
+
+  const removePhoto = (index) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleBeforeUpload = async (e) => {
@@ -209,23 +220,28 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
           caption: finalCaption,
         });
       } else {
-        // General Lifestyle / Routine Story
+        // General Lifestyle / Routine Story (Supports Multiple Photos)
         const finalCaption = caption.trim() || 'แชร์เรื่องราวดี ๆ ร่วมกับทุกคนในบ้าน 💖';
 
-        let finalPhoto = null;
-        if (singlePhoto) {
-          try {
-            const res = await api.uploadBase64Image(singlePhoto, 'routine');
-            finalPhoto = res?.url || singlePhoto;
-          } catch {
-            finalPhoto = singlePhoto;
-          }
+        let uploadedPhotos = [];
+        if (photos.length > 0) {
+          uploadedPhotos = await Promise.all(
+            photos.map(async (p, idx) => {
+              try {
+                const res = await api.uploadBase64Image(p, `routine-${idx}`);
+                return res?.url || p;
+              } catch {
+                return p;
+              }
+            })
+          );
         }
 
         await addRoutineEntry({
           memberId,
           caption: finalCaption,
-          photo: finalPhoto,
+          photo: uploadedPhotos[0] || null,
+          photos: uploadedPhotos,
           category: 'เรื่องราววันนี้',
           points: 25,
           exp: 150,
@@ -425,50 +441,98 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
             </div>
 
             {mode === 'routine' ? (
-              /* Single Photo Box (General Post) */
-              <div>
-                <div
-                  onClick={() => singleInputRef.current?.click()}
-                  className="relative h-38 sm:h-44 rounded-2xl border-2 border-dashed border-[#ECE7DF] hover:border-[#5F8D75] bg-[#FAF8F5] cursor-pointer overflow-hidden flex flex-col items-center justify-center transition-all p-2 text-center group"
-                >
-                  {singlePhoto ? (
-                    <div className="relative w-full h-full">
-                      <img
-                        src={singlePhoto}
-                        alt="รูปกิจกรรม"
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSinglePhoto(null);
-                        }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                      <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-md font-bold">
-                        แตะเพื่อเปลี่ยนรูป
+              /* Multi-Photo Grid (General Post & Activity) */
+              <div className="space-y-2">
+                {photos.length > 0 ? (
+                  <div className="space-y-2">
+                    {/* Header info */}
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-[#5F8D75] flex items-center gap-1">
+                        <Images size={14} weight="bold" />
+                        <span>เลือกแล้ว {photos.length} รูป (ใส่ได้สูงสุด 10 รูป)</span>
                       </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {compressing ? (
-                        <CircleNotch size={28} className="mx-auto text-[#5F8D75] animate-spin" />
-                      ) : (
-                        <Camera size={28} className="mx-auto text-[#746C65] group-hover:scale-110 transition-transform" />
+                      {photos.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => photosInputRef.current?.click()}
+                          className="text-[#2563EB] hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <Plus size={13} weight="bold" />
+                          <span>เพิ่มรูปอีก</span>
+                        </button>
                       )}
-                      <p className="text-xs font-bold text-[#2D2825]">แตะถ่ายรูป หรือเลือกรูปจากเครื่อง</p>
-                      <p className="text-[10px] text-[#9E958D]">รองรับทั้งรูปกล้องและแกลเลอรี</p>
                     </div>
-                  )}
-                </div>
+
+                    {/* Thumbnails Grid */}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {photos.map((src, idx) => (
+                        <div
+                          key={idx}
+                          className="relative aspect-square rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 group"
+                        >
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(idx)}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/65 hover:bg-black text-white flex items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer transition-colors"
+                            title="ลบรูปนี้"
+                          >
+                            ✕
+                          </button>
+                          {idx === 0 && (
+                            <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-2xs">
+                              รูปหน้าปก
+                            </span>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Add More Tile */}
+                      {photos.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => photosInputRef.current?.click()}
+                          className="aspect-square rounded-2xl border-2 border-dashed border-[#ECE7DF] hover:border-[#5F8D75] bg-[#FAF8F5] flex flex-col items-center justify-center gap-1 text-[#746C65] hover:text-[#5F8D75] transition-all cursor-pointer group"
+                        >
+                          {compressing ? (
+                            <CircleNotch size={20} className="text-[#5F8D75] animate-spin" />
+                          ) : (
+                            <Plus size={20} weight="bold" className="group-hover:scale-110 transition-transform" />
+                          )}
+                          <span className="text-[10px] font-bold">เพิ่มรูป</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Empty state: big friendly drop zone */
+                  <div
+                    onClick={() => photosInputRef.current?.click()}
+                    className="relative h-38 sm:h-44 rounded-2xl border-2 border-dashed border-[#ECE7DF] hover:border-[#5F8D75] bg-[#FAF8F5] cursor-pointer overflow-hidden flex flex-col items-center justify-center transition-all p-3 text-center group"
+                  >
+                    <div className="space-y-1.5">
+                      {compressing ? (
+                        <CircleNotch size={32} className="mx-auto text-[#5F8D75] animate-spin" />
+                      ) : (
+                        <div className="w-11 h-11 mx-auto rounded-2xl bg-[#EEF4F0] text-[#5F8D75] flex items-center justify-center group-hover:scale-108 transition-transform shadow-2xs">
+                          <Images size={24} weight="bold" />
+                        </div>
+                      )}
+                      <p className="text-xs font-black text-[#2D2825]">
+                        แตะถ่ายรูป หรือเลือกรูปจากเครื่อง (ใส่ได้หลายรูป 📸)
+                      </p>
+                      <p className="text-[10px] text-[#746C65]">
+                        แชร์ภาพกิจกรรม ทริปครอบครัว หรือมื้ออร่อย ได้สูงสุด 10 รูป
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <input
-                  ref={singleInputRef}
+                  ref={photosInputRef}
                   type="file"
+                  multiple
                   accept="image/*"
-                  onChange={handleSingleUpload}
+                  onChange={handlePhotosUpload}
                   className="hidden"
                 />
               </div>

@@ -28,6 +28,7 @@ import {
 } from '../utils/speechHelper';
 import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
+import PostPhotoGrid from './PostPhotoGrid';
 import ProfileModal from './ProfileModal';
 
 function timeAgo(timestamp, lang = 'th') {
@@ -665,11 +666,13 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                     </div>
                   </div>
                 ) : (
-                  post.photo && (
+                  (post.photos?.length > 0 || post.photo) && (
                     <div className="px-3.5">
-                      <div className="w-full h-52 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5">
-                        <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover" />
-                      </div>
+                      <PostPhotoGrid
+                        photos={post.photos}
+                        singlePhoto={post.photo}
+                        alt={post.caption || 'รูปกิจกรรม'}
+                      />
                     </div>
                   )
                 )}

@@ -72,6 +72,7 @@ export function initDb() {
       praise TEXT,
       praiseEmoji TEXT,
       photo TEXT,
+      photos TEXT,
       beforeImage TEXT,
       afterImage TEXT,
       imageUrl TEXT,
@@ -195,6 +196,12 @@ export function initDb() {
     }
     if (!cols.includes('pin')) {
       db.exec("ALTER TABLE members ADD COLUMN pin TEXT DEFAULT '1234'");
+    }
+
+    // Ensure posts table has photos column
+    const postCols = db.prepare('PRAGMA table_info(posts)').all().map(c => c.name);
+    if (!postCols.includes('photos')) {
+      db.exec("ALTER TABLE posts ADD COLUMN photos TEXT");
     }
     // Ensure Fluke is the sole house owner & admin (0615678160)
     const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();

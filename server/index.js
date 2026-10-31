@@ -706,8 +706,19 @@ app.get('/api/posts', async (req, res) => {
     const enrichedPosts = posts.map(post => {
       const postComments = commentMap[post.id] || [];
       const likedSet = likesMap[post.id] || new Set();
+      let postPhotos = [];
+      if (post.photos) {
+        try {
+          postPhotos = typeof post.photos === 'string' ? JSON.parse(post.photos) : post.photos;
+        } catch {
+          postPhotos = [post.photos];
+        }
+      } else if (post.photo) {
+        postPhotos = [post.photo];
+      }
       return {
         ...post,
+        photos: postPhotos,
         comments: postComments,
         likes: likedSet.size,
         isLiked: currentMemberId ? likedSet.has(currentMemberId) : false,
@@ -814,6 +825,7 @@ app.post('/api/posts/routine', async (req, res) => {
       memberId,
       caption,
       photo,
+      photos,
       points = 25,
     } = req.body;
 
@@ -821,23 +833,40 @@ app.post('/api/posts/routine', async (req, res) => {
       return res.status(400).json({ error: 'memberId is required' });
     }
 
-    let finalPhoto = photo || null;
-    if (finalPhoto && finalPhoto.startsWith('data:image/')) {
-      finalPhoto = await uploadBase64ToSupabase(finalPhoto, 'routine');
+    let finalPhotos = [];
+    if (Array.isArray(photos) && photos.length > 0) {
+      for (const p of photos) {
+        if (p && p.startsWith('data:image/')) {
+          const up = await uploadBase64ToSupabase(p, 'routine');
+          finalPhotos.push(up);
+        } else if (p) {
+          finalPhotos.push(p);
+        }
+      }
+    } else if (photo) {
+      let p = photo;
+      if (p.startsWith('data:image/')) {
+        p = await uploadBase64ToSupabase(p, 'routine');
+      }
+      finalPhotos.push(p);
     }
+
+    const finalPhoto = finalPhotos[0] || null;
+    const photosJson = finalPhotos.length > 0 ? JSON.stringify(finalPhotos) : null;
 
     const postId = `routine-${Date.now()}`;
     const timestamp = Date.now();
 
     const tx = db.transaction(() => {
       db.prepare(`
-        INSERT INTO posts (id, type, memberId, caption, photo, points, likes, timestamp)
-        VALUES (?, 'routine', ?, ?, ?, ?, 0, ?)
+        INSERT INTO posts (id, type, memberId, caption, photo, photos, points, likes, timestamp)
+        VALUES (?, 'routine', ?, ?, ?, ?, ?, 0, ?)
       `).run(
         postId,
         memberId,
         caption || 'แชร์เรื่องราวดี ๆ ร่วมกับทุกคนในบ้าน 💖',
         finalPhoto,
+        photosJson,
         points,
         timestamp
       );
@@ -854,7 +883,7 @@ app.post('/api/posts/routine', async (req, res) => {
         points,
         dateStr,
         timestamp,
-        photo || null
+        finalPhoto || null
       );
     });
 
@@ -864,7 +893,7 @@ app.post('/api/posts/routine', async (req, res) => {
     const created = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     res.json({
       success: true,
-      post: { ...created, comments: [], likes: 0, isLiked: false },
+      post: { ...created, photos: finalPhotos, comments: [], likes: 0, isLiked: false },
     });
   } catch (err) {
     console.error('Error creating routine post:', err);

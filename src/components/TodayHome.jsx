@@ -34,6 +34,7 @@ import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
 import DigitalFridgeBoard from './DigitalFridgeBoard';
 import FamilyMilestonesModal, { getCountdownInfo } from './FamilyMilestonesModal';
+import PostPhotoGrid from './PostPhotoGrid';
 
 const MEMBER_THEMES = {
   'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -983,16 +984,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   </div>
                 )
               ) : (
-                /* Routine Lifestyle Photo */
-                post.photo && (
+                /* Routine / Activity Lifestyle Photos (Single or Multi-Photo Grid) */
+                (post.photos?.length > 0 || post.photo) && (
                   <div className="px-3.5">
-                    <div
-                      onClick={() => setViewingPhoto(post.photo)}
-                      className="w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-[#ECE7DF] bg-black/5 cursor-pointer group"
-                      title="แตะเพื่อดูรูปขนาดเต็ม"
-                    >
-                      <img src={post.photo} alt="รูปกิจกรรม" className="w-full h-full object-cover group-hover:scale-102 transition-transform" />
-                    </div>
+                    <PostPhotoGrid
+                      photos={post.photos}
+                      singlePhoto={post.photo}
+                      alt={post.caption || 'รูปกิจกรรม'}
+                    />
                   </div>
                 )
               )}

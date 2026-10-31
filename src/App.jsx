@@ -36,6 +36,9 @@ import FamilyCalendarView from './components/FamilyCalendarView';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstallAppModal from './components/InstallAppModal';
 import HomeSpaceLogo from './components/HomeSpaceLogo';
+import DesktopTopNav from './components/DesktopTopNav';
+import DesktopLeftSidebar from './components/DesktopLeftSidebar';
+import DesktopRightSidebar from './components/DesktopRightSidebar';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -144,11 +147,60 @@ function AppContent() {
     }
   };
 
-  // Phone App View (Rendered inside Phone Mockup or Centered on Desktop)
+  const renderTabContent = () => (
+    <>
+      {activeTab === 'home' && (
+        <TodayHome
+          onNavigateTab={setActiveTab}
+          onViewMemberProfile={handleViewMember}
+        />
+      )}
+      {activeTab === 'fridge' && (
+        <DigitalFridgeBoard
+          isFullPage={true}
+          onNavigateTab={setActiveTab}
+        />
+      )}
+      {activeTab === 'calendar' && (
+        <FamilyCalendarView
+          onNavigateTab={setActiveTab}
+        />
+      )}
+      {activeTab === 'my-feed' && (
+        <MyFeedProfile
+          onNavigateTab={setActiveTab}
+          viewingMember={viewingMember}
+          onBackToMe={() => setViewingMember(null)}
+        />
+      )}
+      {activeTab === 'summary' && <FamilySummary />}
+      {activeTab === 'rewards' && <MonthlyRewards />}
+    </>
+  );
+
   return (
     <div className={`relative w-full h-full flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FAF8F5] text-[#2D2825] font-sans select-text ${seniorMode ? 'senior-mode' : ''}`}>
-      {/* Mobile Top Header - Ultra Clean & Elegant */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
+      {/* 1. Desktop Facebook-Style Top Header (Screens >= 1024px) */}
+      <div className="hidden lg:block w-full shrink-0">
+        <DesktopTopNav
+          activeTab={activeTab}
+          onNavigateTab={(tab) => {
+            if (tab === 'my-feed') setViewingMember(null);
+            setActiveTab(tab);
+          }}
+          onOpenSearch={() => setSearchOpen(true)}
+          onOpenNotifications={() => {
+            setNotificationOpen(true);
+            if (currentUser?.id && unreadCount > 0) markNotificationsRead(currentUser.id);
+          }}
+          onOpenAdmin={() => setFamilyAdminOpen(true)}
+          onOpenMembers={() => setFamilyMembersOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
+        />
+      </div>
+
+      {/* 2. Mobile Top Header - Ultra Clean & Elegant (< 1024px) */}
+      <header className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0">
         <div
           onClick={() => {
             setViewingMember(null);
@@ -165,7 +217,7 @@ function AppContent() {
 
         {/* Right Actions: Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Members (👥) */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Senior & Easy-Reading Mode Toggle (โหมดสบายตา / ตัวหนังสือใหญ่) */}
+          {/* Senior & Easy-Reading Mode Toggle */}
           <button
             type="button"
             onClick={toggleSeniorMode}
@@ -179,7 +231,7 @@ function AppContent() {
             <TextAa size={15} weight={seniorMode ? 'bold' : 'regular'} />
           </button>
 
-          {/* Language Switcher for UX/UI (สลับภาษาไทย 🇹🇭 / English 🇬🇧) */}
+          {/* Language Switcher */}
           <button
             type="button"
             onClick={toggleLanguage}
@@ -211,7 +263,7 @@ function AppContent() {
             </button>
           )}
 
-          {/* Search Button (ค้นหาคนในบ้าน หรืองานบ้าน) */}
+          {/* Search Button */}
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
@@ -245,7 +297,7 @@ function AppContent() {
             )}
           </button>
 
-          {/* Clean User Profile Avatar */}
+          {/* User Profile Avatar */}
           <button
             type="button"
             onClick={() => {
@@ -280,50 +332,61 @@ function AppContent() {
         </div>
       </header>
 
-      {/* Scrollable View Area */}
+      {/* 3. Facebook 3-Column Desktop View (Screens >= 1024px) */}
+      <div className="hidden lg:flex flex-1 min-h-0 w-full max-w-[1440px] mx-auto justify-between px-3 xl:px-6 overflow-hidden">
+        {/* Left Sidebar */}
+        <DesktopLeftSidebar
+          activeTab={activeTab}
+          onNavigateTab={(tab) => {
+            if (tab === 'my-feed') setViewingMember(null);
+            setActiveTab(tab);
+          }}
+          onOpenAdmin={() => setFamilyAdminOpen(true)}
+          onOpenSummary={() => setActiveTab('summary')}
+          onOpenInstall={() => setInstallModalOpen(true)}
+        />
+
+        {/* Center Feed (Main Content, Scrollable) */}
+        <main
+          ref={scrollContainerRef}
+          data-scrollable="true"
+          className="flex-1 max-w-[680px] h-full overflow-y-auto no-scrollbar py-3 px-2 pb-24 scroll-area"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+          }}
+        >
+          {renderTabContent()}
+        </main>
+
+        {/* Right Sidebar */}
+        <DesktopRightSidebar
+          onViewMember={handleViewMember}
+          onNavigateTab={setActiveTab}
+          onOpenChore={() => {
+            setActiveTab('home');
+          }}
+          onOpenAdmin={() => setFamilyAdminOpen(true)}
+        />
+      </div>
+
+      {/* 4. Mobile Single-Column Scrollable View (< 1024px) */}
       <div
-        ref={scrollContainerRef}
-        data-scrollable="true"
-        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden no-scrollbar relative scroll-area"
+        className="lg:hidden flex-1 min-h-0 w-full max-w-md mx-auto overflow-y-auto overflow-x-hidden no-scrollbar relative scroll-area"
         style={{
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y',
         }}
       >
         <main className="w-full px-3.5 pt-3 pb-28">
-          {activeTab === 'home' && (
-            <TodayHome
-              onNavigateTab={setActiveTab}
-              onViewMemberProfile={handleViewMember}
-            />
-          )}
-          {activeTab === 'fridge' && (
-            <DigitalFridgeBoard
-              isFullPage={true}
-              onNavigateTab={setActiveTab}
-            />
-          )}
-          {activeTab === 'calendar' && (
-            <FamilyCalendarView
-              onNavigateTab={setActiveTab}
-            />
-          )}
-          {activeTab === 'my-feed' && (
-            <MyFeedProfile
-              onNavigateTab={setActiveTab}
-              viewingMember={viewingMember}
-              onBackToMe={() => setViewingMember(null)}
-            />
-          )}
-          {activeTab === 'summary' && <FamilySummary />}
-          {activeTab === 'rewards' && <MonthlyRewards />}
+          {renderTabContent()}
         </main>
       </div>
 
-      {/* Floating Mobile Bottom Navigation Island - Permanently Docked at Bottom of Viewport */}
+      {/* 5. Floating Mobile Bottom Navigation Island (< 1024px) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 pointer-events-auto"
+        className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 pointer-events-auto"
       >
         <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around">
           {tabs.map((tab) => {
@@ -642,8 +705,8 @@ function AppRouter() {
   );
 
   return (
-    <div className="h-full h-[100dvh] w-full bg-[#EDE7DF] flex justify-center overflow-hidden">
-      <div className="w-full max-w-md h-full h-[100dvh] bg-[#FAF8F5] flex flex-col relative sm:border-x sm:border-[#ECE7DF] sm:shadow-xl overflow-hidden">
+    <div className="h-full min-h-[100dvh] w-full bg-[#FAF8F5] flex justify-center overflow-hidden">
+      <div className="w-full h-full flex flex-col relative overflow-hidden">
         {!isLoggedIn || isPending || hasInviteLink ? (
           <LoginPage />
         ) : (

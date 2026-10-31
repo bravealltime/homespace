@@ -1524,24 +1524,29 @@ app.get('/api/milestones', (req, res) => {
 
 app.post('/api/milestones', async (req, res) => {
   try {
-    const { title, date, emoji = '🎂', category = 'event', memberId, taggedMemberIds = [] } = req.body;
+    const { title, date, endDate = null, emoji = '🎂', category = 'event', memberId, taggedMemberIds = [] } = req.body;
     if (!title || !title.trim() || !date) {
       return res.status(400).json({ error: 'Title and date required' });
     }
     const id = `milestone-${Date.now()}`;
     const timestamp = Date.now();
     const taggedStr = typeof taggedMemberIds === 'string' ? taggedMemberIds : JSON.stringify(taggedMemberIds);
+    const finalEndDate = endDate && endDate >= date ? endDate : null;
 
     db.prepare(`
-      INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, taggedMemberIds, timestamp)
-      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, title.trim(), date, emoji, category, memberId || null, taggedStr, timestamp);
+      INSERT INTO family_milestones (id, familyId, title, date, endDate, emoji, category, memberId, taggedMemberIds, timestamp)
+      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, title.trim(), date, finalEndDate, emoji, category, memberId || null, taggedStr, timestamp);
 
     // Send notifications to all tagged family members (except creator)
     if (Array.isArray(taggedMemberIds) && taggedMemberIds.length > 0) {
       const creator = memberId ? db.prepare('SELECT name FROM members WHERE id = ?').get(memberId) : null;
       const creatorName = creator?.name || 'สมาชิกในบ้าน';
-      const formattedDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      const formattedStartDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      const dateRangeText = finalEndDate && finalEndDate !== date
+        ? `${formattedStartDate} - ${new Date(finalEndDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}`
+        : formattedStartDate;
+
       for (const taggedId of taggedMemberIds) {
         if (taggedId !== memberId) {
           db.prepare(`
@@ -1551,7 +1556,7 @@ app.post('/api/milestones', async (req, res) => {
             `notif-tag-${Date.now()}-${Math.random().toString(36).substring(7)}`,
             taggedId,
             memberId || 'system',
-            `📅 ${creatorName} ได้แท็กคุณในนัดหมาย: "${title.trim()}" (${formattedDate})`,
+            `📅 ${creatorName} ได้แท็กคุณในนัดหมาย: "${title.trim()}" (${dateRangeText})`,
             Date.now()
           );
         }

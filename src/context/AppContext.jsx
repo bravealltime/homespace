@@ -806,6 +806,7 @@ export function AppProvider({ children }) {
       familyId: 'family-main',
       title: milestoneData.title,
       date: milestoneData.date,
+      endDate: milestoneData.endDate || null,
       emoji: milestoneData.emoji || '🎂',
       category: milestoneData.category || 'event',
       memberId: milestoneData.memberId || currentUser?.id,

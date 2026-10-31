@@ -20,8 +20,8 @@ const CATEGORIES = [
   { id: 'event', label: 'นัดหมายทั่วไป', emoji: '📅' },
 ];
 
-export function getCountdownInfo(dateStr) {
-  if (!dateStr) return { days: 0, text: '', isToday: false, isPast: false };
+export function getCountdownInfo(dateStr, endDateStr = null) {
+  if (!dateStr) return { days: 0, text: '', isToday: false, isPast: false, isOngoing: false };
 
   const target = new Date(dateStr);
   target.setHours(0, 0, 0, 0);
@@ -29,17 +29,44 @@ export function getCountdownInfo(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const endTarget = endDateStr ? new Date(endDateStr) : null;
+  if (endTarget) endTarget.setHours(23, 59, 59, 999);
+
   const diffTime = target.getTime() - today.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
+  // Multi-day ongoing check
+  if (endTarget && today >= target && today <= endTarget) {
+    const currentDay = Math.floor((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalDays = Math.floor((endTarget.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return {
+      days: 0,
+      text: `🎉 กำลังจัดทริป! (วันที่ ${currentDay}/${totalDays})`,
+      isToday: true,
+      isOngoing: true,
+      isPast: false,
+      currentDay,
+      totalDays,
+    };
+  }
+
   if (diffDays === 0) {
-    return { days: 0, text: '🎉 วันนี้แล้ว!', isToday: true, isPast: false };
+    return { days: 0, text: '🎉 วันนี้แล้ว!', isToday: true, isPast: false, isOngoing: false };
   } else if (diffDays === 1) {
-    return { days: 1, text: 'พรุ่งนี้แล้ว! ⭐', isToday: false, isPast: false };
+    return { days: 1, text: 'พรุ่งนี้แล้ว! ⭐', isToday: false, isPast: false, isOngoing: false };
   } else if (diffDays > 1) {
-    return { days: diffDays, text: `อีก ${diffDays} วัน`, isToday: false, isPast: false };
+    return { days: diffDays, text: `อีก ${diffDays} วัน`, isToday: false, isPast: false, isOngoing: false };
   } else {
-    return { days: Math.abs(diffDays), text: `ผ่านไป ${Math.abs(diffDays)} วัน`, isToday: false, isPast: true };
+    const pastSinceEnd = endTarget
+      ? Math.floor((today.getTime() - endTarget.getTime()) / (1000 * 60 * 60 * 24))
+      : Math.abs(diffDays);
+    return {
+      days: Math.abs(diffDays),
+      text: `ผ่านไป ${pastSinceEnd <= 0 ? 1 : pastSinceEnd} วัน`,
+      isToday: false,
+      isPast: true,
+      isOngoing: false,
+    };
   }
 }
 

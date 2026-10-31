@@ -472,7 +472,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
 
   // Find the closest upcoming milestone for banner countdown
   const sortedUpcomingMilestones = (milestones || [])
-    .map((m) => ({ ...m, info: getCountdownInfo(m.date) }))
+    .map((m) => ({ ...m, info: getCountdownInfo(m.date, m.endDate) }))
     .filter((m) => !m.info.isPast || m.info.isToday)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
   const closestMilestone = sortedUpcomingMilestones[0] || null;

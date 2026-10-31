@@ -173,6 +173,7 @@ export function initDb() {
       familyId TEXT DEFAULT 'family-main',
       title TEXT NOT NULL,
       date TEXT NOT NULL,
+      endDate TEXT,
       emoji TEXT DEFAULT '🎂',
       category TEXT DEFAULT 'event',
       memberId TEXT,
@@ -322,10 +323,13 @@ export function initDb() {
     db.exec("UPDATE members SET familyId = 'family-main' WHERE familyId IS NULL");
     db.exec("UPDATE members SET status = 'active' WHERE status IS NULL");
 
-    // Ensure family_milestones has taggedMemberIds
+    // Ensure family_milestones has taggedMemberIds & endDate
     const milestoneCols = db.prepare('PRAGMA table_info(family_milestones)').all().map(c => c.name);
     if (!milestoneCols.includes('taggedMemberIds')) {
       db.exec("ALTER TABLE family_milestones ADD COLUMN taggedMemberIds TEXT DEFAULT '[]'");
+    }
+    if (!milestoneCols.includes('endDate')) {
+      db.exec("ALTER TABLE family_milestones ADD COLUMN endDate TEXT");
     }
   } catch (err) {
     console.warn('Migration warning:', err.message);

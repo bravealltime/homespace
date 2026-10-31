@@ -14,11 +14,13 @@ import {
   Heart,
   CalendarCheck,
   Globe,
+  AirplaneTakeoff,
+  Sun,
+  MapPin,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { getCountdownInfo } from './FamilyMilestonesModal';
-import { translateText, hasThaiCharacters } from '../utils/translator';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
@@ -29,36 +31,67 @@ const THAI_MONTHS = [
 const WEEKDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
 const EMOJI_OPTIONS = [
-  '🎂', '🏥', '🍲', '🏖️', '🚗', '✈️',
+  '🏖️', '✈️', '🚗', '⛺', '🎂', '🏥', '🍲',
   '🎉', '💊', '🛒', '🐾', '💍', '🎓', '🏡', '💖',
 ];
 
 const CATEGORIES = [
   { id: 'all', label: 'ทั้งหมด' },
+  { id: 'trip', label: 'ทริปเที่ยว/พักผ่อน', emoji: '🏖️' },
   { id: 'birthday', label: 'วันเกิด', emoji: '🎂' },
   { id: 'health', label: 'หาหมอ/ยา', emoji: '🏥' },
-  { id: 'trip', label: 'ทริปเที่ยว', emoji: '🏖️' },
   { id: 'food', label: 'นัดกินข้าว', emoji: '🍲' },
-  { id: 'event', label: 'ทั่วไป', emoji: '📅' },
+  { id: 'event', label: 'กิจกรรมทั่วไป', emoji: '📅' },
 ];
+
+// Parse local YYYY-MM-DD safely without timezone offset drift
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+// Format Date object to local YYYY-MM-DD string
+const formatLocalDate = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// Calculate duration in days & nights
+const calculateTripDuration = (startStr, endStr) => {
+  if (!startStr) return { days: 1, nights: 0, text: '1 วัน' };
+  if (!endStr || endStr <= startStr) return { days: 1, nights: 0, text: '1 วัน' };
+  const s = parseLocalDate(startStr);
+  const e = parseLocalDate(endStr);
+  const diffTime = e.getTime() - s.getTime();
+  const days = Math.round(diffTime / 86400000) + 1;
+  if (days <= 1) return { days: 1, nights: 0, text: '1 วัน' };
+  return { days, nights: days - 1, text: `${days} วัน ${days - 1} คืน` };
+};
 
 export default function FamilyCalendarView({ onNavigateTab }) {
   const { milestones, addMilestone, deleteMilestone, members, t } = useApp();
   const { currentUser, isAdmin } = useAuth();
 
   const today = new Date();
+  const todayStr = formatLocalDate(today);
+
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [selectedDateStr, setSelectedDateStr] = useState(today.toISOString().split('T')[0]);
+  const [selectedDateStr, setSelectedDateStr] = useState(todayStr);
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Form states
+  // Form states (Multi-day Range & Single Day)
+  const [isRangeMode, setIsRangeMode] = useState(false);
   const [formTitle, setFormTitle] = useState('');
-  const [formDate, setFormDate] = useState(today.toISOString().split('T')[0]);
-  const [formEmoji, setFormEmoji] = useState('🎂');
-  const [formCategory, setFormCategory] = useState('birthday');
+  const [formDate, setFormDate] = useState(todayStr);
+  const [formEndDate, setFormEndDate] = useState(todayStr);
+  const [formEmoji, setFormEmoji] = useState('🏖️');
+  const [formCategory, setFormCategory] = useState('trip');
   const [formTaggedIds, setFormTaggedIds] = useState([]);
 
   // Month navigation
@@ -84,7 +117,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
     const now = new Date();
     setCurrentYear(now.getFullYear());
     setCurrentMonth(now.getMonth());
-    setSelectedDateStr(now.toISOString().split('T')[0]);
+    setSelectedDateStr(formatLocalDate(now));
   };
 
   // Calendar Math
@@ -92,15 +125,51 @@ export default function FamilyCalendarView({ onNavigateTab }) {
   const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-  // Map milestones by date string "YYYY-MM-DD"
+  // Map milestones across ALL dates they span (Multi-Day Comprehensive Support)
   const milestonesByDate = {};
   (milestones || []).forEach((m) => {
     if (!m.date) return;
-    const dateKey = m.date.slice(0, 10);
-    if (!milestonesByDate[dateKey]) {
-      milestonesByDate[dateKey] = [];
+    const startDateStr = m.date.slice(0, 10);
+    const endDateStr = m.endDate && m.endDate > startDateStr ? m.endDate.slice(0, 10) : null;
+
+    if (endDateStr) {
+      // Multi-day continuous event / trip
+      const sDate = parseLocalDate(startDateStr);
+      const eDate = parseLocalDate(endDateStr);
+      const totalDays = Math.round((eDate.getTime() - sDate.getTime()) / 86400000) + 1;
+      let curr = new Date(sDate);
+      let dayIdx = 1;
+
+      while (curr <= eDate) {
+        const dKey = formatLocalDate(curr);
+        if (!milestonesByDate[dKey]) milestonesByDate[dKey] = [];
+        milestonesByDate[dKey].push({
+          ...m,
+          isMultiDay: true,
+          multiDayStart: startDateStr,
+          multiDayEnd: endDateStr,
+          dayIndex: dayIdx,
+          totalDays,
+          isFirstDay: dKey === startDateStr,
+          isLastDay: dKey === endDateStr,
+        });
+        curr.setDate(curr.getDate() + 1);
+        dayIdx++;
+      }
+    } else {
+      // Single-day event
+      if (!milestonesByDate[startDateStr]) milestonesByDate[startDateStr] = [];
+      milestonesByDate[startDateStr].push({
+        ...m,
+        isMultiDay: false,
+        multiDayStart: startDateStr,
+        multiDayEnd: startDateStr,
+        dayIndex: 1,
+        totalDays: 1,
+        isFirstDay: true,
+        isLastDay: true,
+      });
     }
-    milestonesByDate[dateKey].push(m);
   });
 
   // Calendar grid cells
@@ -109,7 +178,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const dayNum = daysInPrevMonth - i;
     const prevMonthDate = new Date(currentYear, currentMonth - 1, dayNum);
-    const dateStr = prevMonthDate.toISOString().split('T')[0];
+    const dateStr = formatLocalDate(prevMonthDate);
     calendarCells.push({
       dayNum,
       dateStr,
@@ -120,9 +189,8 @@ export default function FamilyCalendarView({ onNavigateTab }) {
 
   // 2. Current month days
   for (let dayNum = 1; dayNum <= daysInCurrentMonth; dayNum++) {
-    const mStr = String(currentMonth + 1).padStart(2, '0');
-    const dStr = String(dayNum).padStart(2, '0');
-    const dateStr = `${currentYear}-${mStr}-${dStr}`;
+    const curDate = new Date(currentYear, currentMonth, dayNum);
+    const dateStr = formatLocalDate(curDate);
     calendarCells.push({
       dayNum,
       dateStr,
@@ -131,11 +199,11 @@ export default function FamilyCalendarView({ onNavigateTab }) {
     });
   }
 
-  // 3. Next month leading days (fill to multiple of 7)
+  // 3. Next month leading days (fill to 42 cells)
   const remainingCells = 42 - calendarCells.length;
   for (let dayNum = 1; dayNum <= (remainingCells >= 7 ? remainingCells % 7 : remainingCells); dayNum++) {
     const nextMonthDate = new Date(currentYear, currentMonth + 1, dayNum);
-    const dateStr = nextMonthDate.toISOString().split('T')[0];
+    const dateStr = formatLocalDate(nextMonthDate);
     calendarCells.push({
       dayNum,
       dateStr,
@@ -144,29 +212,43 @@ export default function FamilyCalendarView({ onNavigateTab }) {
     });
   }
 
-  const todayStr = today.toISOString().split('T')[0];
   const selectedDayMilestones = milestonesByDate[selectedDateStr] || [];
 
-  // Filtered upcoming milestones
+  // Filtered upcoming milestones (Sorted by date)
   const allSortedMilestones = [...(milestones || [])].sort(
     (a, b) => new Date(a.date) - new Date(b.date)
   );
 
   const upcomingMilestones = allSortedMilestones
-    .map((m) => ({ ...m, info: getCountdownInfo(m.date) }))
+    .map((m) => ({ ...m, info: getCountdownInfo(m.date, m.endDate) }))
     .filter((m) => {
       if (activeCategoryFilter === 'all') return true;
       return m.category === activeCategoryFilter;
     });
 
   // Open add modal pre-filling selected date
-  const openAddWithDate = (dateStr) => {
-    setFormDate(dateStr || selectedDateStr || todayStr);
+  const openAddWithDate = (dateStr, asRange = false) => {
+    const start = dateStr || selectedDateStr || todayStr;
+    setFormDate(start);
+
+    // Default multi-day end date (+2 days = 3 days 2 nights)
+    const nextDay = parseLocalDate(start);
+    nextDay.setDate(nextDay.getDate() + 2);
+    setFormEndDate(formatLocalDate(nextDay));
+
+    setIsRangeMode(asRange);
     setFormTitle('');
-    setFormEmoji('🎂');
-    setFormCategory('birthday');
+    setFormEmoji(asRange ? '🏖️' : '🎂');
+    setFormCategory(asRange ? 'trip' : 'birthday');
     setFormTaggedIds([]);
     setIsAddModalOpen(true);
+  };
+
+  // Quick Preset Helper for Multi-day duration (+X days)
+  const handleApplyPreset = (plusDays) => {
+    const s = parseLocalDate(formDate);
+    s.setDate(s.getDate() + plusDays);
+    setFormEndDate(formatLocalDate(s));
   };
 
   // Toggle member tag in form
@@ -189,9 +271,12 @@ export default function FamilyCalendarView({ onNavigateTab }) {
     e.preventDefault();
     if (!formTitle.trim() || !formDate) return;
 
+    const finalEndDate = isRangeMode && formEndDate && formEndDate > formDate ? formEndDate : null;
+
     await addMilestone({
       title: formTitle.trim(),
       date: formDate,
+      endDate: finalEndDate,
       emoji: formEmoji,
       category: formCategory,
       memberId: currentUser?.id || 'member-fluke',
@@ -211,8 +296,12 @@ export default function FamilyCalendarView({ onNavigateTab }) {
               📅
             </div>
             <div>
-              <h1 className="text-base font-black text-[#2D2825]">{t ? t('calendarTitle', 'ปฏิทินวันสำคัญของบ้าน') : 'ปฏิทินวันสำคัญของบ้าน'}</h1>
-              <p className="text-[11px] text-[#746C65]">{t ? t('calendarSubtitle', 'วันเกิด นัดหมอ กิจกรรม และแท็กคนที่ไปด้วยกัน 👥') : 'วันเกิด นัดหมอ กิจกรรม และแท็กคนที่ไปด้วยกัน 👥'}</p>
+              <h1 className="text-base font-black text-[#2D2825]">
+                {t ? t('calendarTitle', 'ปฏิทินวันสำคัญของบ้าน') : 'ปฏิทินวันสำคัญของบ้าน'}
+              </h1>
+              <p className="text-[11px] text-[#746C65]">
+                วันเกิด นัดหมอ ทริปหลายวัน และแท็กคนที่ไปด้วยกัน 👥
+              </p>
             </div>
           </div>
 
@@ -256,22 +345,24 @@ export default function FamilyCalendarView({ onNavigateTab }) {
             <button
               type="button"
               onClick={handleJumpToToday}
-              className="px-2.5 py-1 rounded-xl bg-white hover:bg-[#EEF4F0] text-[#5F8D75] border border-[#5F8D75]/30 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#EEF4F0] text-[#5F8D75] border border-[#5F8D75]/30 text-xs font-bold transition-all shadow-2xs cursor-pointer"
             >
               วันนี้
             </button>
+
+            {/* Quick Add Dropdown / Action */}
             <button
               type="button"
-              onClick={() => openAddWithDate(selectedDateStr)}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              onClick={() => openAddWithDate(selectedDateStr, false)}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
             >
-              <Plus size={13} weight="bold" />
+              <Plus size={14} weight="bold" />
               <span>เพิ่มวัน</span>
             </button>
           </div>
         </div>
 
-        {/* 3. Interactive Monthly Calendar Grid */}
+        {/* 3. Interactive Monthly Calendar Grid with Multi-Day Spanning */}
         <div className="space-y-1 select-none">
           {/* Weekday Labels (อา - ส) */}
           <div className="grid grid-cols-7 text-center">
@@ -292,20 +383,34 @@ export default function FamilyCalendarView({ onNavigateTab }) {
             {calendarCells.map((cell, idx) => {
               const isToday = cell.dateStr === todayStr;
               const isSelected = cell.dateStr === selectedDateStr;
-              const hasEvents = cell.milestones.length > 0;
+              const multiDayItem = cell.milestones.find((ev) => ev.isMultiDay);
+              const singleEvents = cell.milestones.filter((ev) => !ev.isMultiDay);
+
+              // Multi-day styling classes
+              let multiDayBg = '';
+              if (multiDayItem) {
+                if (multiDayItem.isFirstDay) {
+                  multiDayBg = 'bg-[#FFF5EB] border-[#E88D67] rounded-l-2xl shadow-2xs ring-1 ring-[#E88D67]/30';
+                } else if (multiDayItem.isLastDay) {
+                  multiDayBg = 'bg-[#FFF5EB] border-[#E88D67] rounded-r-2xl shadow-2xs ring-1 ring-[#E88D67]/30';
+                } else {
+                  multiDayBg = 'bg-[#FFF9F5] border-y border-[#FDE0C7] rounded-none';
+                }
+              }
 
               return (
                 <div
                   key={`${cell.dateStr}-${idx}`}
                   onClick={() => setSelectedDateStr(cell.dateStr)}
-                  className={`min-h-[52px] sm:min-h-[58px] p-1 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`min-h-[58px] sm:min-h-[64px] p-1 border transition-all cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-[#EEF4F0] border-[#5F8D75] ring-2 ring-[#5F8D75]/40 shadow-xs'
-                      : isToday
-                      ? 'bg-[#FFF9F5] border-[#E88D67] shadow-2xs'
-                      : cell.isCurrentMonth
-                      ? 'bg-white border-[#ECE7DF] hover:bg-[#FAF8F5]'
-                      : 'bg-[#FAF8F5]/60 border-[#ECE7DF]/50 text-[#B0A79E] opacity-60'
+                      ? 'bg-[#EEF4F0] border-[#5F8D75] ring-2 ring-[#5F8D75]/50 shadow-xs z-10 scale-102 rounded-2xl'
+                      : multiDayBg ||
+                        (isToday
+                          ? 'bg-[#FFF9F5] border-[#E88D67] shadow-2xs rounded-2xl'
+                          : cell.isCurrentMonth
+                          ? 'bg-white border-[#ECE7DF] hover:bg-[#FAF8F5] rounded-2xl'
+                          : 'bg-[#FAF8F5]/60 border-[#ECE7DF]/40 text-[#B0A79E] opacity-50 rounded-2xl')
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -315,6 +420,8 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                           ? 'bg-[#E88D67] text-white font-black'
                           : isSelected
                           ? 'text-[#5F8D75] font-black'
+                          : multiDayItem
+                          ? 'text-[#E88D67] font-black'
                           : cell.isCurrentMonth
                           ? 'text-[#2D2825]'
                           : 'text-[#B0A79E]'
@@ -322,25 +429,55 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                     >
                       {cell.dayNum}
                     </span>
-                    {hasEvents && (
-                      <span className="text-[10px] leading-none shrink-0">
-                        {cell.milestones[0]?.emoji || '•'}
+
+                    {/* Emoji header indicator */}
+                    {multiDayItem ? (
+                      <span className="text-[11px] leading-none shrink-0" title={multiDayItem.title}>
+                        {multiDayItem.emoji || '🏖️'}
                       </span>
+                    ) : (
+                      singleEvents.length > 0 && (
+                        <span className="text-[10px] leading-none shrink-0" title={singleEvents[0].title}>
+                          {singleEvents[0]?.emoji || '🎂'}
+                        </span>
+                      )
                     )}
                   </div>
 
-                  {/* Event indicators dots/emojis */}
-                  <div className="flex items-center gap-0.5 justify-center flex-wrap min-h-[14px]">
-                    {hasEvents ? (
-                      cell.milestones.slice(0, 3).map((ev, eIdx) => (
-                        <span
-                          key={ev.id || eIdx}
-                          className="w-1.5 h-1.5 rounded-full bg-[#E88D67]"
-                          title={ev.title}
-                        />
-                      ))
+                  {/* Multi-Day Banner / Event Indicators */}
+                  <div className="space-y-0.5">
+                    {multiDayItem ? (
+                      <div className="w-full">
+                        {multiDayItem.isFirstDay && (
+                          <span className="block text-[8.5px] font-black text-[#E88D67] bg-[#FFE8D6] px-1 py-0.2 rounded-md truncate text-center">
+                            เริ่มทริป 🚀
+                          </span>
+                        )}
+                        {!multiDayItem.isFirstDay && !multiDayItem.isLastDay && (
+                          <span className="block text-[8px] font-bold text-[#E88D67]/80 truncate text-center">
+                            วันที่ {multiDayItem.dayIndex}
+                          </span>
+                        )}
+                        {multiDayItem.isLastDay && (
+                          <span className="block text-[8.5px] font-black text-[#5F8D75] bg-[#EEF4F0] px-1 py-0.2 rounded-md truncate text-center">
+                            🏁 จบทริป
+                          </span>
+                        )}
+                      </div>
                     ) : (
-                      <span className="opacity-0">•</span>
+                      <div className="flex items-center gap-0.5 justify-center flex-wrap min-h-[14px]">
+                        {singleEvents.length > 0 ? (
+                          singleEvents.slice(0, 3).map((ev, eIdx) => (
+                            <span
+                              key={ev.id || eIdx}
+                              className="w-1.5 h-1.5 rounded-full bg-[#E88D67]"
+                              title={ev.title}
+                            />
+                          ))
+                        ) : (
+                          <span className="opacity-0">•</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -349,14 +486,14 @@ export default function FamilyCalendarView({ onNavigateTab }) {
           </div>
         </div>
 
-        {/* 4. Selected Date Inspector Card */}
+        {/* 4. Selected Date Inspector Card with Multi-day Details */}
         {selectedDateStr && (
-          <div className="bg-[#FAF8F5] rounded-2xl p-3 border border-[#ECE7DF] space-y-2">
+          <div className="bg-[#FAF8F5] rounded-2xl p-3 border border-[#ECE7DF] space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CalendarCheck size={18} className="text-[#5F8D75]" weight="bold" />
                 <span className="text-xs font-black text-[#2D2825]">
-                  วันที่ {new Date(selectedDateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  วันที่ {parseLocalDate(selectedDateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 {selectedDateStr === todayStr && (
                   <span className="text-[10px] bg-[#E88D67] text-white font-black px-2 py-0.5 rounded-full">
@@ -365,76 +502,142 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => openAddWithDate(selectedDateStr)}
-                className="text-xs font-bold text-[#5F8D75] hover:underline cursor-pointer"
-              >
-                + เพิ่มนัดวันนี้
-              </button>
+              {/* Action Buttons: Add Single vs Add Trip */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openAddWithDate(selectedDateStr, true)}
+                  className="text-[11px] font-bold text-[#E88D67] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>🏖️ +จัดทริปหลายวัน</span>
+                </button>
+                <span className="text-[#D6CFC7]">|</span>
+                <button
+                  type="button"
+                  onClick={() => openAddWithDate(selectedDateStr, false)}
+                  className="text-[11px] font-bold text-[#5F8D75] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>+เพิ่มนัด</span>
+                </button>
+              </div>
             </div>
 
             {selectedDayMilestones.length > 0 ? (
-              <div className="space-y-1.5 pt-1">
+              <div className="space-y-2 pt-1">
                 {selectedDayMilestones.map((m) => {
                   const creator = members.find((mem) => mem.id === m.memberId);
                   const taggedList = (m.taggedMemberIds || [])
                     .map((id) => members.find((mem) => mem.id === id))
                     .filter(Boolean);
 
+                  const duration = m.isMultiDay
+                    ? calculateTripDuration(m.multiDayStart, m.multiDayEnd)
+                    : null;
+
                   return (
                     <div
                       key={m.id}
-                      className="bg-white rounded-xl p-2.5 px-3 border border-[#ECE7DF] shadow-2xs flex items-center justify-between gap-2"
+                      className={`bg-white rounded-2xl p-3 border shadow-2xs space-y-2 transition-all ${
+                        m.isMultiDay ? 'border-[#E88D67]/40 ring-1 ring-[#E88D67]/20' : 'border-[#ECE7DF]'
+                      }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-2xl shrink-0">{m.emoji || '🎂'}</span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-black text-[#2D2825] truncate">{m.title}</p>
-                          {taggedList.length > 0 && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[10px] text-[#746C65] font-bold">ไปด้วยกัน:</span>
-                              <div className="flex items-center -space-x-1">
-                                {taggedList.map((tagMem) => (
-                                  <div
-                                    key={tagMem.id}
-                                    title={tagMem.name}
-                                    className="w-4 h-4 rounded-full bg-[#FAF8F5] border border-white overflow-hidden text-[9px] flex items-center justify-center font-bold"
-                                  >
-                                    {tagMem.avatarType === 'image' && tagMem.avatarImage ? (
-                                      <img src={tagMem.avatarImage} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                      tagMem.avatar || '😊'
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              <span className="text-[10px] text-[#5F8D75] font-semibold truncate">
-                                {taggedList.map((t) => t.name).join(', ')}
-                              </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <span className="text-3xl shrink-0 mt-0.5">{m.emoji || '🎂'}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs sm:text-sm font-black text-[#2D2825] truncate">
+                                {m.title}
+                              </p>
+                              {m.isMultiDay && (
+                                <span className="text-[10px] font-black bg-[#FFF5EB] text-[#E88D67] border border-[#E88D67]/30 px-2 py-0.5 rounded-full">
+                                  🏖️ ทริป {duration?.text}
+                                </span>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
 
-                      {(isAdmin || currentUser?.id === m.memberId) && (
-                        <button
-                          type="button"
-                          onClick={() => deleteMilestone(m.id)}
-                          className="w-7 h-7 rounded-lg text-[#9E958D] hover:text-[#C84B31] hover:bg-[#FAF8F5] flex items-center justify-center transition-colors cursor-pointer"
-                          title="ลบนัดหมาย"
-                        >
-                          <Trash size={14} />
-                        </button>
-                      )}
+                            {/* Multi-Day Progress Info */}
+                            {m.isMultiDay ? (
+                              <div className="mt-1 space-y-0.5">
+                                <p className="text-[11px] font-bold text-[#5F8D75]">
+                                  📍 วันนี้คือวันที่ {m.dayIndex} จากทั้งหมด {m.totalDays} วัน
+                                </p>
+                                <p className="text-[10px] text-[#746C65]">
+                                  📅 {parseLocalDate(m.multiDayStart).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} ถึง {parseLocalDate(m.multiDayEnd).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-[#746C65] mt-0.5">
+                                📅 นัดหมายวันเดียว
+                              </p>
+                            )}
+
+                            {/* Tagged Family Members 👥 */}
+                            {taggedList.length > 0 && (
+                              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                <span className="text-[10px] text-[#746C65] font-bold">
+                                  {m.isMultiDay ? 'คนที่ร่วมทริป:' : 'ไปด้วยกัน:'}
+                                </span>
+                                <div className="flex items-center -space-x-1">
+                                  {taggedList.map((tagMem) => (
+                                    <div
+                                      key={tagMem.id}
+                                      title={tagMem.name}
+                                      className="w-5 h-5 rounded-full bg-[#FAF8F5] border-2 border-white overflow-hidden text-[9px] flex items-center justify-center font-bold shadow-2xs"
+                                    >
+                                      {tagMem.avatarType === 'image' && tagMem.avatarImage ? (
+                                        <img src={tagMem.avatarImage} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        tagMem.avatar || '😊'
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-[#5F8D75] font-semibold truncate">
+                                  {taggedList.map((t) => t.name).join(', ')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {(isAdmin || currentUser?.id === m.memberId) && (
+                          <button
+                            type="button"
+                            onClick={() => deleteMilestone(m.id)}
+                            className="w-7 h-7 rounded-lg text-[#9E958D] hover:text-[#C84B31] hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                            title="ลบนัดหมาย"
+                          >
+                            <Trash size={15} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-xs text-[#9E958D] text-center py-2">
-                ยังไม่มีนัดหมายในวันนี้ แตะ "+ เพิ่มนัดวันนี้" เพื่อเพิ่มได้เลย
-              </p>
+              <div className="text-center py-3 space-y-1">
+                <p className="text-xs text-[#9E958D]">
+                  ยังไม่มีนัดหมายในวันนี้
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => openAddWithDate(selectedDateStr, false)}
+                    className="text-xs font-bold text-[#5F8D75] bg-[#EEF4F0] px-3 py-1 rounded-xl hover:bg-[#E2EEE6] transition-colors cursor-pointer"
+                  >
+                    + เพิ่มนัดหมายวันเดียว
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAddWithDate(selectedDateStr, true)}
+                    className="text-xs font-bold text-[#E88D67] bg-[#FFF5EB] px-3 py-1 rounded-xl hover:bg-[#FFE8D6] transition-colors cursor-pointer"
+                  >
+                    🏖️ + วางแผนทริปหลายวัน
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -453,7 +656,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
           {CATEGORIES.map((cat) => {
             const isActive = activeCategoryFilter === cat.id;
             return (
@@ -461,7 +664,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategoryFilter(cat.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer ${
                   isActive
                     ? 'bg-[#5F8D75] text-white shadow-xs'
                     : 'bg-[#FAF8F5] text-[#746C65] hover:bg-[#ECE7DF]'
@@ -483,12 +686,17 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                 .map((id) => members.find((mem) => mem.id === id))
                 .filter(Boolean);
               const isToday = m.info?.isToday;
+              const isOngoing = m.info?.isOngoing;
+              const isMultiDay = Boolean(m.endDate && m.endDate > m.date);
+              const duration = isMultiDay ? calculateTripDuration(m.date, m.endDate) : null;
 
               return (
                 <div
                   key={m.id}
                   className={`p-3 rounded-2xl border transition-all ${
-                    isToday
+                    isOngoing
+                      ? 'bg-gradient-to-r from-[#FFF5EB] via-white to-[#EEF4F0] border-[#E88D67] shadow-xs'
+                      : isToday
                       ? 'bg-gradient-to-r from-[#FFF5EB] to-white border-[#E88D67] shadow-xs'
                       : 'bg-white border-[#ECE7DF] hover:bg-[#FAF8F5]'
                   }`}
@@ -499,9 +707,16 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-xs font-black text-[#2D2825]">{m.title}</h3>
+                          {isMultiDay && (
+                            <span className="text-[10px] font-black bg-[#FFF5EB] text-[#E88D67] px-2 py-0.2 rounded-full border border-[#E88D67]/30">
+                              🏖️ {duration?.text}
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                              isToday
+                              isOngoing
+                                ? 'bg-[#5F8D75] text-white animate-pulse'
+                                : isToday
                                 ? 'bg-[#E88D67] text-white animate-pulse'
                                 : m.info?.isPast
                                 ? 'bg-[#FAF8F5] text-[#9E958D]'
@@ -512,13 +727,22 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                           </span>
                         </div>
 
+                        {/* Date info */}
                         <p className="text-[11px] text-[#746C65] mt-0.5">
-                          📅 {new Date(m.date).toLocaleDateString('th-TH', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
+                          {isMultiDay ? (
+                            <span>
+                              📅 {parseLocalDate(m.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} - {parseLocalDate(m.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          ) : (
+                            <span>
+                              📅 {parseLocalDate(m.date).toLocaleDateString('th-TH', {
+                                weekday: 'short',
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          )}
                         </p>
 
                         {/* Tagged Family Members 👥 */}
@@ -526,7 +750,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                             <span className="text-[10px] text-[#746C65] font-bold flex items-center gap-1">
                               <Users size={12} weight="fill" className="text-[#5F8D75]" />
-                              <span>ไปด้วยกัน:</span>
+                              <span>{isMultiDay ? 'ร่วมทริป:' : 'ไปด้วยกัน:'}</span>
                             </span>
                             <div className="flex items-center -space-x-1">
                               {taggedList.map((tagMem) => (
@@ -543,7 +767,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                                 </div>
                               ))}
                             </div>
-                            <span className="text-[10px] text-[#5F8D75] font-bold">
+                            <span className="text-[10px] text-[#5F8D75] font-semibold truncate">
                               {taggedList.map((t) => t.name).join(', ')}
                             </span>
                           </div>
@@ -575,7 +799,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
         </div>
       </section>
 
-      {/* 6. Modal: Add Milestone & Tag Family Members */}
+      {/* 6. Modal: Add Milestone & Multi-day Trip Planner */}
       {isAddModalOpen && (
         <div
           role="dialog"
@@ -584,14 +808,21 @@ export default function FamilyCalendarView({ onNavigateTab }) {
           onClick={() => setIsAddModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto p-4 sm:p-5 space-y-4 animate-enter-rise"
+            className="bg-white rounded-3xl border border-[#ECE7DF] shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto no-scrollbar p-4 sm:p-5 space-y-3.5 animate-enter-rise"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#ECE7DF] pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{formEmoji}</span>
-                <h3 className="text-sm font-black text-[#2D2825]">เพิ่มวันสำคัญ & นัดหมาย</h3>
+                <div>
+                  <h3 className="text-sm font-black text-[#2D2825]">
+                    {isRangeMode ? 'วางแผนทริป & กิจกรรมหลายวัน' : 'เพิ่มวันสำคัญ & นัดหมาย'}
+                  </h3>
+                  <p className="text-[10px] text-[#746C65]">
+                    {isRangeMode ? 'กำหนดวันเริ่มต้น - วันกลับ พร้อมแท็กคนในบ้าน' : 'ระบุวันสำคัญ พร้อมแท็กคนที่ไปด้วยกัน'}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -603,34 +834,172 @@ export default function FamilyCalendarView({ onNavigateTab }) {
             </div>
 
             <form onSubmit={handleAddSubmit} className="space-y-3.5">
+              {/* Mode Switcher: Single Day vs Multi-Day Range */}
+              <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] text-xs font-bold gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRangeMode(false);
+                    setFormCategory('birthday');
+                    setFormEmoji('🎂');
+                  }}
+                  className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    !isRangeMode
+                      ? 'bg-white text-[#2D2825] shadow-xs font-black'
+                      : 'text-[#746C65] hover:text-[#2D2825]'
+                  }`}
+                >
+                  <span>🔘 วันเดียว</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRangeMode(true);
+                    setFormCategory('trip');
+                    setFormEmoji('🏖️');
+                    // Ensure end date is at least start date
+                    if (formEndDate < formDate) {
+                      const next = parseLocalDate(formDate);
+                      next.setDate(next.getDate() + 2);
+                      setFormEndDate(formatLocalDate(next));
+                    }
+                  }}
+                  className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isRangeMode
+                      ? 'bg-[#E88D67] text-white shadow-xs font-black'
+                      : 'text-[#746C65] hover:text-[#2D2825]'
+                  }`}
+                >
+                  <span>🏖️ หลายวัน (ทริปเที่ยว)</span>
+                </button>
+              </div>
+
               {/* Title */}
               <div>
                 <label className="text-[11px] font-bold text-[#746C65] block mb-1">
-                  ชื่อวันสำคัญ / กิจกรรม <span className="text-[#C84B31]">*</span>
+                  ชื่อกิจกรรม / ทริป <span className="text-[#C84B31]">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="เช่น วันเกิดคุณแม่, พาคุณตาไปหาหมอ, ไปกินหมูกะทะ"
+                  placeholder={isRangeMode ? "เช่น ทริปเที่ยวหัวหิน, ไปเชียงใหม่ 3 วัน, พักผ่อนเขาใหญ่" : "เช่น วันเกิดคุณแม่, พาคุณตาไปหาหมอ, ไปกินหมูกะทะ"}
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[#ECE7DF] bg-[#FAF8F5] text-xs font-medium text-[#2D2825] focus:outline-none focus:border-[#5F8D75] focus:bg-white"
                 />
               </div>
 
-              {/* Date */}
-              <div>
-                <label className="text-[11px] font-bold text-[#746C65] block mb-1">
-                  วันที่ <span className="text-[#C84B31]">*</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[#ECE7DF] bg-[#FAF8F5] text-xs font-bold text-[#2D2825] focus:outline-none focus:border-[#5F8D75] focus:bg-white"
-                />
-              </div>
+              {/* Single Day Date Picker */}
+              {!isRangeMode ? (
+                <div>
+                  <label className="text-[11px] font-bold text-[#746C65] block mb-1">
+                    วันที่ <span className="text-[#C84B31]">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formDate}
+                    onChange={(e) => setFormDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#ECE7DF] bg-[#FAF8F5] text-xs font-bold text-[#2D2825] focus:outline-none focus:border-[#5F8D75] focus:bg-white"
+                  />
+                </div>
+              ) : (
+                /* Multi-Day Range Pickers */
+                <div className="space-y-2 p-3 rounded-2xl bg-gradient-to-b from-[#FFF5EB] to-[#FFF9F5] border border-[#E88D67]/30">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Start Date */}
+                    <div>
+                      <label className="text-[10.5px] font-black text-[#E88D67] block mb-1">
+                        🚀 วันเริ่มต้น:
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formDate}
+                        onChange={(e) => {
+                          const newStart = e.target.value;
+                          setFormDate(newStart);
+                          if (formEndDate < newStart) {
+                            setFormEndDate(newStart);
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-[#E88D67]/40 bg-white text-xs font-bold text-[#2D2825] focus:outline-none focus:border-[#E88D67]"
+                      />
+                    </div>
+
+                    {/* End Date */}
+                    <div>
+                      <label className="text-[10.5px] font-black text-[#5F8D75] block mb-1">
+                        🏁 วันสิ้นสุด (กลับ):
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        min={formDate}
+                        value={formEndDate}
+                        onChange={(e) => {
+                          const newEnd = e.target.value;
+                          if (newEnd >= formDate) {
+                            setFormEndDate(newEnd);
+                          } else {
+                            setFormEndDate(formDate);
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-[#5F8D75]/40 bg-white text-xs font-bold text-[#2D2825] focus:outline-none focus:border-[#5F8D75]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Duration Preview Badge */}
+                  <div className="flex items-center justify-between text-[11px] font-black text-[#E88D67] pt-0.5">
+                    <span className="flex items-center gap-1">
+                      <span>✨</span>
+                      <span>ระยะเวลา: {calculateTripDuration(formDate, formEndDate).text}</span>
+                    </span>
+                    <span className="text-[10px] text-[#746C65] font-semibold">
+                      ({parseLocalDate(formDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} - {parseLocalDate(formEndDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})
+                    </span>
+                  </div>
+
+                  {/* Quick Duration Presets (+X days) */}
+                  <div className="space-y-1 pt-1 border-t border-[#E88D67]/20">
+                    <span className="text-[10px] font-bold text-[#746C65] block">
+                      แตะเลือกความยาวทริปด่วน:
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(1)}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FFE8D6] text-[#E88D67] border border-[#E88D67]/30 text-[10px] font-bold cursor-pointer transition-colors"
+                      >
+                        +1 วัน (2 วัน 1 คืน)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(2)}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FFE8D6] text-[#E88D67] border border-[#E88D67]/30 text-[10px] font-bold cursor-pointer transition-colors"
+                      >
+                        +2 วัน (3 วัน 2 คืน)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(3)}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FFE8D6] text-[#E88D67] border border-[#E88D67]/30 text-[10px] font-bold cursor-pointer transition-colors"
+                      >
+                        +3 วัน (4 วัน 3 คืน)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(6)}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FFE8D6] text-[#E88D67] border border-[#E88D67]/30 text-[10px] font-bold cursor-pointer transition-colors"
+                      >
+                        +6 วัน (1 สัปดาห์)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Category */}
               <div>
@@ -683,7 +1052,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                   <div className="flex items-center gap-1.5">
                     <Users size={15} weight="fill" className="text-[#5F8D75]" />
                     <label className="text-[11px] font-black text-[#2D2825]">
-                      แท็กคนที่ไปด้วยกัน / เกี่ยวข้อง 👥
+                      {isRangeMode ? 'ใครไปร่วมทริปนี้บ้าง? 👥' : 'แท็กคนที่ไปด้วยกัน / เกี่ยวข้อง 👥'}
                     </label>
                   </div>
                   <button
@@ -751,7 +1120,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                   type="submit"
                   className="flex-1 py-2.5 rounded-2xl bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
                 >
-                  บันทึกลงปฏิทิน ✓
+                  {isRangeMode ? 'บันทึกทริปนี้ ✓' : 'บันทึกลงปฏิทิน ✓'}
                 </button>
               </div>
             </form>

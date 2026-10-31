@@ -274,8 +274,8 @@ export function importJsonToDb(data) {
           db.prepare('DELETE FROM family_milestones').run();
         }
         const stmt = db.prepare(`
-          INSERT OR REPLACE INTO family_milestones (id, familyId, title, date, emoji, category, memberId, taggedMemberIds, timestamp)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO family_milestones (id, familyId, title, date, endDate, emoji, category, memberId, taggedMemberIds, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const m of data.family_milestones) {
           stmt.run(
@@ -283,6 +283,7 @@ export function importJsonToDb(data) {
             m.familyId || 'family-main',
             m.title,
             m.date,
+            m.endDate || null,
             m.emoji || '🎂',
             m.category || 'event',
             m.memberId || null,

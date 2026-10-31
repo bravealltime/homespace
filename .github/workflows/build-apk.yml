@@ -35,8 +35,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Sync Capacitor Android
-        run: npx cap sync android
+        run: |
+          npx --yes @capacitor/cli telemetry off || true
+          npx --yes @capacitor/cli sync android
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew

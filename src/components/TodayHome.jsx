@@ -954,7 +954,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           {/* Button 1: ส่งรูปภาพให้ลูกหลานดู */}
           <button
             type="button"
-            onClick={() => openCreatePost('routine')}
+            onClick={() => openCreatePost('photo')}
             className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/30 hover:border-[#5F8D75] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
@@ -969,7 +969,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           {/* Button 2: พูดทักทายคนในบ้าน (Voice Greeting) */}
           <button
             type="button"
-            onClick={() => openCreatePost('routine')}
+            onClick={() => openCreatePost('voice')}
             className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/30 hover:border-[#E88D67] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
@@ -1467,10 +1467,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               </button>
               <button
                 type="button"
-                onClick={() => openCreatePost('routine')}
+                onClick={() => openCreatePost('photo')}
                 className="px-4 py-2 rounded-xl bg-[#FAF8F5] text-[#2D2825] border border-[#ECE7DF] text-xs font-bold hover:bg-white transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <span>📸 แชร์เรื่องราว</span>
+                <span>📸 แชร์รูปภาพ</span>
               </button>
             </div>
           </div>

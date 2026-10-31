@@ -39,6 +39,7 @@ import HomeSpaceLogo from './components/HomeSpaceLogo';
 import DesktopTopNav from './components/DesktopTopNav';
 import DesktopLeftSidebar from './components/DesktopLeftSidebar';
 import DesktopRightSidebar from './components/DesktopRightSidebar';
+import HomeHandbookModal from './components/HomeHandbookModal';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -92,6 +93,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
+  const [homeHandbookOpen, setHomeHandbookOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
@@ -153,6 +155,7 @@ function AppContent() {
         <TodayHome
           onNavigateTab={setActiveTab}
           onViewMemberProfile={handleViewMember}
+          onOpenHandbook={() => setHomeHandbookOpen(true)}
         />
       )}
       {activeTab === 'fridge' && (
@@ -344,6 +347,7 @@ function AppContent() {
           onOpenAdmin={() => setFamilyAdminOpen(true)}
           onOpenSummary={() => setActiveTab('summary')}
           onOpenInstall={() => setInstallModalOpen(true)}
+          onOpenHandbook={() => setHomeHandbookOpen(true)}
         />
 
         {/* Center Feed (Main Content, Scrollable) */}
@@ -436,6 +440,7 @@ function AppContent() {
       {/* Edit Profile Modal */}
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
+      <HomeHandbookModal isOpen={homeHandbookOpen} onClose={() => setHomeHandbookOpen(false)} />
       <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}

@@ -81,6 +81,35 @@ function reducer(state, action) {
         milestones: (state.milestones || []).filter((m) => m.id !== action.payload.milestoneId),
       };
 
+    case 'SET_HOME_CONTACTS':
+      return { ...state, homeContacts: action.payload || [] };
+
+    case 'ADD_HOME_CONTACT':
+      return { ...state, homeContacts: [...(state.homeContacts || []), action.payload] };
+
+    case 'DELETE_HOME_CONTACT':
+      return {
+        ...state,
+        homeContacts: (state.homeContacts || []).filter((c) => c.id !== action.payload.contactId),
+      };
+
+    case 'SET_HOME_MAINTENANCE':
+      return { ...state, homeMaintenance: action.payload || [] };
+
+    case 'UPDATE_HOME_MAINTENANCE':
+      return {
+        ...state,
+        homeMaintenance: (state.homeMaintenance || []).map((m) =>
+          m.id === action.payload.id ? action.payload : m
+        ),
+      };
+
+    case 'DELETE_HOME_MAINTENANCE':
+      return {
+        ...state,
+        homeMaintenance: (state.homeMaintenance || []).filter((m) => m.id !== action.payload.maintId),
+      };
+
     case 'SET_REWARDS_DATA':
       return {
         ...state,
@@ -342,6 +371,8 @@ function getInitialState() {
     notifications: [],
     notes: [],
     milestones: [],
+    homeContacts: [],
+    homeMaintenance: [],
     backendVotes: {},
     backendMemberScores: {},
     totalScoreMonth: 0,
@@ -396,6 +427,18 @@ export function AppProvider({ children }) {
       const backendMilestones = await api.fetchMilestones();
       if (Array.isArray(backendMilestones)) {
         dispatch({ type: 'SET_MILESTONES', payload: backendMilestones });
+      }
+
+      // Sync Home Handbook (สมุดคู่มือบ้าน & เบอร์ช่างฉุกเฉิน)
+      const [backendContacts, backendMaint] = await Promise.all([
+        api.fetchHomeContacts().catch(() => []),
+        api.fetchHomeMaintenance().catch(() => []),
+      ]);
+      if (Array.isArray(backendContacts)) {
+        dispatch({ type: 'SET_HOME_CONTACTS', payload: backendContacts });
+      }
+      if (Array.isArray(backendMaint)) {
+        dispatch({ type: 'SET_HOME_MAINTENANCE', payload: backendMaint });
       }
     } catch (err) {
       // Backend momentarily restarting; silent fallback
@@ -764,6 +807,66 @@ export function AppProvider({ children }) {
     }
   };
 
+  // Home Handbook & Maintenance (สมุดคู่มือบ้าน & เบอร์ช่างฉุกเฉิน)
+  const addHomeContact = async (contactData) => {
+    try {
+      const res = await api.createHomeContact(contactData);
+      if (res?.contact) {
+        dispatch({ type: 'ADD_HOME_CONTACT', payload: res.contact });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend add contact error:', err.message);
+    }
+  };
+
+  const deleteHomeContact = async (contactId) => {
+    dispatch({ type: 'DELETE_HOME_CONTACT', payload: { contactId } });
+    try {
+      await api.deleteHomeContact(contactId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete contact error:', err.message);
+    }
+  };
+
+  const addHomeMaintenance = async (maintData) => {
+    try {
+      const res = await api.createHomeMaintenance(maintData);
+      if (res?.item) {
+        dispatch({ type: 'SET_HOME_MAINTENANCE', payload: [...(state.homeMaintenance || []), res.item] });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend add maintenance error:', err.message);
+    }
+  };
+
+  const completeHomeMaintenance = async (maintId) => {
+    try {
+      const res = await api.completeHomeMaintenance(maintId, currentUser?.id || 'member-fluke');
+      if (res?.item) {
+        dispatch({ type: 'UPDATE_HOME_MAINTENANCE', payload: res.item });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend complete maintenance error:', err.message);
+    }
+  };
+
+  const deleteHomeMaintenance = async (maintId) => {
+    dispatch({ type: 'DELETE_HOME_MAINTENANCE', payload: { maintId } });
+    try {
+      await api.deleteHomeMaintenance(maintId);
+      syncWithBackend();
+    } catch (err) {
+      console.warn('Backend delete maintenance error:', err.message);
+    }
+  };
+
   const [language, setLanguage] = useState(() => {
     try {
       return localStorage.getItem('hs_language') || 'th';
@@ -899,6 +1002,13 @@ export function AppProvider({ children }) {
     setInstallModalOpen,
     promptInstallApp,
     syncWithBackend,
+    homeContacts: state.homeContacts || [],
+    homeMaintenance: state.homeMaintenance || [],
+    addHomeContact,
+    deleteHomeContact,
+    addHomeMaintenance,
+    completeHomeMaintenance,
+    deleteHomeMaintenance,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

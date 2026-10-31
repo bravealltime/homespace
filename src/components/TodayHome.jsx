@@ -35,6 +35,7 @@ import CreateStoryModal from './CreateStoryModal';
 import DigitalFridgeBoard from './DigitalFridgeBoard';
 import FamilyMilestonesModal, { getCountdownInfo } from './FamilyMilestonesModal';
 import PostPhotoGrid from './PostPhotoGrid';
+import { getMaintenanceStatus } from './HomeHandbookModal';
 
 const MEMBER_THEMES = {
   'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -94,7 +95,7 @@ function timeAgo(timestamp, lang = 'th') {
   return `${days} วันที่แล้ว`;
 }
 
-export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
+export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook }) {
   const { currentUser, isAdmin } = useAuth();
   const {
     members,
@@ -112,6 +113,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     unlockedRewards,
     milestones,
     notes,
+    homeMaintenance,
     language,
     t,
     isStandalone,
@@ -193,6 +195,11 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
   const [startX, setStartX] = useState(0);
   const [scrollLeftState, setScrollLeftState] = useState(0);
   const isDraggingRef = useRef(false);
+
+  const urgentMaintenance = (homeMaintenance || []).filter((item) => {
+    const st = getMaintenanceStatus(item.nextDueDate);
+    return st.isDue;
+  });
 
   const openCreatePost = (mode = 'routine', choreId = 'dishes') => {
     setCreatePostMode(mode);
@@ -770,9 +777,46 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 <span className="text-[9px] text-[#5F8D75] font-black">+{q.points}</span>
               </button>
             ))}
+
+            {/* Quick Home Handbook Button */}
+            <button
+              type="button"
+              onClick={onOpenHandbook}
+              className="px-2.5 py-1 rounded-xl bg-[#EEF4F0] hover:bg-[#E2EEE6] border border-[#5F8D75]/30 text-[#5F8D75] text-[11px] font-black flex items-center gap-1 shrink-0 transition-all cursor-pointer active:scale-95"
+              title="เปิดสมุดคู่มือบ้าน & เบอร์ช่างฉุกเฉิน"
+            >
+              <span>🏡</span>
+              <span>คู่มือบ้าน & เบอร์ช่าง</span>
+            </button>
           </div>
         </div>
       </section>
+
+      {/* Progressive Disclosure: Urgent Home Maintenance Reminder (Auto-Hidden When All Safe) */}
+      {urgentMaintenance.length > 0 && (
+        <section
+          onClick={onOpenHandbook}
+          className="p-3 rounded-2xl bg-amber-50 hover:bg-amber-100/70 border border-amber-200 shadow-2xs flex items-center justify-between transition-all cursor-pointer group animate-fadeIn"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xl shrink-0">{urgentMaintenance[0].emoji || '🛠️'}</span>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-amber-950 truncate flex items-center gap-1.5">
+                <span>เตือนดูแลบ้าน: {urgentMaintenance[0].title}</span>
+                <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-1.5 py-0.5 rounded-md shrink-0">
+                  {getMaintenanceStatus(urgentMaintenance[0].nextDueDate).text}
+                </span>
+              </p>
+              <p className="text-[10px] text-amber-800 mt-0.5">
+                แตะเพื่อดูเบอร์ช่าง หรือบันทึกว่าทำเสร็จแล้ว (+25 แต้มโหลของบ้าน)
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-black text-amber-900 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
+            เปิดดู →
+          </span>
+        </section>
+      )}
 
       {/* 3. Sleek Mobile Create Post Bar (แถบโพสต์เร็วแบบมินิมอล) */}
       <section className="bg-white rounded-2xl p-2 px-3 border border-[#ECE7DF] shadow-2xs flex items-center gap-2.5">

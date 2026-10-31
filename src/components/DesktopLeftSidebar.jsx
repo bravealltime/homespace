@@ -11,6 +11,7 @@ import {
   Copy,
   Check,
   Sparkle,
+  Wrench,
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -21,6 +22,7 @@ export default function DesktopLeftSidebar({
   onOpenAdmin,
   onOpenSummary,
   onOpenInstall,
+  onOpenHandbook,
 }) {
   const { currentUser, currentFamily, isAdmin } = useAuth();
   const { totalScoreMonth, backendMemberScores, t } = useApp();
@@ -161,6 +163,18 @@ export default function DesktopLeftSidebar({
             <ChartBar size={18} weight="bold" />
           </div>
           <span className="truncate flex-1">สรุปความร่วมมือของบ้าน</span>
+        </button>
+
+        {/* Home Handbook & Maintenance Shortcut */}
+        <button
+          type="button"
+          onClick={onOpenHandbook}
+          className="w-full px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all cursor-pointer text-left text-xs font-bold text-[#2D2825] hover:bg-white hover:shadow-2xs"
+        >
+          <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#5F8D75] flex items-center justify-center text-base shrink-0">
+            <Wrench size={18} weight="bold" />
+          </div>
+          <span className="truncate flex-1">สมุดคู่มือบ้าน & เบอร์ช่าง</span>
         </button>
 
         {/* Admin Family Management Shortcut */}

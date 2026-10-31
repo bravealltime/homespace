@@ -179,6 +179,32 @@ export function initDb() {
       taggedMemberIds TEXT DEFAULT '[]',
       timestamp INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS home_contacts (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      category TEXT DEFAULT 'technician',
+      emoji TEXT DEFAULT '📞',
+      note TEXT,
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS home_maintenance (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      title TEXT NOT NULL,
+      category TEXT DEFAULT 'air',
+      emoji TEXT DEFAULT '❄️',
+      frequencyMonths INTEGER DEFAULT 6,
+      lastServicedDate TEXT,
+      nextDueDate TEXT,
+      cost TEXT,
+      technicianPhone TEXT,
+      note TEXT,
+      updatedAt INTEGER NOT NULL
+    );
   `);
 
   
@@ -357,6 +383,44 @@ function seedInitialData() {
         INSERT INTO family_milestones (id, familyId, title, date, emoji, category, memberId, timestamp)
         VALUES (?, 'family-main', ?, ?, '🍲', 'event', 'member-fluke', ?)
       `).run('milestone-sample', 'ปาร์ตี้รวมพลครอบครัวสุดสัปดาห์', dateStr, Date.now());
+    }
+
+    // Seed default home contacts if empty
+    const contactCount = db.prepare('SELECT COUNT(*) as count FROM home_contacts').get().count;
+    if (contactCount === 0) {
+      const defaultContacts = [
+        ['contact-1', 'ช่างแอร์ประจำบ้าน (ช่างเอก)', '0812345678', 'technician', '❄️', 'ล้างแอร์ ซ่อมแอร์ เครื่องละ 500 บ.'],
+        ['contact-2', 'ช่างไฟ & ประปา (ช่างสมศักดิ์)', '0898765432', 'technician', '⚡', 'ซ่อมระบบไฟ ท่อตัน ปั๊มน้ำ'],
+        ['contact-3', 'นิติบุคคลหมู่บ้าน / รปภ.', '029998888', 'utility', '🏢', 'ติดต่องานส่วนกลาง และแจ้งปัญหาหน้าบ้าน'],
+        ['contact-4', 'สายด่วนแพทย์ฉุกเฉิน (ทั่วไทย)', '1669', 'emergency', '🚑', 'เรียกรถพยาบาลกู้ชีพฉุกเฉิน 24 ชม.'],
+        ['contact-5', 'เหตุด่วนเหตุร้าย (ตำรวจ)', '191', 'emergency', '🚓', 'แจ้งเหตุด่วน 24 ชม.'],
+        ['contact-6', 'ดับเพลิง / จับสัตว์มีพิษ', '199', 'emergency', '🚒', 'แจ้งเหตุไฟไหม้ งู/สัตว์มีพิษเข้าบ้าน'],
+      ];
+      const insertContact = db.prepare(`
+        INSERT INTO home_contacts (id, familyId, name, phone, category, emoji, note, createdAt)
+        VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?)
+      `);
+      for (const c of defaultContacts) {
+        insertContact.run(c[0], c[1], c[2], c[3], c[4], c[5], Date.now());
+      }
+    }
+
+    // Seed default maintenance items if empty
+    const maintCount = db.prepare('SELECT COUNT(*) as count FROM home_maintenance').get().count;
+    if (maintCount === 0) {
+      const defaultMaintenance = [
+        ['maint-1', 'ล้างแอร์ห้องนอนใหญ่', 'air', '❄️', 6, '2026-01-15', '2026-07-15', '500 บาท', '0812345678', 'ล้างฟิลเตอร์และเติมน้ำยาแอร์'],
+        ['maint-2', 'ล้างแอร์ห้องนั่งเล่น', 'air', '❄️', 6, '2026-02-10', '2026-08-10', '500 บาท', '0812345678', 'แอร์เปิดบ่อยช่วงกลางวัน'],
+        ['maint-3', 'เปลี่ยนไส้กรองเครื่องกรองน้ำ', 'water', '💧', 6, '2025-11-20', '2026-05-20', '800 บาท', '0898765432', 'เปลี่ยนไส้กรองเซรามิกและคาร์บอน'],
+        ['maint-4', 'ตรวจฉีดปลวก & แมลงรอบบ้าน', 'pest', '🐜', 12, '2025-08-15', '2026-08-15', '2,500 บาท', '029998888', 'ตรวจอัดน้ำยาลงท่อใต้คาน'],
+      ];
+      const insertMaint = db.prepare(`
+        INSERT INTO home_maintenance (id, familyId, title, category, emoji, frequencyMonths, lastServicedDate, nextDueDate, cost, technicianPhone, note, updatedAt)
+        VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const m of defaultMaintenance) {
+        insertMaint.run(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], Date.now());
+      }
     }
   } catch (err) {
     console.warn('Seed notes/milestones warning:', err.message);

@@ -1606,6 +1606,189 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
+// ==========================================
+// 15. HOME HANDBOOK & MAINTENANCE (สมุดคู่มือบ้าน & เบอร์ช่างฉุกเฉิน)
+// ==========================================
+app.get('/api/handbook/contacts', (req, res) => {
+  try {
+    const contacts = db.prepare('SELECT * FROM home_contacts ORDER BY createdAt ASC').all();
+    res.json(contacts);
+  } catch (err) {
+    console.error('Error fetching contacts:', err);
+    res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
+});
+
+app.post('/api/handbook/contacts', async (req, res) => {
+  try {
+    const { name, phone, category = 'technician', emoji = '📞', note } = req.body;
+    if (!name || !name.trim() || !phone || !phone.trim()) {
+      return res.status(400).json({ error: 'ชื่อและเบอร์โทรจำเป็นต้องกรอก' });
+    }
+    const id = `contact-${Date.now()}`;
+    db.prepare(`
+      INSERT INTO home_contacts (id, familyId, name, phone, category, emoji, note, createdAt)
+      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?)
+    `).run(id, name.trim(), phone.trim(), category, emoji, note?.trim() || null, Date.now());
+
+    await pushToCloud().catch(err => console.warn('Push cloud after contact:', err.message));
+    const created = db.prepare('SELECT * FROM home_contacts WHERE id = ?').get(id);
+    res.json({ success: true, contact: created });
+  } catch (err) {
+    console.error('Error creating contact:', err);
+    res.status(500).json({ error: 'Failed to create contact' });
+  }
+});
+
+app.delete('/api/handbook/contacts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM home_contacts WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete contact:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting contact:', err);
+    res.status(500).json({ error: 'Failed to delete contact' });
+  }
+});
+
+app.get('/api/handbook/maintenance', (req, res) => {
+  try {
+    const items = db.prepare('SELECT * FROM home_maintenance ORDER BY nextDueDate ASC').all();
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching maintenance:', err);
+    res.status(500).json({ error: 'Failed to fetch maintenance' });
+  }
+});
+
+app.post('/api/handbook/maintenance', async (req, res) => {
+  try {
+    const {
+      title,
+      category = 'air',
+      emoji = '❄️',
+      frequencyMonths = 6,
+      lastServicedDate,
+      cost,
+      technicianPhone,
+      note,
+    } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'ชื่อรายการจำเป็นต้องกรอก' });
+    }
+
+    const id = `maint-${Date.now()}`;
+    const serviced = lastServicedDate || new Date().toISOString().split('T')[0];
+    const nextDate = new Date(serviced);
+    nextDate.setMonth(nextDate.getMonth() + Number(frequencyMonths || 6));
+    const nextDueDate = nextDate.toISOString().split('T')[0];
+
+    db.prepare(`
+      INSERT INTO home_maintenance (id, familyId, title, category, emoji, frequencyMonths, lastServicedDate, nextDueDate, cost, technicianPhone, note, updatedAt)
+      VALUES (?, 'family-main', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      title.trim(),
+      category,
+      emoji,
+      Number(frequencyMonths || 6),
+      serviced,
+      nextDueDate,
+      cost?.trim() || null,
+      technicianPhone?.trim() || null,
+      note?.trim() || null,
+      Date.now()
+    );
+
+    await pushToCloud().catch(err => console.warn('Push cloud after maintenance:', err.message));
+    const created = db.prepare('SELECT * FROM home_maintenance WHERE id = ?').get(id);
+    res.json({ success: true, item: created });
+  } catch (err) {
+    console.error('Error creating maintenance item:', err);
+    res.status(500).json({ error: 'Failed to create maintenance item' });
+  }
+});
+
+app.post('/api/handbook/maintenance/:id/complete', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { memberId = 'member-fluke' } = req.body;
+
+    const item = db.prepare('SELECT * FROM home_maintenance WHERE id = ?').get(id);
+    if (!item) {
+      return res.status(404).json({ error: 'Maintenance item not found' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const nextDate = new Date();
+    nextDate.setMonth(nextDate.getMonth() + Number(item.frequencyMonths || 6));
+    const nextDueDate = nextDate.toISOString().split('T')[0];
+
+    const points = 25;
+    const timestamp = Date.now();
+
+    const tx = db.transaction(() => {
+      // 1. Update maintenance schedule
+      db.prepare(`
+        UPDATE home_maintenance
+        SET lastServicedDate = ?, nextDueDate = ?, updatedAt = ?
+        WHERE id = ?
+      `).run(today, nextDueDate, timestamp, id);
+
+      // 2. Add points to chore_history
+      const histId = `hist-maint-${timestamp}-${memberId}`;
+      db.prepare(`
+        INSERT INTO chore_history (id, memberId, choreName, choreEmoji, points, praise, praiseEmoji, date, timestamp, imageUrl)
+        VALUES (?, ?, ?, ?, ?, 'ดูแลบ้านเรียบร้อยน่าอยู่เสมอ', '🏡', ?, ?, NULL)
+      `).run(
+        histId,
+        memberId,
+        `ดูแลบ้าน: ${item.title}`,
+        item.emoji || '🏡',
+        points,
+        today,
+        timestamp
+      );
+
+      // 3. Post to family feed
+      const postId = `routine-maint-${timestamp}`;
+      db.prepare(`
+        INSERT INTO posts (id, type, memberId, caption, photo, points, likes, timestamp)
+        VALUES (?, 'routine', ?, ?, NULL, ?, 0, ?)
+      `).run(
+        postId,
+        memberId,
+        `ช่างมาทำ "${item.title}" เรียบร้อยแล้วครับ ✨ บ้านสะอาด ปลอดภัย สบายใจทุกคน 🏡`,
+        points,
+        timestamp
+      );
+    });
+
+    tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after complete maintenance:', err.message));
+
+    const updated = db.prepare('SELECT * FROM home_maintenance WHERE id = ?').get(id);
+    res.json({ success: true, item: updated, pointsAwarded: points });
+  } catch (err) {
+    console.error('Error completing maintenance:', err);
+    res.status(500).json({ error: 'Failed to complete maintenance' });
+  }
+});
+
+app.delete('/api/handbook/maintenance/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM home_maintenance WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete maintenance:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting maintenance item:', err);
+    res.status(500).json({ error: 'Failed to delete maintenance item' });
+  }
+});
+
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {

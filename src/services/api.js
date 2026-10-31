@@ -303,3 +303,45 @@ export async function deleteMilestone(milestoneId) {
     method: 'DELETE',
   });
 }
+
+// 10. Home Handbook & Maintenance (สมุดคู่มือบ้าน & เบอร์ช่างฉุกเฉิน)
+export async function fetchHomeContacts() {
+  return request('/handbook/contacts');
+}
+
+export async function createHomeContact(contactData) {
+  return request('/handbook/contacts', {
+    method: 'POST',
+    body: JSON.stringify(contactData),
+  });
+}
+
+export async function deleteHomeContact(contactId) {
+  return request(`/handbook/contacts/${contactId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchHomeMaintenance() {
+  return request('/handbook/maintenance');
+}
+
+export async function createHomeMaintenance(maintData) {
+  return request('/handbook/maintenance', {
+    method: 'POST',
+    body: JSON.stringify(maintData),
+  });
+}
+
+export async function completeHomeMaintenance(maintId, memberId) {
+  return request(`/handbook/maintenance/${maintId}/complete`, {
+    method: 'POST',
+    body: JSON.stringify({ memberId }),
+  });
+}
+
+export async function deleteHomeMaintenance(maintId) {
+  return request(`/handbook/maintenance/${maintId}`, {
+    method: 'DELETE',
+  });
+}

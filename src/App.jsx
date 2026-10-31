@@ -274,9 +274,9 @@ function AppContent() {
         />
       </div>
 
-      {/* 2. Mobile Top Header - Ultra Clean & Stable (< 1024px) */}
+      {/* 2. Mobile Top Header - Ultra Clean & Full Featured (< 1024px) */}
       <header
-        className={`lg:hidden bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0 z-30 ${
+        className={`lg:hidden bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-2.5 sm:px-4 py-2 flex items-center justify-between shadow-2xs safe-area-top shrink-0 z-30 ${
           isViewingContent ? 'hidden' : ''
         }`}
       >
@@ -285,17 +285,19 @@ function AppContent() {
             setViewingMember(null);
             setActiveTab('home');
           }}
-          className="flex items-center gap-2 cursor-pointer shrink-0"
+          className="flex items-center gap-2 cursor-pointer shrink-0 min-w-0"
         >
-          <HomeSpaceLogo size={34} rounded="rounded-xl" className="shadow-xs" />
-          <div>
-            <h1 className="text-sm font-black text-[#2D2825] leading-tight tracking-tight">HomeSpace</h1>
-            <p className="text-[9px] text-[#746C65]">{t('appSubtitle', 'บันทึกความสุขของบ้าน')}</p>
+          <HomeSpaceLogo size={32} rounded="rounded-xl" className="shadow-xs shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-sm font-black text-[#2D2825] leading-none tracking-tight">HomeSpace</h1>
+            <p className="text-[9px] text-[#746C65] font-medium leading-none mt-0.5 truncate">
+              {language === 'en' ? 'Our Family Space' : 'บันทึกความสุขของบ้าน'}
+            </p>
           </div>
         </div>
 
-        {/* Right Actions: Clean, Uncluttered 4-Item Bar (SOS + Search + Notifications + Quick House Menu) */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Right Actions: SOS + Senior Text (Aa) + Lang (🌐) + Search + Notifications + Profile Hub */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* 1. Emergency SOS Button */}
           <button
             type="button"
@@ -303,24 +305,53 @@ function AppContent() {
               setSosInitialCountdown(!activeSosAlert);
               setSosModalOpen(true);
             }}
-            className="h-8 px-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+            className="h-7.5 px-2 sm:px-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-[11px] sm:text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
             title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
           >
             <span className="text-xs">🚨</span>
             <span className="font-mono font-black tracking-tight">SOS</span>
           </button>
 
-          {/* 2. Search Button */}
+          {/* 2. Senior Mode (Aa Large Text Toggle) */}
+          <button
+            type="button"
+            onClick={toggleSeniorMode}
+            className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all cursor-pointer border shrink-0 ${
+              seniorMode
+                ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
+                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
+            }`}
+            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตา)'}
+          >
+            <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
+          </button>
+
+          {/* 3. Language Switcher (EN / ไทย) */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className={`h-7.5 px-1.5 sm:px-2 rounded-full flex items-center gap-0.5 sm:gap-1 transition-all cursor-pointer border text-[10px] sm:text-[11px] font-black shrink-0 ${
+              language === 'en'
+                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs'
+                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
+            }`}
+            title={t('langToggleTitle', 'สลับภาษาไทย / Switch to English')}
+          >
+            <Globe size={13} weight="bold" />
+            <span>{language === 'en' ? 'EN' : 'TH'}</span>
+          </button>
+
+          {/* 4. Search Button */}
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
+            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
             title={t('searchTitle', 'ค้นหาในบ้าน')}
           >
-            <MagnifyingGlass size={16} weight="bold" />
+            <MagnifyingGlass size={15} weight="bold" />
           </button>
 
-          {/* 3. Notification Bell with Badge */}
+          {/* 5. Notification Bell with Badge */}
           <button
             type="button"
             onClick={() => {
@@ -329,29 +360,29 @@ function AppContent() {
                 markNotificationsRead(currentUser.id);
               }
             }}
-            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
+            className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
             title={t('notificationsTitle', 'การแจ้งเตือน')}
           >
             <Bell
-              size={17}
+              size={16}
               weight={unreadCount > 0 ? 'fill' : 'bold'}
               className={unreadCount > 0 ? 'text-[#E88D67]' : 'text-[#746C65]'}
             />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
                 {unreadCount}
               </span>
             )}
           </button>
 
-          {/* 4. Quick House Menu & Profile Avatar Hub */}
+          {/* 6. Quick House Menu & Profile Avatar Hub */}
           <button
             type="button"
             onClick={() => setQuickHouseMenuOpen(true)}
             className="relative p-0.5 rounded-full border-2 border-[#5F8D75]/40 hover:border-[#5F8D75] transition-all hover:scale-105 cursor-pointer shrink-0 ml-0.5"
             title="ศูนย์จัดการบ้าน & การตั้งค่า"
           >
-            <div className="w-7.5 h-7.5 rounded-full overflow-hidden bg-white">
+            <div className="w-7 h-7 rounded-full overflow-hidden bg-white">
               {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
                 <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -425,7 +456,7 @@ function AppContent() {
           touchAction: 'pan-y',
         }}
       >
-        <main className="w-full px-3.5 pt-3 pb-28">
+        <main className="w-full px-3.5 pt-3 pb-36 sm:pb-40">
           {renderTabContent()}
         </main>
       </div>

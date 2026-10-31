@@ -2121,8 +2121,8 @@ app.post('/api/sos/:id/resolve', async (req, res) => {
 
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`[HomeSpace Backend] Server running at http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[HomeSpace Backend] Server running at http://0.0.0.0:${PORT}`);
     console.log(`[HomeSpace Backend] SQLite database: ${path.join(__dirname, 'homespace.db')}`);
   });
 }

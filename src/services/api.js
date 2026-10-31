@@ -1,8 +1,45 @@
 // HomeSpace Real Backend API Client
-const API_BASE = '/api';
+import { Capacitor } from '@capacitor/core';
+
+// Default LAN IP for testing on mobile device over Wi-Fi
+export const DEFAULT_LAN_API_URL = 'http://192.168.1.42:3001/api';
+
+export function getApiBaseUrl() {
+  // 1. In-app custom server configuration (set via Settings modal)
+  if (typeof localStorage !== 'undefined') {
+    const custom = localStorage.getItem('homespace_custom_api_url');
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/+$/, '');
+    }
+  }
+
+  // 2. Vite environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
+  }
+
+  // 3. If running inside Native Android / iOS APK via Capacitor
+  if (Capacitor.isNativePlatform()) {
+    return DEFAULT_LAN_API_URL;
+  }
+
+  // 4. Standard Web Browser / PWA: relative /api path
+  return '/api';
+}
+
+export function setCustomApiUrl(url) {
+  if (typeof localStorage !== 'undefined') {
+    if (!url || !url.trim()) {
+      localStorage.removeItem('homespace_custom_api_url');
+    } else {
+      localStorage.setItem('homespace_custom_api_url', url.trim());
+    }
+  }
+}
 
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -29,7 +66,7 @@ async function request(endpoint, options = {}) {
     }
     return await res.json();
   } catch (err) {
-    console.warn(`[API Network/Server Warning] ${endpoint}:`, err.message);
+    console.warn(`[API Network/Server Warning] ${endpoint} (${url}):`, err.message);
     throw err;
   }
 }
@@ -218,7 +255,8 @@ export async function uploadImageFile(file) {
   const formData = new FormData();
   formData.append('image', file);
 
-  const res = await fetch(`${API_BASE}/upload`, {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/upload`, {
     method: 'POST',
     body: formData,
   });

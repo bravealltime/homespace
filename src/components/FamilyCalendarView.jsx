@@ -287,9 +287,9 @@ export default function FamilyCalendarView({ onNavigateTab }) {
   };
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-36 sm:pb-40">
       {/* 1. Header with Title & Quick Switch to Fridge Board */}
-      <section className="bg-white rounded-3xl p-4 border border-[#ECE7DF] shadow-2xs space-y-3">
+      <section className="bg-white rounded-3xl p-4 sm:p-5 border border-[#ECE7DF] shadow-2xs space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-[#FFF5EB] text-[#E88D67] border border-[#E88D67]/30 flex items-center justify-center text-xl shadow-2xs">
@@ -350,7 +350,6 @@ export default function FamilyCalendarView({ onNavigateTab }) {
               วันนี้
             </button>
 
-            {/* Quick Add Dropdown / Action */}
             <button
               type="button"
               onClick={() => openAddWithDate(selectedDateStr, false)}
@@ -363,13 +362,13 @@ export default function FamilyCalendarView({ onNavigateTab }) {
         </div>
 
         {/* 3. Interactive Monthly Calendar Grid with Multi-Day Spanning */}
-        <div className="space-y-1 select-none">
+        <div className="bg-[#FAF8F5] rounded-2xl p-2 sm:p-3 border border-[#ECE7DF] space-y-1.5 select-none">
           {/* Weekday Labels (อา - ส) */}
-          <div className="grid grid-cols-7 text-center">
+          <div className="grid grid-cols-7 text-center pb-1">
             {WEEKDAYS.map((w, idx) => (
               <span
                 key={w}
-                className={`text-[11px] font-black py-1 ${
+                className={`text-[11px] font-black py-0.5 ${
                   idx === 0 ? 'text-[#C84B31]' : idx === 6 ? 'text-[#3B82F6]' : 'text-[#746C65]'
                 }`}
               >
@@ -378,106 +377,95 @@ export default function FamilyCalendarView({ onNavigateTab }) {
             ))}
           </div>
 
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* Days Grid - Harmonious, Unified Modern Layout */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
             {calendarCells.map((cell, idx) => {
               const isToday = cell.dateStr === todayStr;
               const isSelected = cell.dateStr === selectedDateStr;
               const multiDayItem = cell.milestones.find((ev) => ev.isMultiDay);
               const singleEvents = cell.milestones.filter((ev) => !ev.isMultiDay);
-
-              // Multi-day styling classes
-              let multiDayBg = '';
-              if (multiDayItem) {
-                if (multiDayItem.isFirstDay) {
-                  multiDayBg = 'bg-[#FFF5EB] border-[#E88D67] rounded-l-2xl shadow-2xs ring-1 ring-[#E88D67]/30';
-                } else if (multiDayItem.isLastDay) {
-                  multiDayBg = 'bg-[#FFF5EB] border-[#E88D67] rounded-r-2xl shadow-2xs ring-1 ring-[#E88D67]/30';
-                } else {
-                  multiDayBg = 'bg-[#FFF9F5] border-y border-[#FDE0C7] rounded-none';
-                }
-              }
+              const dayOfWeek = (idx) % 7; // 0 = Sun, 6 = Sat
 
               return (
                 <div
                   key={`${cell.dateStr}-${idx}`}
                   onClick={() => setSelectedDateStr(cell.dateStr)}
-                  className={`min-h-[58px] sm:min-h-[64px] p-1 border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`min-h-[52px] sm:min-h-[62px] p-1 rounded-xl transition-all cursor-pointer flex flex-col justify-between relative group ${
                     isSelected
-                      ? 'bg-[#EEF4F0] border-[#5F8D75] ring-2 ring-[#5F8D75]/50 shadow-xs z-10 scale-102 rounded-2xl'
-                      : multiDayBg ||
-                        (isToday
-                          ? 'bg-[#FFF9F5] border-[#E88D67] shadow-2xs rounded-2xl'
-                          : cell.isCurrentMonth
-                          ? 'bg-white border-[#ECE7DF] hover:bg-[#FAF8F5] rounded-2xl'
-                          : 'bg-[#FAF8F5]/60 border-[#ECE7DF]/40 text-[#B0A79E] opacity-50 rounded-2xl')
+                      ? 'bg-white ring-2 ring-[#5F8D75] shadow-xs z-10'
+                      : isToday
+                      ? 'bg-[#FFF5EB] border border-[#E88D67]/40 shadow-2xs'
+                      : cell.isCurrentMonth
+                      ? 'bg-white/80 hover:bg-white border border-[#ECE7DF]/80 hover:border-[#5F8D75]/40 shadow-2xs'
+                      : 'bg-[#FAF8F5]/50 border border-transparent opacity-35 hover:opacity-70'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  {/* Top: Day Number & Single Event Indicator */}
+                  <div className="flex items-center justify-between w-full">
                     <span
-                      className={`text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold transition-transform group-hover:scale-105 ${
                         isToday
-                          ? 'bg-[#E88D67] text-white font-black'
+                          ? 'bg-[#E88D67] text-white font-black shadow-xs'
                           : isSelected
-                          ? 'text-[#5F8D75] font-black'
-                          : multiDayItem
-                          ? 'text-[#E88D67] font-black'
+                          ? 'bg-[#5F8D75] text-white font-black shadow-xs'
+                          : dayOfWeek === 0
+                          ? 'text-[#C84B31]'
+                          : dayOfWeek === 6
+                          ? 'text-[#3B82F6]'
                           : cell.isCurrentMonth
                           ? 'text-[#2D2825]'
-                          : 'text-[#B0A79E]'
+                          : 'text-[#9E958D]'
                       }`}
                     >
                       {cell.dayNum}
                     </span>
 
-                    {/* Emoji header indicator */}
-                    {multiDayItem ? (
+                    {/* Single Day Event Indicator Dot / Emoji */}
+                    {singleEvents.length > 0 && !multiDayItem && (
+                      <span className="text-[10px] leading-none shrink-0" title={singleEvents[0].title}>
+                        {singleEvents[0]?.emoji || '🎂'}
+                      </span>
+                    )}
+
+                    {multiDayItem && multiDayItem.isFirstDay && (
                       <span className="text-[11px] leading-none shrink-0" title={multiDayItem.title}>
                         {multiDayItem.emoji || '🏖️'}
                       </span>
-                    ) : (
-                      singleEvents.length > 0 && (
-                        <span className="text-[10px] leading-none shrink-0" title={singleEvents[0].title}>
-                          {singleEvents[0]?.emoji || '🎂'}
-                        </span>
-                      )
                     )}
                   </div>
 
-                  {/* Multi-Day Banner / Event Indicators */}
-                  <div className="space-y-0.5">
+                  {/* Bottom: Multi-Day Continuous Ribbon or Single Event Dots */}
+                  <div className="w-full mt-0.5">
                     {multiDayItem ? (
                       <div className="w-full">
                         {multiDayItem.isFirstDay && (
-                          <span className="block text-[8.5px] font-black text-[#E88D67] bg-[#FFE8D6] px-1 py-0.2 rounded-md truncate text-center">
-                            เริ่มทริป 🚀
-                          </span>
+                          <div className="w-full rounded-l-md bg-gradient-to-r from-amber-400 to-amber-300 text-amber-950 font-black text-[8px] sm:text-[9px] px-1 py-0.5 truncate shadow-2xs">
+                            {multiDayItem.title || 'เริ่มทริป'}
+                          </div>
                         )}
                         {!multiDayItem.isFirstDay && !multiDayItem.isLastDay && (
-                          <span className="block text-[8px] font-bold text-[#E88D67]/80 truncate text-center">
+                          <div className="w-full bg-amber-200/90 text-amber-900 font-bold text-[7.5px] sm:text-[8px] py-0.5 truncate text-center">
                             วันที่ {multiDayItem.dayIndex}
-                          </span>
+                          </div>
                         )}
                         {multiDayItem.isLastDay && (
-                          <span className="block text-[8.5px] font-black text-[#5F8D75] bg-[#EEF4F0] px-1 py-0.2 rounded-md truncate text-center">
-                            🏁 จบทริป
-                          </span>
+                          <div className="w-full rounded-r-md bg-gradient-to-l from-amber-400 to-amber-300 text-amber-950 font-black text-[8px] sm:text-[9px] px-1 py-0.5 truncate text-center shadow-2xs">
+                            🏁 จบ
+                          </div>
                         )}
+                      </div>
+                    ) : singleEvents.length > 0 ? (
+                      <div className="flex items-center gap-0.5 justify-center">
+                        {singleEvents.slice(0, 3).map((ev, eIdx) => (
+                          <span
+                            key={ev.id || eIdx}
+                            className="w-1.5 h-1.5 rounded-full bg-[#5F8D75]"
+                            title={ev.title}
+                          />
+                        ))}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-0.5 justify-center flex-wrap min-h-[14px]">
-                        {singleEvents.length > 0 ? (
-                          singleEvents.slice(0, 3).map((ev, eIdx) => (
-                            <span
-                              key={ev.id || eIdx}
-                              className="w-1.5 h-1.5 rounded-full bg-[#E88D67]"
-                              title={ev.title}
-                            />
-                          ))
-                        ) : (
-                          <span className="opacity-0">•</span>
-                        )}
-                      </div>
+                      <div className="h-1.5" />
                     )}
                   </div>
                 </div>
@@ -486,40 +474,31 @@ export default function FamilyCalendarView({ onNavigateTab }) {
           </div>
         </div>
 
-        {/* 4. Selected Date Inspector Card with Multi-day Details */}
+        {/* 4. Selected Date Inspector Card with Multi-day Details (Clean, Uncluttered) */}
         {selectedDateStr && (
-          <div className="bg-[#FAF8F5] rounded-2xl p-3 border border-[#ECE7DF] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CalendarCheck size={18} className="text-[#5F8D75]" weight="bold" />
-                <span className="text-xs font-black text-[#2D2825]">
-                  วันที่ {parseLocalDate(selectedDateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="bg-[#FAF8F5] rounded-2xl p-3 sm:p-4 border border-[#ECE7DF] space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <CalendarCheck size={18} className="text-[#5F8D75] shrink-0" weight="bold" />
+                <span className="text-xs sm:text-sm font-black text-[#2D2825] truncate">
+                  วันที่ {parseLocalDate(selectedDateStr).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 {selectedDateStr === todayStr && (
-                  <span className="text-[10px] bg-[#E88D67] text-white font-black px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-[#E88D67] text-white font-black px-2 py-0.5 rounded-full shrink-0 shadow-2xs">
                     วันนี้
                   </span>
                 )}
               </div>
 
-              {/* Action Buttons: Add Single vs Add Trip */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => openAddWithDate(selectedDateStr, true)}
-                  className="text-[11px] font-bold text-[#E88D67] hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <span>🏖️ +จัดทริปหลายวัน</span>
-                </button>
-                <span className="text-[#D6CFC7]">|</span>
-                <button
-                  type="button"
-                  onClick={() => openAddWithDate(selectedDateStr, false)}
-                  className="text-[11px] font-bold text-[#5F8D75] hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <span>+เพิ่มนัด</span>
-                </button>
-              </div>
+              {/* Single Primary Action: Add Event or Trip */}
+              <button
+                type="button"
+                onClick={() => openAddWithDate(selectedDateStr, false)}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#5F8D75] hover:bg-[#4E7661] text-white text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
+              >
+                <Plus size={14} weight="bold" />
+                <span>เพิ่มกิจกรรม</span>
+              </button>
             </div>
 
             {selectedDayMilestones.length > 0 ? (
@@ -617,24 +596,28 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                 })}
               </div>
             ) : (
-              <div className="text-center py-3 space-y-1">
-                <p className="text-xs text-[#9E958D]">
-                  ยังไม่มีนัดหมายในวันนี้
-                </p>
-                <div className="flex items-center justify-center gap-2 pt-1">
+              <div className="py-4 px-3 text-center space-y-2">
+                <div className="w-10 h-10 rounded-2xl bg-[#EEF4F0] text-[#5F8D75] flex items-center justify-center mx-auto text-lg shadow-2xs">
+                  🌿
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#2D2825]">ยังไม่มีนัดหมายในวันนี้</p>
+                  <p className="text-[11px] text-[#746C65] mt-0.5">แตะเลือกจัดทริปหรือเพิ่มวันสำคัญของบ้านได้เลย</p>
+                </div>
+                <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
                   <button
                     type="button"
                     onClick={() => openAddWithDate(selectedDateStr, false)}
-                    className="text-xs font-bold text-[#5F8D75] bg-[#EEF4F0] px-3 py-1 rounded-xl hover:bg-[#E2EEE6] transition-colors cursor-pointer"
+                    className="text-xs font-bold text-[#5F8D75] bg-[#EEF4F0] hover:bg-[#DCEAE1] px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
                   >
-                    + เพิ่มนัดหมายวันเดียว
+                    + เพิ่มวันเกิด / นัดหมาย
                   </button>
                   <button
                     type="button"
                     onClick={() => openAddWithDate(selectedDateStr, true)}
-                    className="text-xs font-bold text-[#E88D67] bg-[#FFF5EB] px-3 py-1 rounded-xl hover:bg-[#FFE8D6] transition-colors cursor-pointer"
+                    className="text-xs font-bold text-[#E88D67] bg-[#FFF5EB] hover:bg-[#FFE8D6] px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs border border-[#E88D67]/30"
                   >
-                    🏖️ + วางแผนทริปหลายวัน
+                    🏖️ วางแผนทริปหลายวัน
                   </button>
                 </div>
               </div>

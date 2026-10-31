@@ -358,42 +358,177 @@ function reducer(state, action) {
 }
 
 function getInitialState() {
-  try {
-    // Purge any legacy stale mock state from localStorage
-    localStorage.removeItem('homespace-state');
-  } catch (e) {
-    // ignore
-  }
-
   let initialSeniorMode = false;
   try {
     initialSeniorMode = localStorage.getItem('homespace_senior_mode') === 'true';
   } catch (e) {}
 
+  // 1. Try loading cached persistent state from localStorage (ensures APK never launches empty)
+  try {
+    const cachedStr = localStorage.getItem('homespace_cached_state');
+    if (cachedStr) {
+      const parsed = JSON.parse(cachedStr);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          history: Array.isArray(parsed.history) ? parsed.history : [],
+          feedPosts: Array.isArray(parsed.feedPosts) && parsed.feedPosts.length > 0 ? parsed.feedPosts : getWarmDefaultPosts(),
+          stories: Array.isArray(parsed.stories) ? parsed.stories : [],
+          notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
+          notes: Array.isArray(parsed.notes) && parsed.notes.length > 0 ? parsed.notes : getWarmDefaultNotes(),
+          milestones: Array.isArray(parsed.milestones) && parsed.milestones.length > 0 ? parsed.milestones : getWarmDefaultMilestones(),
+          homeContacts: Array.isArray(parsed.homeContacts) ? parsed.homeContacts : [],
+          homeMaintenance: Array.isArray(parsed.homeMaintenance) ? parsed.homeMaintenance : [],
+          treeState: parsed.treeState || {
+            level: 1,
+            stage: 'sprout',
+            exp: 5,
+            maxExp: 20,
+            waterDrops: 10,
+            totalWatered: 2,
+            recentLogs: [],
+          },
+          activeSosAlert: parsed.activeSosAlert || null,
+          backendVotes: parsed.backendVotes || {},
+          backendMemberScores: parsed.backendMemberScores || {},
+          totalScoreMonth: parsed.totalScoreMonth || 50,
+          seniorMode: initialSeniorMode,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('[AppContext] Failed to read cached state:', e);
+  }
+
+  // 2. Warm Initial Seed State for First-Time APK Launch
   return {
     history: [],
-    feedPosts: [],
+    feedPosts: getWarmDefaultPosts(),
     stories: [],
     notifications: [],
-    notes: [],
-    milestones: [],
+    notes: getWarmDefaultNotes(),
+    milestones: getWarmDefaultMilestones(),
     homeContacts: [],
     homeMaintenance: [],
     treeState: {
       level: 1,
       stage: 'sprout',
-      exp: 0,
+      exp: 5,
       maxExp: 20,
       waterDrops: 10,
-      totalWatered: 0,
+      totalWatered: 2,
       recentLogs: [],
     },
     activeSosAlert: null,
     backendVotes: {},
     backendMemberScores: {},
-    totalScoreMonth: 0,
+    totalScoreMonth: 50,
     seniorMode: initialSeniorMode,
   };
+}
+
+function getWarmDefaultPosts() {
+  const now = Date.now();
+  return [
+    {
+      id: 'seed-post-1',
+      type: 'chore',
+      memberId: 'member-fluke',
+      choreName: 'ล้างจานชาม',
+      choreEmoji: '🧽',
+      caption: 'ล้างจานชามสะอาดเงาวับแล้วครับ ✨',
+      praise: 'สะอาดเรียบร้อยดีมาก! ✨',
+      praiseEmoji: '✨',
+      points: 25,
+      timestamp: now - 3600000,
+      likes: 1,
+      comments: [
+        {
+          id: 'c-seed-1',
+          memberId: 'member-mom',
+          text: 'เก่งมากจ้ะลูก สะอาดเรียบร้อยมาก 💖',
+          timestamp: now - 3000000,
+        },
+      ],
+      isLiked: false,
+    },
+    {
+      id: 'seed-post-2',
+      type: 'routine',
+      memberId: 'member-1793450790296',
+      caption: 'วันนี้เคลียร์หน้าบ้านเรียบร้อยหมดแล้วครับ สดชื่นรับแดดเช้า ☀️',
+      category: 'เรื่องราววันนี้',
+      points: 25,
+      timestamp: now - 14400000,
+      likes: 2,
+      comments: [],
+      isLiked: false,
+    },
+    {
+      id: 'seed-post-3',
+      type: 'routine',
+      memberId: 'member-fluke',
+      caption: 'ไปกินหมูกะทะมาวันนี้ อิ่มอร่อยมากทุกคน 🍲',
+      category: 'มื้ออร่อยประจำบ้าน',
+      points: 25,
+      timestamp: now - 86400000,
+      likes: 2,
+      comments: [],
+      isLiked: false,
+    },
+  ];
+}
+
+function getWarmDefaultNotes() {
+  return [
+    {
+      id: 'seed-note-1',
+      title: 'อย่าลืมกินยาหลังอาหารเช้าจ้า 💊',
+      content: 'คุณหมอสั่งยาบำรุงหัวใจและวิตามินซีไว้ในกล่องยาบนโต๊ะกินข้าวนะลูก ทานน้ำเยอะๆ ด้วยนะ',
+      color: 'amber',
+      pin: true,
+      authorId: 'member-grandma',
+      createdAt: new Date().toISOString(),
+      acknowledgments: [],
+    },
+    {
+      id: 'seed-note-2',
+      title: 'ซื้อของเข้าตู้เย็นวันอาทิตย์นี้ 🛒',
+      content: 'ไข่ไก่ นมสด ขนมปัง และผลไม้สดจ้า',
+      color: 'emerald',
+      pin: false,
+      authorId: 'member-mom',
+      createdAt: new Date().toISOString(),
+      acknowledgments: [],
+    },
+  ];
+}
+
+function getWarmDefaultMilestones() {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  return [
+    {
+      id: 'seed-ms-1',
+      title: 'วันเกิดคุณยาย 🎂',
+      date: `${y}-${m}-15`,
+      endDate: null,
+      emoji: '🎂',
+      category: 'birthday',
+      memberId: 'member-grandma',
+      taggedMemberIds: [],
+    },
+    {
+      id: 'seed-ms-2',
+      title: 'ทริปครอบครัวเขาใหญ่ 🏖️',
+      date: `${y}-${m}-20`,
+      endDate: `${y}-${m}-23`,
+      emoji: '🏖️',
+      category: 'trip',
+      memberId: 'member-fluke',
+      taggedMemberIds: [],
+    },
+  ];
 }
 
 export function AppProvider({ children }) {
@@ -466,6 +601,24 @@ export function AppProvider({ children }) {
       // Sync Active Family SOS Alert (สัญญาณขอความช่วยเหลือฉุกเฉิน)
       const sosRes = await api.fetchActiveSos().catch(() => null);
       dispatch({ type: 'SET_ACTIVE_SOS', payload: sosRes?.activeAlert || null });
+
+      // Save cache bundle to localStorage for offline / instant APK launch
+      try {
+        const cacheBundle = {
+          feedPosts: backendPosts || [],
+          stories: backendStories || [],
+          notifications: backendNotifs || [],
+          notes: backendNotes || [],
+          milestones: backendMilestones || [],
+          homeContacts: backendContacts || [],
+          homeMaintenance: backendMaint || [],
+          treeState: backendTree || undefined,
+          activeSosAlert: sosRes?.activeAlert || null,
+        };
+        localStorage.setItem('homespace_cached_state', JSON.stringify(cacheBundle));
+      } catch (cacheErr) {
+        // storage quota exceeded or disabled
+      }
     } catch (err) {
       // Backend momentarily restarting; silent fallback
     }

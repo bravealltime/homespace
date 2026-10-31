@@ -14,9 +14,13 @@ import {
   GearSix,
   Heart,
   House,
+  Broadcast,
+  PencilSimple,
+  ArrowClockwise,
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { getApiBaseUrl, setCustomApiUrl, DEFAULT_LAN_API_URL } from '../services/api';
 
 export default function QuickHouseMenu({
   isOpen,
@@ -42,6 +46,32 @@ export default function QuickHouseMenu({
 
   const userScore = backendMemberScores?.[currentUser?.id] ?? currentUser?.points ?? 0;
   const activeMembersCount = (members || []).filter((m) => m.status !== 'pending').length;
+
+  const [isEditingServer, setIsEditingServer] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(() => getApiBaseUrl());
+  const [serverSaveSuccess, setServerSaveSuccess] = useState(false);
+
+  const handleSaveServer = (e) => {
+    e.preventDefault();
+    setCustomApiUrl(serverUrlInput);
+    setServerSaveSuccess(true);
+    setTimeout(() => {
+      setServerSaveSuccess(false);
+      setIsEditingServer(false);
+      window.location.reload();
+    }, 600);
+  };
+
+  const handleResetServer = () => {
+    setCustomApiUrl('');
+    setServerUrlInput(DEFAULT_LAN_API_URL);
+    setServerSaveSuccess(true);
+    setTimeout(() => {
+      setServerSaveSuccess(false);
+      setIsEditingServer(false);
+      window.location.reload();
+    }, 600);
+  };
 
   return (
     <div
@@ -316,6 +346,67 @@ export default function QuickHouseMenu({
               </div>
               <CaretRight size={14} weight="bold" className="text-[#9E958D]" />
             </button>
+          </div>
+
+          {/* Server Connection Settings Card (For Android APK / Wi-Fi Sync) */}
+          <div className="p-3.5 rounded-2xl bg-white border border-[#ECE7DF] shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#5F8D75] flex items-center justify-center">
+                  <Broadcast size={18} weight="bold" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-[#2D2825]">
+                    การเชื่อมต่อเซิร์ฟเวอร์บ้าน
+                  </h4>
+                  <p className="text-[10px] text-[#746C65]">เซิร์ฟเวอร์ฐานข้อมูล & การซิงก์ APK</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingServer(!isEditingServer)}
+                className="text-[11px] font-bold text-[#5F8D75] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <PencilSimple size={12} weight="bold" />
+                <span>{isEditingServer ? 'ยกเลิก' : 'ตั้งค่า IP'}</span>
+              </button>
+            </div>
+
+            <div className="p-2 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-[11px] font-mono text-[#57534E] break-all flex items-center justify-between gap-2">
+              <span className="truncate">{getApiBaseUrl()}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="พร้อมเชื่อมต่อ" />
+            </div>
+
+            {isEditingServer && (
+              <form onSubmit={handleSaveServer} className="pt-2 border-t border-[#ECE7DF] space-y-2">
+                <label className="block text-[10px] font-bold text-[#746C65]">
+                  ระบุ IP คอมพิวเตอร์ เช่น http://192.168.1.42:3001/api
+                </label>
+                <input
+                  type="text"
+                  value={serverUrlInput}
+                  onChange={(e) => setServerUrlInput(e.target.value)}
+                  placeholder="http://192.168.1.42:3001/api"
+                  className="w-full px-3 py-1.5 rounded-xl border border-[#ECE7DF] text-xs font-mono bg-white focus:outline-hidden focus:border-[#5F8D75]"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-1.5 rounded-xl bg-[#5F8D75] text-white text-xs font-bold hover:bg-[#4E7661] transition-colors cursor-pointer"
+                  >
+                    {serverSaveSuccess ? '✓ บันทึกแล้ว' : 'บันทึก & รีโหลด'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetServer}
+                    className="px-2.5 py-1.5 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-[11px] text-[#746C65] hover:bg-[#ECE7DF] cursor-pointer"
+                    title="คืนค่าเริ่มต้น"
+                  >
+                    รีเซ็ต
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Logout Button */}

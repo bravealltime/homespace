@@ -801,6 +801,46 @@ export function AppProvider({ children }) {
     });
   };
 
+  // PWA Install Prompt State & Handlers
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+      setIsStandalone(isStandaloneMode);
+
+      const handleBeforeInstallPrompt = (e) => {
+        e.preventDefault();
+        setDeferredInstallPrompt(e);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }
+  }, []);
+
+  const promptInstallApp = useCallback(async () => {
+    if (deferredInstallPrompt) {
+      try {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setIsStandalone(true);
+          setDeferredInstallPrompt(null);
+          return true;
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
+    }
+    setInstallModalOpen(true);
+    return false;
+  }, [deferredInstallPrompt]);
+
   const value = {
     state,
     members,
@@ -850,6 +890,11 @@ export function AppProvider({ children }) {
     t,
     autoTranslate,
     toggleAutoTranslate,
+    deferredInstallPrompt,
+    isStandalone,
+    installModalOpen,
+    setInstallModalOpen,
+    promptInstallApp,
     syncWithBackend,
   };
 

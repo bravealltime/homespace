@@ -80,7 +80,20 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment, language, t } = useApp();
+  const {
+    feedPosts,
+    stories,
+    deleteStory,
+    replyStory,
+    likePost,
+    addComment,
+    deletePost,
+    deleteComment,
+    language,
+    t,
+    isStandalone,
+    promptInstallApp,
+  } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
@@ -344,6 +357,26 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
             <p className="text-[10px] text-[#746C65] font-semibold">คอมเมนต์ 💬</p>
           </div>
         </div>
+
+        {/* PWA / App Install Button in Profile */}
+        {!isStandalone && isMe && (
+          <button
+            type="button"
+            onClick={promptInstallApp}
+            className="w-full py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-[#5F8D75] to-[#4E7661] text-white flex items-center justify-between shadow-xs hover:opacity-95 transition-transform active:scale-98 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">📲</span>
+              <div className="text-left">
+                <p className="text-xs font-black leading-tight">{t('installPwaProfileBtn', 'ติดตั้งแอปลงมือถือ (PWA / APK)')}</p>
+                <p className="text-[10px] text-white/80">{t('installPwaSub', 'เปิดเต็มจอ ลื่นไหล ไม่ต้องเข้าผ่านเบราว์เซอร์')}</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-white/20 text-white text-[10px] font-bold">
+              {t('installAppBtn', 'วิธีลง ↗')}
+            </span>
+          </button>
+        )}
 
         {/* Instagram-Style Highlights Bar */}
         <div className="pt-2.5 border-t border-[#ECE7DF]/70">

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, DeviceMobile, ShareNetwork, PlusSquare, DotsThreeVertical, CheckCircle, ArrowSquareOut } from '@phosphor-icons/react';
+import { X, DeviceMobile, ShareNetwork, PlusSquare, DotsThreeVertical, CheckCircle, ArrowSquareOut, DownloadSimple } from '@phosphor-icons/react';
+import { useApp } from '../context/AppContext';
 
 export default function InstallAppModal({ isOpen, onClose }) {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const { deferredInstallPrompt, isStandalone, language, t } = useApp();
   const [activePlatform, setActivePlatform] = useState('ios');
-  const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
     // Detect iOS vs Android automatically
@@ -15,33 +15,22 @@ export default function InstallAppModal({ isOpen, onClose }) {
       } else if (/iphone|ipad|ipod/i.test(ua)) {
         setActivePlatform('ios');
       }
-
-      // Check if already in standalone mode
-      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        setInstalled(true);
-      }
-
-      // Listen for Android install prompt
-      const handleBeforeInstall = (e) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-      };
-      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-      return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     }
   }, []);
 
   if (!isOpen) return null;
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstalled(true);
-      onClose();
+    if (!deferredInstallPrompt) return;
+    try {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        onClose();
+      }
+    } catch (err) {
+      console.warn('Install click error:', err);
     }
-    setDeferredPrompt(null);
   };
 
   return (
@@ -105,11 +94,11 @@ export default function InstallAppModal({ isOpen, onClose }) {
 
         {/* Content body */}
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          {installed ? (
+          {isStandalone ? (
             <div className="p-4 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/30 text-center space-y-2">
               <CheckCircle size={36} className="text-[#5F8D75] mx-auto" weight="fill" />
               <p className="text-xs font-bold text-[#2D2825]">แอปได้รับการติดตั้งบนอุปกรณ์นี้แล้ว!</p>
-              <p className="text-[11px] text-[#5F8D75]">คุณสามารถเปิดใช้งานจากหน้าจอโฮมได้ทันที</p>
+              <p className="text-[11px] text-[#5F8D75]">คุณกำลังใช้งาน HomeSpace จากหน้าจอโฮมแบบเต็มจอ</p>
             </div>
           ) : activePlatform === 'ios' ? (
             <div className="space-y-3">
@@ -163,14 +152,14 @@ export default function InstallAppModal({ isOpen, onClose }) {
                 <span>📦 ดาวน์โหลดไฟล์ HomeSpace.apk (Android) ⬇️</span>
               </a>
 
-              {deferredPrompt && (
+              {deferredInstallPrompt && (
                 <button
                   type="button"
                   onClick={handleInstallClick}
                   className="w-full py-2 rounded-2xl bg-[#5F8D75] text-white text-xs font-bold shadow-xs hover:bg-[#4E7661] transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <DeviceMobile size={16} weight="bold" />
-                  <span>หรือกดติดตั้งลงหน้าจอทันที (PWA) 📲</span>
+                  <span>กดตรงนี้เพื่อติดตั้งลงหน้าจอทันที (PWA 1 คลิก) 📲</span>
                 </button>
               )}
 

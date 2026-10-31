@@ -72,14 +72,25 @@ function HeaderAvatar({ member, size = 'sm' }) {
 
 function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
-  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead, language, toggleLanguage, t } = useApp();
+  const {
+    notifications,
+    seniorMode,
+    toggleSeniorMode,
+    markNotificationsRead,
+    language,
+    toggleLanguage,
+    t,
+    installModalOpen,
+    setInstallModalOpen,
+    promptInstallApp,
+    isStandalone,
+  } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
-  const [installAppOpen, setInstallAppOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
   const scrollContainerRef = useRef(null);
@@ -358,7 +369,7 @@ function AppContent() {
       {/* Edit Profile Modal */}
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
-      <InstallAppModal isOpen={installAppOpen} onClose={() => setInstallAppOpen(false)} />
+      <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}
         {familyMembersOpen && (
@@ -533,7 +544,7 @@ function AppContent() {
                   type="button"
                   onClick={() => {
                     setFamilyMembersOpen(false);
-                    setInstallAppOpen(true);
+                    promptInstallApp();
                   }}
                   className="w-full py-2 px-3 rounded-2xl bg-gradient-to-r from-[#5F8D75] to-[#4E7661] text-white flex items-center justify-between shadow-xs hover:opacity-95 transition-transform active:scale-98 cursor-pointer"
                 >

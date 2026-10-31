@@ -113,7 +113,17 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     notes,
     language,
     t,
+    isStandalone,
+    promptInstallApp,
   } = useApp();
+
+  const [pwaBannerDismissed, setPwaBannerDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem('homespace_pwa_dismissed') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const [translations, setTranslations] = useState({});
 
@@ -449,6 +459,48 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#2D2825] text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl border border-white/20 animate-enter-rise flex items-center gap-2 pointer-events-none">
           <span>✨</span>
           <span>{seniorToast}</span>
+        </div>
+      )}
+
+      {/* 📲 PWA 1-Tap Quick Install Banner */}
+      {!isStandalone && !pwaBannerDismissed && (
+        <div className="bg-gradient-to-r from-[#5F8D75] via-[#4E7661] to-[#3B5D4C] text-white p-3 sm:p-3.5 rounded-3xl shadow-sm flex items-center justify-between gap-2.5 animate-enter-rise">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 text-lg sm:text-xl shadow-xs">
+              📲
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-black truncate">{t('installPwaTitle', 'ติดตั้งแอป HomeSpace บนมือถือ')}</p>
+                <span className="text-[9px] bg-white/25 text-white px-1.5 py-0.2 rounded-full font-bold shrink-0">PWA</span>
+              </div>
+              <p className="text-[10.5px] text-white/85 truncate">
+                {t('installPwaSub', 'เปิดเต็มจอ ลื่นไหล ไม่ต้องเข้าผ่านเบราว์เซอร์')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={promptInstallApp}
+              className="px-3 py-1.5 rounded-full bg-white text-[#3B5D4C] font-black text-xs hover:bg-[#FAF8F5] active:scale-95 shadow-xs transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+            >
+              <span>{t('installNowBtn', 'ติดตั้งทันที 📲')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPwaBannerDismissed(true);
+                try {
+                  sessionStorage.setItem('homespace_pwa_dismissed', '1');
+                } catch {}
+              }}
+              className="w-6 h-6 rounded-full bg-black/15 hover:bg-black/25 flex items-center justify-center text-white/80 hover:text-white cursor-pointer transition-colors shrink-0"
+              title={t('close', 'ปิด')}
+            >
+              <X size={13} weight="bold" />
+            </button>
+          </div>
         </div>
       )}
 

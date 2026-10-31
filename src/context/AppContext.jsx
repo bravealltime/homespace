@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
+import { createContext, useContext, useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { MONTHLY_GOAL, REWARDS, PRAISE_STICKERS, generateInitialHistory } from '../data';
 import { useAuth } from './AuthContext';
 import * as api from '../services/api';

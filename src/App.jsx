@@ -33,6 +33,7 @@ import MonthlyRewards from './components/MonthlyRewards';
 import FamilyAdminModal from './components/FamilyAdminModal';
 import DigitalFridgeBoard from './components/DigitalFridgeBoard';
 import FamilyCalendarView from './components/FamilyCalendarView';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -596,7 +597,13 @@ function AppRouter() {
   return (
     <div className="min-h-[100dvh] w-full bg-[#EDE7DF] flex justify-center">
       <div className="w-full max-w-md min-h-[100dvh] bg-[#FAF8F5] flex flex-col relative sm:border-x sm:border-[#ECE7DF] sm:shadow-xl overflow-hidden">
-        {!isLoggedIn || isPending || hasInviteLink ? <LoginPage /> : <AppContent />}
+        {!isLoggedIn || isPending || hasInviteLink ? (
+          <LoginPage />
+        ) : (
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        )}
       </div>
     </div>
   );

@@ -141,12 +141,16 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
     }
   };
 
+  const translatingKeysRef = useRef(new Set());
+
   // Auto-translate posts when autoTranslate mode is ON
   useEffect(() => {
     if (!autoTranslate) return;
     (feedPosts || []).forEach((post) => {
-      if (post.caption && !translations[`post-${post.id}`]?.text) {
-        handleTranslate(`post-${post.id}`, post.caption);
+      const key = `post-${post?.id}`;
+      if (post?.caption && !translations[key]?.text && !translatingKeysRef.current.has(key)) {
+        translatingKeysRef.current.add(key);
+        handleTranslate(key, post.caption);
       }
     });
   }, [autoTranslate, feedPosts]);

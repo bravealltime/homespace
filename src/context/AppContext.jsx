@@ -110,6 +110,9 @@ function reducer(state, action) {
         homeMaintenance: (state.homeMaintenance || []).filter((m) => m.id !== action.payload.maintId),
       };
 
+    case 'SET_TREE_STATE':
+      return { ...state, treeState: action.payload };
+
     case 'SET_REWARDS_DATA':
       return {
         ...state,
@@ -373,6 +376,15 @@ function getInitialState() {
     milestones: [],
     homeContacts: [],
     homeMaintenance: [],
+    treeState: {
+      level: 1,
+      stage: 'sprout',
+      exp: 0,
+      maxExp: 20,
+      waterDrops: 10,
+      totalWatered: 0,
+      recentLogs: [],
+    },
     backendVotes: {},
     backendMemberScores: {},
     totalScoreMonth: 0,
@@ -439,6 +451,12 @@ export function AppProvider({ children }) {
       }
       if (Array.isArray(backendMaint)) {
         dispatch({ type: 'SET_HOME_MAINTENANCE', payload: backendMaint });
+      }
+
+      // Sync Family Happiness Garden (ต้นไม้ความสุขของบ้าน)
+      const backendTree = await api.fetchFamilyTree().catch(() => null);
+      if (backendTree && backendTree.level !== undefined) {
+        dispatch({ type: 'SET_TREE_STATE', payload: backendTree });
       }
     } catch (err) {
       // Backend momentarily restarting; silent fallback
@@ -867,6 +885,30 @@ export function AppProvider({ children }) {
     }
   };
 
+  const waterTree = async (drops = 1) => {
+    try {
+      const res = await api.waterFamilyTree(currentUser?.id || 'member-fluke', drops);
+      if (res?.tree) {
+        dispatch({ type: 'SET_TREE_STATE', payload: res.tree });
+      }
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend water tree error:', err.message);
+      throw err;
+    }
+  };
+
+  const addWaterDrops = async (amount = 1) => {
+    try {
+      const res = await api.addWaterDrops(amount);
+      syncWithBackend();
+      return res;
+    } catch (err) {
+      console.warn('Backend add drops error:', err.message);
+    }
+  };
+
   const [language, setLanguage] = useState(() => {
     try {
       return localStorage.getItem('hs_language') || 'th';
@@ -1009,6 +1051,17 @@ export function AppProvider({ children }) {
     addHomeMaintenance,
     completeHomeMaintenance,
     deleteHomeMaintenance,
+    treeState: state.treeState || {
+      level: 1,
+      stage: 'sprout',
+      exp: 0,
+      maxExp: 20,
+      waterDrops: 10,
+      totalWatered: 0,
+      recentLogs: [],
+    },
+    waterTree,
+    addWaterDrops,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

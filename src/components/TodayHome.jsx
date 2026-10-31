@@ -36,6 +36,7 @@ import DigitalFridgeBoard from './DigitalFridgeBoard';
 import FamilyMilestonesModal, { getCountdownInfo } from './FamilyMilestonesModal';
 import PostPhotoGrid from './PostPhotoGrid';
 import { getMaintenanceStatus } from './HomeHandbookModal';
+import FamilyTreeCard from './FamilyTreeGarden';
 
 const MEMBER_THEMES = {
   'member-fluke': { bg: 'from-[#DCECE5] to-[#C2DDD0]', border: 'from-[#5F8D75] via-[#7BA7C2] to-[#E88D67]' },
@@ -95,7 +96,7 @@ function timeAgo(timestamp, lang = 'th') {
   return `${days} วันที่แล้ว`;
 }
 
-export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook }) {
+export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden }) {
   const { currentUser, isAdmin } = useAuth();
   const {
     members,
@@ -791,6 +792,9 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           </div>
         </div>
       </section>
+
+      {/* 2.5 Family Happiness Garden (ต้นไม้ความสุขของบ้าน) */}
+      <FamilyTreeCard onOpenGarden={onOpenGarden} />
 
       {/* Progressive Disclosure: Urgent Home Maintenance Reminder (Auto-Hidden When All Safe) */}
       {urgentMaintenance.length > 0 && (

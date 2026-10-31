@@ -803,6 +803,13 @@ app.post('/api/posts/chore', async (req, res) => {
         timestamp,
         finalImage
       );
+
+      // Award +2 water drops to family tree
+      try {
+        db.prepare("UPDATE family_tree SET waterDrops = waterDrops + 2, updatedAt = ? WHERE id = 'tree-main'").run(timestamp);
+      } catch (e) {
+        console.warn('Tree waterDrops update warning:', e.message);
+      }
     });
 
     tx();
@@ -885,6 +892,13 @@ app.post('/api/posts/routine', async (req, res) => {
         timestamp,
         finalPhoto || null
       );
+
+      // Award +1 water drop to family tree
+      try {
+        db.prepare("UPDATE family_tree SET waterDrops = waterDrops + 1, updatedAt = ? WHERE id = 'tree-main'").run(timestamp);
+      } catch (e) {
+        console.warn('Tree waterDrops update warning:', e.message);
+      }
     });
 
     tx();
@@ -1764,6 +1778,13 @@ app.post('/api/handbook/maintenance/:id/complete', async (req, res) => {
         points,
         timestamp
       );
+
+      // Award +3 water drops to family tree
+      try {
+        db.prepare("UPDATE family_tree SET waterDrops = waterDrops + 3, updatedAt = ? WHERE id = 'tree-main'").run(timestamp);
+      } catch (e) {
+        console.warn('Tree waterDrops update warning:', e.message);
+      }
     });
 
     tx();
@@ -1786,6 +1807,161 @@ app.delete('/api/handbook/maintenance/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting maintenance item:', err);
     res.status(500).json({ error: 'Failed to delete maintenance item' });
+  }
+});
+
+// ==========================================
+// 16. FAMILY HAPPINESS GARDEN (ต้นไม้ความสุขของบ้าน)
+// ==========================================
+function getStageFromLevel(level) {
+  if (level <= 1) return 'sprout';    // 🌱 ต้นกล้าแห่งความหวัง
+  if (level <= 3) return 'sapling';   // 🌿 ต้นอ่อนผลิกิ่งใบ
+  if (level <= 5) return 'blossom';   // 🌸 ต้นไม้ผลิช่อดอกไม้หอม
+  return 'golden';                    // 🌳 ต้นไม้ใหญ่ผลไม้สีทอง
+}
+
+app.get('/api/tree', (req, res) => {
+  try {
+    let tree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    if (!tree) {
+      db.prepare(`
+        INSERT INTO family_tree (id, familyId, waterDrops, exp, maxExp, level, stage, totalWatered, updatedAt)
+        VALUES ('tree-main', 'family-main', 10, 0, 20, 1, 'sprout', 0, ?)
+      `).run(Date.now());
+      tree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    }
+
+    const logs = db.prepare(`
+      SELECT l.*, m.name as memberName, m.avatar, m.avatarType, m.avatarImage
+      FROM tree_watering_log l
+      LEFT JOIN members m ON l.memberId = m.id
+      ORDER BY l.timestamp DESC
+      LIMIT 10
+    `).all();
+
+    res.json({
+      ...tree,
+      stage: getStageFromLevel(tree.level),
+      recentLogs: logs,
+    });
+  } catch (err) {
+    console.error('Error fetching tree state:', err);
+    res.status(500).json({ error: 'Failed to fetch tree state' });
+  }
+});
+
+app.post('/api/tree/water', async (req, res) => {
+  try {
+    const { memberId = 'member-fluke', drops = 1 } = req.body;
+    let tree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    if (!tree) {
+      db.prepare(`
+        INSERT INTO family_tree (id, familyId, waterDrops, exp, maxExp, level, stage, totalWatered, updatedAt)
+        VALUES ('tree-main', 'family-main', 10, 0, 20, 1, 'sprout', 0, ?)
+      `).run(Date.now());
+      tree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    }
+
+    const dropsToUse = Math.max(1, Math.min(Number(drops) || 1, 10));
+    if (tree.waterDrops < dropsToUse) {
+      return res.status(400).json({
+        error: 'หยดน้ำไม่พอแล้วจ้า ช่วยกันทำงานบ้านหรือแชร์รูปภาพเพื่อสะสมหยดน้ำเพิ่มนะ 💧',
+        waterDrops: tree.waterDrops,
+      });
+    }
+
+    let newDrops = tree.waterDrops - dropsToUse;
+    let newExp = tree.exp + dropsToUse;
+    let newLevel = tree.level;
+    let newMaxExp = tree.maxExp;
+    let didLevelUp = false;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.35);
+      didLevelUp = true;
+    }
+
+    const newStage = getStageFromLevel(newLevel);
+    const newTotalWatered = tree.totalWatered + dropsToUse;
+    const timestamp = Date.now();
+    const pointsAwarded = dropsToUse * 10;
+    const member = db.prepare('SELECT * FROM members WHERE id = ?').get(memberId);
+    const memberName = member ? member.name : 'สมาชิก';
+
+    const tx = db.transaction(() => {
+      db.prepare(`
+        UPDATE family_tree
+        SET waterDrops = ?, exp = ?, maxExp = ?, level = ?, stage = ?, totalWatered = ?, updatedAt = ?
+        WHERE id = 'tree-main'
+      `).run(newDrops, newExp, newMaxExp, newLevel, newStage, newTotalWatered, timestamp);
+
+      const logId = `log-water-${timestamp}-${Math.round(Math.random() * 1000)}`;
+      const logMsg = didLevelUp
+        ? `${memberName} รดน้ำ ${dropsToUse} หยด 💧 จนต้นไม้เติบโตเป็นเลเวล ${newLevel}! 🎉`
+        : `${memberName} รดน้ำต้นไม้ ${dropsToUse} หยด 💧`;
+
+      db.prepare(`
+        INSERT INTO tree_watering_log (id, treeId, memberId, amount, message, timestamp)
+        VALUES (?, 'tree-main', ?, ?, ?, ?)
+      `).run(logId, memberId, dropsToUse, logMsg, timestamp);
+
+      // Award bonus points to the member
+      const histId = `hist-water-${timestamp}-${memberId}`;
+      db.prepare(`
+        INSERT INTO chore_history (id, memberId, choreName, choreEmoji, points, praise, praiseEmoji, date, timestamp, imageUrl)
+        VALUES (?, ?, ?, '💧', ?, ?, '🌱', ?, ?, NULL)
+      `).run(
+        histId,
+        memberId,
+        'รดน้ำต้นไม้ความสุข',
+        pointsAwarded,
+        'ต้นไม้สดชื่นเบ่งบาน ขอบคุณนะจ๊ะ!',
+        new Date().toISOString().split('T')[0],
+        timestamp
+      );
+    });
+
+    tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after watering tree:', err.message));
+
+    const updatedTree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    const logs = db.prepare(`
+      SELECT l.*, m.name as memberName, m.avatar, m.avatarType, m.avatarImage
+      FROM tree_watering_log l
+      LEFT JOIN members m ON l.memberId = m.id
+      ORDER BY l.timestamp DESC
+      LIMIT 10
+    `).all();
+
+    res.json({
+      success: true,
+      tree: { ...updatedTree, stage: getStageFromLevel(updatedTree.level), recentLogs: logs },
+      didLevelUp,
+      pointsAwarded,
+    });
+  } catch (err) {
+    console.error('Error watering tree:', err);
+    res.status(500).json({ error: 'Failed to water tree' });
+  }
+});
+
+app.post('/api/tree/add-drops', async (req, res) => {
+  try {
+    const { amount = 1 } = req.body;
+    const dropsToAdd = Math.max(1, Number(amount) || 1);
+    db.prepare(`
+      UPDATE family_tree
+      SET waterDrops = waterDrops + ?, updatedAt = ?
+      WHERE id = 'tree-main'
+    `).run(dropsToAdd, Date.now());
+    await pushToCloud().catch(err => console.warn('Push cloud after adding drops:', err.message));
+    const tree = db.prepare('SELECT * FROM family_tree WHERE id = ?').get('tree-main');
+    res.json({ success: true, waterDrops: tree.waterDrops });
+  } catch (err) {
+    console.error('Error adding water drops:', err);
+    res.status(500).json({ error: 'Failed to add water drops' });
   }
 });
 

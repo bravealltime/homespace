@@ -345,3 +345,22 @@ export async function deleteHomeMaintenance(maintId) {
     method: 'DELETE',
   });
 }
+
+// 11. Family Happiness Garden (ต้นไม้ความสุขของบ้าน)
+export async function fetchFamilyTree() {
+  return request('/tree');
+}
+
+export async function waterFamilyTree(memberId, drops = 1) {
+  return request('/tree/water', {
+    method: 'POST',
+    body: JSON.stringify({ memberId, drops }),
+  });
+}
+
+export async function addWaterDrops(amount = 1) {
+  return request('/tree/add-drops', {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  });
+}

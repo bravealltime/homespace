@@ -15,6 +15,7 @@ import {
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { getTreeStageInfo } from './FamilyTreeGarden';
 
 export default function DesktopLeftSidebar({
   activeTab,
@@ -23,9 +24,10 @@ export default function DesktopLeftSidebar({
   onOpenSummary,
   onOpenInstall,
   onOpenHandbook,
+  onOpenGarden,
 }) {
   const { currentUser, currentFamily, isAdmin } = useAuth();
-  const { totalScoreMonth, backendMemberScores, t } = useApp();
+  const { totalScoreMonth, backendMemberScores, treeState, t } = useApp();
   const [copiedCode, setCopiedCode] = useState(false);
 
   const familyCode = currentFamily?.code || 'HAPPY123';
@@ -34,6 +36,12 @@ export default function DesktopLeftSidebar({
   const jarPoints = totalScoreMonth || 100;
   const jarMax = 500;
   const jarPercent = Math.min(100, Math.round((jarPoints / jarMax) * 100));
+
+  const treeLevel = treeState?.level || 1;
+  const stageInfo = getTreeStageInfo(treeLevel);
+  const treeExp = treeState?.exp || 0;
+  const treeMaxExp = treeState?.maxExp || 20;
+  const treePercent = Math.min(100, Math.round((treeExp / Math.max(1, treeMaxExp)) * 100));
 
   const copyCode = () => {
     navigator.clipboard?.writeText?.(familyCode);
@@ -121,6 +129,33 @@ export default function DesktopLeftSidebar({
           <p className="text-[9px] text-[#746C65] mt-1 text-right">
             สะสมอีก {Math.max(0, jarMax - jarPoints)} แต้ม เพื่อปลดล็อกรางวัล →
           </p>
+        </div>
+
+        {/* Tree Progress Quick Card */}
+        <div
+          onClick={onOpenGarden}
+          className="p-2.5 rounded-xl bg-gradient-to-r from-[#EAF7ED] to-[#F3FAF4] border border-[#5F8D75]/25 hover:border-[#5F8D75]/50 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between text-[11px] font-black text-[#2D2825] mb-1">
+            <span className="flex items-center gap-1.5">
+              <span>{stageInfo.emoji}</span>
+              <span className="group-hover:text-[#5F8D75] transition-colors truncate max-w-[110px]">{stageInfo.name}</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white font-mono text-[#5F8D75]">Lv.{treeLevel}</span>
+            </span>
+            <span className="text-blue-600 font-bold flex items-center gap-0.5 shrink-0">
+              <span>💧</span> {treeState?.waterDrops || 0} หยด
+            </span>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-white overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#5F8D75] to-[#60A5FA] transition-all duration-500"
+              style={{ width: `${treePercent}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[9px] text-[#746C65] mt-1">
+            <span>{treeExp} / {treeMaxExp} 💧</span>
+            <span className="text-[#5F8D75] font-bold group-hover:underline">เปิดสวนของบ้าน →</span>
+          </div>
         </div>
       </div>
 

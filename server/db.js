@@ -205,6 +205,28 @@ export function initDb() {
       note TEXT,
       updatedAt INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS family_tree (
+      id TEXT PRIMARY KEY DEFAULT 'tree-main',
+      familyId TEXT DEFAULT 'family-main',
+      waterDrops INTEGER DEFAULT 10,
+      exp INTEGER DEFAULT 0,
+      maxExp INTEGER DEFAULT 20,
+      level INTEGER DEFAULT 1,
+      stage TEXT DEFAULT 'sprout',
+      totalWatered INTEGER DEFAULT 0,
+      updatedAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tree_watering_log (
+      id TEXT PRIMARY KEY,
+      treeId TEXT DEFAULT 'tree-main',
+      memberId TEXT NOT NULL,
+      amount INTEGER DEFAULT 1,
+      message TEXT,
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
   `);
 
   
@@ -421,6 +443,20 @@ function seedInitialData() {
       for (const m of defaultMaintenance) {
         insertMaint.run(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], Date.now());
       }
+    }
+
+    // Seed default family tree if empty
+    const treeCount = db.prepare('SELECT COUNT(*) as count FROM family_tree').get().count;
+    if (treeCount === 0) {
+      db.prepare(`
+        INSERT INTO family_tree (id, familyId, waterDrops, exp, maxExp, level, stage, totalWatered, updatedAt)
+        VALUES ('tree-main', 'family-main', 10, 0, 20, 1, 'sprout', 0, ?)
+      `).run(Date.now());
+
+      db.prepare(`
+        INSERT INTO tree_watering_log (id, treeId, memberId, amount, message, timestamp)
+        VALUES (?, 'tree-main', 'member-fluke', 1, ?, ?)
+      `).run('log-init-1', 'ช่วยกันปลูกต้นไม้แห่งความสุขของบ้านเรากันนะ 🌱💧', Date.now());
     }
   } catch (err) {
     console.warn('Seed notes/milestones warning:', err.message);

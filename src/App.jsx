@@ -40,6 +40,7 @@ import DesktopTopNav from './components/DesktopTopNav';
 import DesktopLeftSidebar from './components/DesktopLeftSidebar';
 import DesktopRightSidebar from './components/DesktopRightSidebar';
 import HomeHandbookModal from './components/HomeHandbookModal';
+import { FamilyGardenModal } from './components/FamilyTreeGarden';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -94,6 +95,7 @@ function AppContent() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
   const [homeHandbookOpen, setHomeHandbookOpen] = useState(false);
+  const [familyGardenOpen, setFamilyGardenOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
@@ -156,6 +158,7 @@ function AppContent() {
           onNavigateTab={setActiveTab}
           onViewMemberProfile={handleViewMember}
           onOpenHandbook={() => setHomeHandbookOpen(true)}
+          onOpenGarden={() => setFamilyGardenOpen(true)}
         />
       )}
       {activeTab === 'fridge' && (
@@ -348,6 +351,7 @@ function AppContent() {
           onOpenSummary={() => setActiveTab('summary')}
           onOpenInstall={() => setInstallModalOpen(true)}
           onOpenHandbook={() => setHomeHandbookOpen(true)}
+          onOpenGarden={() => setFamilyGardenOpen(true)}
         />
 
         {/* Center Feed (Main Content, Scrollable) */}
@@ -441,6 +445,7 @@ function AppContent() {
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <FamilyAdminModal isOpen={familyAdminOpen} onClose={() => setFamilyAdminOpen(false)} />
       <HomeHandbookModal isOpen={homeHandbookOpen} onClose={() => setHomeHandbookOpen(false)} />
+      <FamilyGardenModal isOpen={familyGardenOpen} onClose={() => setFamilyGardenOpen(false)} />
       <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}

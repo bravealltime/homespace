@@ -40,9 +40,10 @@ jobs:
 
       - name: Configure Android SDK
         run: |
-          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "sdk.dir=${ANDROID_HOME:-/usr/local/lib/android/sdk}" > android/local.properties
           mkdir -p android/app/src/main/assets/public
           mkdir -p android/capacitor-cordova-android-plugins
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Sync Capacitor Android
         run: |
@@ -54,19 +55,13 @@ jobs:
       - name: Build Debug APK with Gradle
         run: |
           cd android
-          ./gradlew :app:assembleDebug --stacktrace --no-daemon 2>&1 | tee gradle.log || {
-            ERR=$(grep -E -A 8 "FAILURE:|error:|FAILED" gradle.log | head -n 25 | tr '\r\n' '  ')
-            echo "::error title=Gradle Fail::$ERR"
-            exit 1
-          }
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Prepare APK Output
         run: |
           mkdir -p output
           echo "=== Searching for any .apk files in workspace ==="
-          find . -name "*.apk" -type f || true
-          echo "=== Build directory tree ==="
-          find android/app/build -maxdepth 4 || true
+          find . -name "*.apk" -type f
           APK_FILE=$(find . -name "*.apk" -type f | head -n 1)
           echo "Selected APK: '$APK_FILE'"
           if [ -n "$APK_FILE" ] && [ -f "$APK_FILE" ]; then
@@ -76,6 +71,15 @@ jobs:
             echo "::error::No APK file found in workspace!"
             exit 1
           fi
+
+      - name: Upload Build Reports if Failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-reports
+          path: |
+            android/app/build/reports/
+            android/build/reports/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

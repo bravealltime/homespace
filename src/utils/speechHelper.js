@@ -129,3 +129,14 @@ export const SENIOR_QUICK_BLESSINGS = [
   { text: 'ภูมิใจในตัวลูกนะ ✨', emoji: '✨' },
   { text: 'คิดถึงนะจ๊ะ 💖', emoji: '💖' },
 ];
+
+export const SENIOR_QUICK_BLESSINGS_EN = [
+  { text: 'Great job! ❤️', emoji: '❤️' },
+  { text: 'So sweet 🥰', emoji: '🥰' },
+  { text: 'Have a good meal 🍲', emoji: '🍲' },
+  { text: 'Very neat & tidy 👏', emoji: '👏' },
+  { text: 'Get plenty of rest 🌿', emoji: '🌿' },
+  { text: 'Keep it up! 💪', emoji: '💪' },
+  { text: 'So proud of you ✨', emoji: '✨' },
+  { text: 'Miss you lots 💖', emoji: '💖' },
+];

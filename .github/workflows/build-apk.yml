@@ -1,0 +1,79 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web App
+        run: npm run build
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK with Gradle
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/debug/app-debug.apk output/HomeSpace.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HomeSpace-Android-App
+          path: output/HomeSpace.apk
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: apk-latest
+          name: HomeSpace Android APK (Latest)
+          body: |
+            📱 **HomeSpace Android Application (APK)**
+            
+            ไฟล์ APK สำหรับติดตั้งลงเครื่อง Android (เช่น Samsung Galaxy S25 Ultra):
+            
+            📥 [ดาวน์โหลด HomeSpace.apk](https://github.com/${{ github.repository }}/releases/download/apk-latest/HomeSpace.apk)
+            
+            **วิธีติดตั้งบนเครื่อง Android:**
+            1. ดาวน์โหลดไฟล์ `HomeSpace.apk`
+            2. แตะเปิดไฟล์แล้วเลือก "ติดตั้ง" (Install)
+            3. หากระบบถาม ให้กดอนุญาต "ติดตั้งจากแหล่งที่ไม่รู้จัก" (Allow from this source)
+          files: output/HomeSpace.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

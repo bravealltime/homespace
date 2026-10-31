@@ -24,15 +24,24 @@ import {
   stopSpeaking,
   createThaiSpeechRecognition,
   SENIOR_QUICK_BLESSINGS,
+  SENIOR_QUICK_BLESSINGS_EN,
 } from '../utils/speechHelper';
 import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
 import ProfileModal from './ProfileModal';
 
-function timeAgo(timestamp) {
-  if (!timestamp) return 'เมื่อสักครู่';
+function timeAgo(timestamp, lang = 'th') {
+  if (!timestamp) return lang === 'en' ? 'just now' : 'เมื่อสักครู่';
   const diff = Date.now() - timestamp;
   const minutes = Math.floor(diff / 60000);
+  if (lang === 'en') {
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
   if (minutes < 1) return 'เมื่อสักครู่';
   if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
   const hours = Math.floor(minutes / 60);
@@ -751,7 +760,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                                     <SpeakerHigh size={13} weight={speakingCommentId === c.id ? 'fill' : 'regular'} />
                                   </button>
                                   {c.timestamp && (
-                                    <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp)}</span>
+                                    <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp, language)}</span>
                                   )}
                                   {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
                                     <button
@@ -794,12 +803,12 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                     <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-[#746C65]">
                       <span className="flex items-center gap-1">
                         <span>💬</span>
-                        <span>คำตอบด่วนความรัก:</span>
+                        <span>{t ? t('quickCheerLabel', 'คำตอบด่วนความรัก:') : 'คำตอบด่วนความรัก:'}</span>
                       </span>
-                      <span className="text-[10px] text-[#5F8D75] font-bold">แตะ 1 ครั้งส่งทันที</span>
+                      <span className="text-[10px] text-[#5F8D75] font-bold">{t ? t('oneTapSend', 'แตะ 1 ครั้งส่งทันที') : 'แตะ 1 ครั้งส่งทันที'}</span>
                     </div>
                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                      {SENIOR_QUICK_BLESSINGS.map((blessing, idx) => (
+                      {(language === 'en' ? SENIOR_QUICK_BLESSINGS_EN : SENIOR_QUICK_BLESSINGS).map((blessing, idx) => (
                         <button
                           key={idx}
                           type="button"
@@ -822,7 +831,7 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                           value={commentText[post.id] || ''}
                           onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
                           onKeyDown={(e) => e.key === 'Enter' && handleSendComment(post.id)}
-                          placeholder="พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด..."
+                          placeholder={t ? t('writeComment', 'พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด...') : 'พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด...'}
                           className="w-full pl-3.5 pr-22 py-2 bg-[#FAF8F5] focus:bg-white rounded-full border border-[#ECE7DF] focus:border-[#5F8D75] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none transition-all shadow-2xs"
                         />
                         <div className="absolute right-1.5 flex items-center gap-1">

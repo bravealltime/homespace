@@ -153,14 +153,24 @@ export default function InstallAppModal({ isOpen, onClose }) {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Direct APK Download Option for Android */}
+              <a
+                href="https://github.com/bravealltime/homespace/releases/download/apk-latest/HomeSpace.apk"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-[#E88D67] to-[#D57B56] text-white text-xs font-black shadow-md hover:opacity-95 transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer no-underline"
+              >
+                <span>📦 ดาวน์โหลดไฟล์ HomeSpace.apk (Android) ⬇️</span>
+              </a>
+
               {deferredPrompt && (
                 <button
                   type="button"
                   onClick={handleInstallClick}
-                  className="w-full py-2.5 rounded-2xl bg-[#5F8D75] text-white text-xs font-black shadow-md hover:bg-[#4E7661] transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer mb-2"
+                  className="w-full py-2 rounded-2xl bg-[#5F8D75] text-white text-xs font-bold shadow-xs hover:bg-[#4E7661] transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <DeviceMobile size={18} weight="bold" />
-                  <span>กดตรงนี้เพื่อติดตั้งลงเครื่องทันที 📲</span>
+                  <DeviceMobile size={16} weight="bold" />
+                  <span>หรือกดติดตั้งลงหน้าจอทันที (PWA) 📲</span>
                 </button>
               )}
 

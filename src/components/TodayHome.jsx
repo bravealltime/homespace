@@ -28,6 +28,7 @@ import {
   stopSpeaking,
   createThaiSpeechRecognition,
   SENIOR_QUICK_BLESSINGS,
+  SENIOR_QUICK_BLESSINGS_EN,
 } from '../utils/speechHelper';
 import CreatePostModal from './CreatePostModal';
 import CreateStoryModal from './CreateStoryModal';
@@ -73,9 +74,17 @@ function MemberAvatar({ member, size = 'md' }) {
   );
 }
 
-function timeAgo(timestamp) {
+function timeAgo(timestamp, lang = 'th') {
   const diff = Date.now() - timestamp;
   const minutes = Math.floor(diff / 60000);
+  if (lang === 'en') {
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
   if (minutes < 1) return 'เมื่อสักครู่';
   if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
   const hours = Math.floor(minutes / 60);
@@ -448,9 +457,9 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         {/* Story Bar Subheader */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-[#2D2825]">สตอรี่ครอบครัว</span>
+            <span className="text-xs font-black text-[#2D2825]">{t('storiesTitle', 'สตอรี่ครอบครัว')}</span>
             <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.5 rounded-full font-bold">
-              24 ชม.
+              {t('twentyFourHours', '24 ชม.')}
             </span>
           </div>
           <button
@@ -459,7 +468,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E88D67] to-[#F15BB5] hover:opacity-90 text-white text-[10px] font-black shadow-2xs cursor-pointer active:scale-95 transition-all"
           >
             <Sparkle size={12} weight="fill" />
-            <span>+ ลงไฮไลท์</span>
+            <span>{t('addHighlight', '+ ลงไฮไลท์')}</span>
           </button>
         </div>
 
@@ -521,7 +530,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               </div>
             </div>
             <div className="flex items-center gap-0.5 justify-center">
-              <span className="text-[11px] font-bold text-[#2D2825] tracking-tight">คุณ</span>
+              <span className="text-[11px] font-bold text-[#2D2825] tracking-tight">{t('you', 'คุณ')}</span>
               {myStories.length > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[#E88D67] shrink-0" />
               )}
@@ -595,7 +604,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               <span className="text-xl">🍯</span>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-[#2D2825]">โหลของบ้าน</span>
+                  <span className="text-xs font-black text-[#2D2825]">{t('familyJar', 'โหลของบ้าน')}</span>
                   <span className="text-[10px] font-bold text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full">
                     {progress}%
                   </span>
@@ -605,7 +614,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
 
             <div className="flex items-center gap-1 text-[11px] font-bold text-[#5F8D75] group-hover:text-[#476E5B] transition-colors">
               <span className="font-black">{totalScoreMonth}</span>
-              <span className="text-[#9E958D]">/ {monthlyGoal} แต้ม</span>
+              <span className="text-[#9E958D]">/ {monthlyGoal} {t('pts', 'แต้ม')}</span>
               <CaretRight size={13} weight="bold" />
             </div>
           </div>
@@ -622,10 +631,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
           <div className="flex items-center justify-between mt-1.5 text-[10px]">
             <span className="text-[#E88D67] font-bold truncate">
               {unlockedRewards.length > 0
-                ? `🎉 ปลดล็อก ${unlockedRewards[0].emoji} ${unlockedRewards[0].name} แล้ว!`
-                : `สะสมอีก ${Math.max(0, monthlyGoal - totalScoreMonth)} แต้ม เพื่อปลดล็อกรางวัล`}
+                ? `🎉 ${unlockedRewards[0].emoji} ${unlockedRewards[0].name}`
+                : `${t('collectMore', 'สะสมอีก')} ${Math.max(0, monthlyGoal - totalScoreMonth)} ${t('toUnlockReward', 'แต้ม เพื่อปลดล็อกรางวัล')}`}
             </span>
-            <span className="text-[#9E958D] font-medium shrink-0">รางวัลครอบครัว →</span>
+            <span className="text-[#9E958D] font-medium shrink-0">{t('familyRewards', 'รางวัลครอบครัว')} →</span>
           </div>
         </div>
 
@@ -639,16 +648,16 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-base shrink-0">{closestMilestone?.emoji || '📅'}</span>
-                <span className="text-[11px] font-black text-[#E88D67]">ปฏิทินบ้าน</span>
+                <span className="text-[11px] font-black text-[#E88D67]">{t('familyCalendar', 'ปฏิทินบ้าน')}</span>
               </div>
               <CaretRight size={12} weight="bold" className="text-[#E88D67]" />
             </div>
 
             <p className="text-xs font-black text-[#2D2825] truncate">
-              {closestMilestone ? closestMilestone.title : 'ยังไม่มีนัดหมาย'}
+              {closestMilestone ? closestMilestone.title : t('noAppointments', 'ยังไม่มีนัดหมาย')}
             </p>
             <p className="text-[10px] text-[#746C65] font-semibold truncate mt-0.5">
-              {closestMilestone ? closestMilestone.info?.text : 'แตะเพิ่มวันสำคัญ'}
+              {closestMilestone ? closestMilestone.info?.text : t('tapToAddMilestone', 'แตะเพิ่มวันสำคัญ')}
             </p>
           </div>
 
@@ -660,7 +669,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-base shrink-0">📌</span>
-                <span className="text-[11px] font-black text-[#CA8A04]">ตู้เย็นโน้ต</span>
+                <span className="text-[11px] font-black text-[#CA8A04]">{t('fridgeNotes', 'ตู้เย็นโน้ต')}</span>
                 {(notes || []).length > 0 && (
                   <span className="text-[9px] bg-[#FEF08A] text-[#854D0E] font-bold px-1.5 rounded-full">
                     {(notes || []).length}
@@ -671,10 +680,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
             </div>
 
             <p className="text-xs font-bold text-[#2D2825] truncate">
-              {(notes || [])[0] ? (notes || [])[0].text : 'แปะโน้ตบอกกัน'}
+              {(notes || [])[0] ? (notes || [])[0].text : t('postStickyNote', 'แปะโน้ตใหม่ 📌')}
             </p>
             <p className="text-[10px] text-[#746C65] font-semibold truncate mt-0.5">
-              {(notes || [])[0] ? 'แตะดูทั้งหมด' : 'แตะเพื่อแปะโน้ต'}
+              {(notes || [])[0] ? t('viewAllNotes', 'แตะดูทั้งหมด') : t('fridgeNotes', 'ตู้เย็นโน้ต')}
             </p>
           </div>
         </div>
@@ -683,19 +692,19 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         <div className="pt-2 border-t border-[#ECE7DF]/80">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-black text-[#746C65] flex items-center gap-1">
-              <span>🎯 เควสต์ด่วนวันนี้:</span>
-              <span className="text-[#5F8D75] font-bold">(แตะส่งรับแต้ม)</span>
+              <span>🎯 {t('todayChores', 'เควสด่วนวันนี้:')}</span>
+              <span className="text-[#5F8D75] font-bold">{t('tapToEarn', '(แตะส่งรับแต้ม)')}</span>
             </span>
-            <span className="text-[10px] text-[#5F8D75] font-bold">รับสูงสุด +120</span>
+            <span className="text-[10px] text-[#5F8D75] font-bold">{t('earnUpTo', 'รับสูงสุด')} +120</span>
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {[
-              { id: 'dishes', name: 'ล้างจาน', emoji: '🧽', points: 25 },
-              { id: 'clean', name: 'กวาดถูบ้าน', emoji: '🧹', points: 20 },
-              { id: 'laundry', name: 'ซักผ้า', emoji: '🧺', points: 25 },
-              { id: 'bed', name: 'จัดห้องนอน', emoji: '🛏️', points: 20 },
-              { id: 'trash', name: 'ทิ้งขยะ', emoji: '🗑️', points: 15 },
+              { id: 'dishes', name: t('choreDishes', 'ล้างจาน'), emoji: '🧽', points: 25 },
+              { id: 'clean', name: t('choreSweep', 'กวาดถูบ้าน'), emoji: '🧹', points: 20 },
+              { id: 'laundry', name: t('choreLaundry', 'ซักผ้า'), emoji: '🧺', points: 25 },
+              { id: 'bed', name: t('choreTidy', 'จัดห้องนอน'), emoji: '🛏️', points: 20 },
+              { id: 'trash', name: t('choreTrash', 'ทิ้งขยะ'), emoji: '🗑️', points: 15 },
             ].map((q) => (
               <button
                 key={q.id}
@@ -727,7 +736,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
           onClick={() => openCreatePost('routine')}
           className="flex-1 bg-[#FAF8F5] hover:bg-[#F2EFEA] text-[#746C65] text-xs font-medium px-3.5 py-2 rounded-full border border-[#ECE7DF] text-left transition-colors cursor-pointer truncate"
         >
-          แชร์รูปหรือเรื่องราววันนี้...
+          {t('shareStoryPrompt', 'แชร์รูปหรือเรื่องราววันนี้...')}
         </button>
 
         <button
@@ -737,7 +746,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
           title="ส่งงานบ้าน"
         >
           <Broom size={14} weight="bold" />
-          <span>งานบ้าน</span>
+          <span>{t('choreBtn', 'งานบ้าน')}</span>
         </button>
       </section>
 
@@ -752,7 +761,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               : 'bg-white text-[#746C65] border border-[#ECE7DF]'
           }`}
         >
-          ทั้งหมด
+          {t('filterAll', 'ทั้งหมด')}
         </button>
         <button
           type="button"
@@ -763,7 +772,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               : 'bg-white text-[#746C65] border border-[#ECE7DF]'
           }`}
         >
-          🧹 งานบ้าน
+          🧹 {t('filterChore', 'งานบ้าน')}
         </button>
         <button
           type="button"
@@ -774,7 +783,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
               : 'bg-white text-[#746C65] border border-[#ECE7DF]'
           }`}
         >
-          📸 กิจกรรม
+          📸 {t('filterActivity', 'กิจกรรม')}
         </button>
 
         {activeFilter !== 'all' && activeFilter !== 'chore' && activeFilter !== 'routine' && (
@@ -809,12 +818,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-[#2D2825] group-hover:text-[#5F8D75] truncate transition-colors">
-                        {author?.name || 'สมาชิกในบ้าน'}
+                        {author?.name || t('familyMember', 'สมาชิกในบ้าน')}
                       </span>
                       <span className="text-[10px] text-[#9E958D]">({author?.role})</span>
                     </div>
                     <p className="text-[10px] text-[#9E958D]">
-                      {timeAgo(post.timestamp)}
+                      {timeAgo(post.timestamp, language)}
                     </p>
                   </div>
                 </div>
@@ -823,14 +832,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   {isChore ? (
                     <span className="px-2.5 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-bold border border-[#5F8D75]/20 flex items-center gap-1">
                       <span>{post.choreEmoji || '🧹'}</span>
-                      <span>{post.choreName || 'งานบ้าน'}</span>
-                      <span className="font-black">+{post.points} แต้ม</span>
+                      <span>{post.choreName || t('choreTag', 'งานบ้าน')}</span>
+                      <span className="font-black">+{post.points} {t('pts', 'แต้ม')}</span>
                     </span>
                   ) : (
                     <span className="px-2.5 py-0.5 rounded-full bg-[#FFF5EB] text-[#E88D67] text-[10px] font-bold border border-[#E88D67]/20 flex items-center gap-1">
                       <span>📸</span>
-                      <span>เรื่องราว</span>
-                      <span className="font-black">+{post.points} แต้ม</span>
+                      <span>{t('storyTag', 'เรื่องราว')}</span>
+                      <span className="font-black">+{post.points} {t('pts', 'แต้ม')}</span>
                     </span>
                   )}
                   <button
@@ -1068,7 +1077,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                                 </button>
                                 {c.timestamp && (
                                   <span className="text-[9px] text-[#B0A79E]">
-                                    {timeAgo(c.timestamp)}
+                                    {timeAgo(c.timestamp, language)}
                                   </span>
                                 )}
                                 {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
@@ -1104,7 +1113,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                     })}
                   </div>
                 ) : (
-                  <p className="text-[11px] text-[#9E958D] py-1 text-center">ยังไม่มีความคิดเห็น มาเป็นคนแรกที่ส่งกำลังใจกันเลย ✨</p>
+                  <p className="text-[11px] text-[#9E958D] py-1 text-center">{t('noCommentsYet', 'ยังไม่มีความคิดเห็น มาเป็นคนแรกที่ส่งกำลังใจกันเลย ✨')}</p>
                 )}
 
                 {/* 1-Tap Quick Blessings / Praise for Seniors & Family (ปุ่มตอบด่วนสำหรับผู้สูงวัย) */}
@@ -1112,12 +1121,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                   <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-[#746C65]">
                     <span className="flex items-center gap-1">
                       <span>💬</span>
-                      <span>คำตอบด่วนความรัก:</span>
+                      <span>{t('quickCheerLabel', 'คำตอบด่วนความรัก:')}</span>
                     </span>
-                    <span className="text-[10px] text-[#5F8D75] font-bold">แตะ 1 ครั้งส่งทันที</span>
+                    <span className="text-[10px] text-[#5F8D75] font-bold">{t('oneTapSend', 'แตะ 1 ครั้งส่งทันที')}</span>
                   </div>
                   <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                    {SENIOR_QUICK_BLESSINGS.map((blessing, idx) => (
+                    {(language === 'en' ? SENIOR_QUICK_BLESSINGS_EN : SENIOR_QUICK_BLESSINGS).map((blessing, idx) => (
                       <button
                         key={idx}
                         type="button"
@@ -1140,7 +1149,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                         value={commentText[post.id] || ''}
                         onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendComment(post.id)}
-                        placeholder="พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด..."
+                        placeholder={t('writeComment', 'พิมพ์ข้อความ หรือแตะปุ่มไมค์เพื่อพูด...')}
                         className="w-full pl-3.5 pr-22 py-2 bg-[#FAF8F5] focus:bg-white rounded-full border border-[#ECE7DF] focus:border-[#5F8D75] text-xs text-[#2D2825] placeholder:text-[#9E958D] focus:outline-none transition-all shadow-2xs"
                       />
                       <div className="absolute right-1.5 flex items-center gap-1">

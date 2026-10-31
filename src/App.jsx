@@ -153,46 +153,46 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right Actions: Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Right Actions: Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Members (👥) */}
+        <div className="flex items-center gap-1 shrink-0">
           {/* Senior & Easy-Reading Mode Toggle (โหมดสบายตา / ตัวหนังสือใหญ่) */}
           <button
             type="button"
             onClick={toggleSeniorMode}
-            className={`h-7 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border ${
+            className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
               seniorMode
                 ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
                 : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
             }`}
-            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่ (กลับสู่ขนาดปกติ)' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตาสำหรับผู้ใหญ่)'}
+            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตา)'}
           >
-            <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
-            <span className="text-[10px] font-bold">{seniorMode ? t('seniorModeOn', 'สบายตา') : t('seniorModeOff', 'ตัวใหญ่')}</span>
+            <TextAa size={15} weight={seniorMode ? 'bold' : 'regular'} />
           </button>
 
           {/* Language Switcher for UX/UI (สลับภาษาไทย 🇹🇭 / English 🇬🇧) */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className={`h-7 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border ${
+            className={`h-7.5 px-1.5 sm:px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border text-[11px] font-black ${
               language === 'en'
-                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs font-black'
+                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs'
                 : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
             }`}
             title={t('langToggleTitle', 'สลับภาษาไทย / Switch to English')}
           >
-            <Globe size={13} weight={language === 'en' ? 'bold' : 'regular'} />
-            <span className="text-[10px] font-bold">{language === 'en' ? '🇬🇧 EN' : '🇹🇭 ไทย'}</span>
+            <Globe size={13} weight="bold" />
+            <span>{language === 'en' ? 'EN' : 'ไทย'}</span>
           </button>
+
           {/* Admin Family Requests & Invite Link Button */}
           {isAdmin && (
             <button
               type="button"
               onClick={() => setFamilyAdminOpen(true)}
-              className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#5F8D75] hover:bg-[#EEF4F0] transition-colors cursor-pointer"
-              title="จัดการคำขอเข้าครอบครัว & ลิงก์เชิญ"
+              className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#5F8D75] hover:bg-[#EEF4F0] transition-colors cursor-pointer"
+              title={t('adminManage', 'จัดการคำขอเข้าครอบครัว & ลิงก์เชิญ')}
             >
-              <ShieldCheck size={19} weight="bold" />
+              <ShieldCheck size={18} weight="bold" />
               {pendingRequests.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
                   {pendingRequests.length}
@@ -205,10 +205,10 @@ function AppContent() {
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-            title="ค้นหาคนในบ้าน หรืองานบ้าน"
+            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+            title={t('searchTitle', 'ค้นหาคนในบ้าน หรืองานบ้าน')}
           >
-            <MagnifyingGlass size={18} weight="bold" />
+            <MagnifyingGlass size={17} weight="bold" />
           </button>
 
           {/* Notification Bell with Badge */}
@@ -220,16 +220,16 @@ function AppContent() {
                 markNotificationsRead(currentUser.id);
               }
             }}
-            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-            title="การแจ้งเตือน"
+            className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+            title={t('notificationsTitle', 'การแจ้งเตือน')}
           >
             <Bell
-              size={18}
+              size={17}
               weight={unreadCount > 0 ? 'fill' : 'bold'}
               className={unreadCount > 0 ? 'text-[#E88D67]' : 'text-[#746C65]'}
             />
             {unreadCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
+              <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
                 {unreadCount}
               </span>
             )}
@@ -242,17 +242,17 @@ function AppContent() {
               setViewingMember(null);
               setActiveTab('my-feed');
             }}
-            className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-transform hover:scale-105 cursor-pointer ${
+            className={`w-7.5 h-7.5 rounded-full overflow-hidden border-2 transition-transform hover:scale-105 cursor-pointer shrink-0 ${
               activeTab === 'my-feed' && !viewingMember
                 ? 'border-[#5F8D75] ring-2 ring-[#5F8D75]/30'
                 : 'border-[#ECE7DF]'
             }`}
-            title="ไปที่โปรไฟล์ของฉัน"
+            title={t('myProfileTitle', 'ไปที่โปรไฟล์ของฉัน')}
           >
             {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
               <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-sm font-bold">
+              <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-xs font-bold">
                 {currentUser?.avatar || '😊'}
               </div>
             )}
@@ -262,10 +262,10 @@ function AppContent() {
           <button
             type="button"
             onClick={() => setFamilyMembersOpen(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer ml-0.5"
-            title="สมาชิกในบ้าน"
+            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer border border-[#ECE7DF] shrink-0"
+            title={t('familyMembersTitle', 'สมาชิกในบ้าน')}
           >
-            <UsersThree size={17} weight="bold" />
+            <UsersThree size={16} weight="bold" />
           </button>
         </div>
       </header>

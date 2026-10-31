@@ -69,48 +69,13 @@ function timeAgo(timestamp) {
 }
 
 export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }) {
-  const { notes, addNote, toggleNoteAck, deleteNote, members, autoTranslate } = useApp();
+  const { notes, addNote, toggleNoteAck, deleteNote, members, t } = useApp();
   const { currentUser, isAdmin } = useAuth();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [noteColor, setNoteColor] = useState('yellow');
   const [speakingNoteId, setSpeakingNoteId] = useState(null);
-  const [noteTranslations, setNoteTranslations] = useState({});
-
-  const handleTranslateNote = async (noteId, text) => {
-    if (!text) return;
-    if (noteTranslations[noteId]?.isVisible) {
-      setNoteTranslations((prev) => ({
-        ...prev,
-        [noteId]: { ...prev[noteId], isVisible: false },
-      }));
-      return;
-    }
-    if (noteTranslations[noteId]?.text) {
-      setNoteTranslations((prev) => ({
-        ...prev,
-        [noteId]: { ...prev[noteId], isVisible: true },
-      }));
-      return;
-    }
-    setNoteTranslations((prev) => ({
-      ...prev,
-      [noteId]: { isTranslating: true, isVisible: true, text: '' },
-    }));
-    try {
-      const translated = await translateText(text);
-      setNoteTranslations((prev) => ({
-        ...prev,
-        [noteId]: { isTranslating: false, isVisible: true, text: translated },
-      }));
-    } catch {
-      setNoteTranslations((prev) => ({
-        ...prev,
-        [noteId]: { isTranslating: false, isVisible: false, text },
-      }));
-    }
-  };
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
@@ -171,24 +136,10 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Translate button */}
-            <button
-              type="button"
-              onClick={() => handleTranslateNote(note.id, note.text)}
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                noteTranslations[note.id]?.isVisible || autoTranslate
-                  ? 'text-[#2563EB] bg-blue-100/60'
-                  : 'text-[#746C65] hover:text-[#2563EB]'
-              }`}
-              title="แปลภาษาไทย ↔ อังกฤษ"
-            >
-              <Globe size={13} weight="bold" />
-            </button>
-
             {/* Speech button for seniors */}
             <button
               type="button"
-              onClick={() => handleSpeakNote(note.id, noteTranslations[note.id]?.isVisible ? noteTranslations[note.id]?.text : `${author?.name || 'สมาชิก'} แปะโน้ตว่า ${note.text}`)}
+              onClick={() => handleSpeakNote(note.id, `${author?.name || 'สมาชิก'} แปะโน้ตว่า ${note.text}`)}
               className={`p-1.5 rounded-full text-[#746C65] hover:text-[#2D2825] transition-colors cursor-pointer ${
                 speakingNoteId === note.id ? 'text-[#5F8D75] animate-pulse' : ''
               }`}
@@ -215,18 +166,6 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
         <p className="text-xs sm:text-[13px] font-semibold text-[#2D2825] leading-relaxed my-2 break-words">
           {note.text}
         </p>
-
-        {/* Translated Text Box */}
-        {(noteTranslations[note.id]?.isVisible || autoTranslate) && (
-          <div className="p-2 rounded-xl bg-white/80 border border-black/10 text-xs text-[#1E3A8A] font-medium flex items-start gap-1.5 my-1.5 animate-enter-rise">
-            <Globe size={13} className="text-[#3B82F6] shrink-0 mt-0.5" weight="bold" />
-            <p className="flex-1 break-words">
-              {noteTranslations[note.id]?.isTranslating
-                ? 'กำลังแปล...'
-                : noteTranslations[note.id]?.text || note.text}
-            </p>
-          </div>
-        )}
 
         {/* Bottom Acknowledgment Action */}
         <div className="pt-2 border-t border-black/10 flex items-center justify-between gap-1">
@@ -380,8 +319,8 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
                 📌
               </div>
               <div>
-                <h1 className="text-base font-black text-[#2D2825]">ตู้เย็น & กระดานโน้ตของบ้าน</h1>
-                <p className="text-[11px] text-[#746C65]">แปะโพสต์อิทบอกกัน ฟังเสียงอ่าน และกดรับทราบ 👍</p>
+                <h1 className="text-base font-black text-[#2D2825]">{t ? t('fridgeTitle', 'ตู้เย็น & กระดานโน้ตของบ้าน') : 'ตู้เย็น & กระดานโน้ตของบ้าน'}</h1>
+                <p className="text-[11px] text-[#746C65]">{t ? t('fridgeSubtitle', 'แปะโพสต์อิทบอกกัน ฟังเสียงอ่าน และกดรับทราบ 👍') : 'แปะโพสต์อิทบอกกัน ฟังเสียงอ่าน และกดรับทราบ 👍'}</p>
               </div>
             </div>
 
@@ -392,7 +331,7 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#FAF8F5] hover:bg-[#FFF5EB] text-[#E88D67] border border-[#E88D67]/40 text-xs font-bold shadow-2xs transition-all cursor-pointer"
               >
                 <CalendarBlank size={14} weight="bold" />
-                <span>ปฏิทินบ้าน</span>
+                <span>{t ? t('tabCalendar', 'ปฏิทิน') : 'ปฏิทินบ้าน'}</span>
               </button>
             )}
           </div>
@@ -408,7 +347,7 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#5F8D75] hover:bg-[#476E5B] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
             >
               <Plus size={14} weight="bold" />
-              <span>+ แปะโน้ตใหม่</span>
+              <span>{t ? t('postStickyNote', 'แปะโน้ตใหม่ 📌') : '+ แปะโน้ตใหม่'}</span>
             </button>
           </div>
 

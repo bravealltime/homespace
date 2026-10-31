@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useMemo, useCallback,
 import { MONTHLY_GOAL, REWARDS, PRAISE_STICKERS, generateInitialHistory } from '../data';
 import { useAuth } from './AuthContext';
 import * as api from '../services/api';
+import { getUIText } from '../utils/i18n';
 
 const AppContext = createContext(null);
 
@@ -760,6 +761,28 @@ export function AppProvider({ children }) {
     }
   };
 
+  const [language, setLanguage] = useState(() => {
+    try {
+      return localStorage.getItem('hs_language') || 'th';
+    } catch {
+      return 'th';
+    }
+  });
+
+  const toggleLanguage = () => {
+    setLanguage((prev) => {
+      const next = prev === 'th' ? 'en' : 'th';
+      try {
+        localStorage.setItem('hs_language', next);
+      } catch {}
+      return next;
+    });
+  };
+
+  const t = useCallback((key, fallback = '') => {
+    return getUIText(language, key, fallback);
+  }, [language]);
+
   const [autoTranslate, setAutoTranslate] = useState(() => {
     try {
       return localStorage.getItem('hs_auto_translate') === 'true';
@@ -821,6 +844,10 @@ export function AppProvider({ children }) {
     seniorMode: Boolean(state.seniorMode),
     toggleSeniorMode: () => dispatch({ type: 'TOGGLE_SENIOR_MODE' }),
     setSeniorMode: (val) => dispatch({ type: 'SET_SENIOR_MODE', payload: val }),
+    language,
+    toggleLanguage,
+    setLanguage,
+    t,
     autoTranslate,
     toggleAutoTranslate,
     syncWithBackend,

@@ -71,7 +71,7 @@ function MemberAvatar({ member, size = 'md' }) {
 
 export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe }) {
   const { currentUser, members } = useAuth();
-  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment, autoTranslate } = useApp();
+  const { feedPosts, stories, deleteStory, replyStory, likePost, addComment, deletePost, deleteComment, language, t } = useApp();
 
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'grid'
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chore' | 'routine'
@@ -673,9 +673,9 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                   )}
                 </div>
 
-                {/* Caption with Audio Speaker & Translate Buttons */}
+                {/* Caption with Audio Speaker */}
                 {post.caption && (
-                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825] space-y-1.5">
+                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825]">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <span className="font-bold mr-1.5">{activeMember?.name}:</span>
@@ -683,21 +683,6 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        {/* Translate Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleTranslate(`post-${post.id}`, post.caption)}
-                          className={`px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
-                            translations[`post-${post.id}`]?.isVisible || autoTranslate
-                              ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'
-                              : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#2563EB] border-[#ECE7DF]'
-                          }`}
-                          title="แปลภาษาไทย ↔ อังกฤษ"
-                        >
-                          <Globe size={12} weight="bold" />
-                          <span>{translations[`post-${post.id}`]?.isVisible || autoTranslate ? 'แปลแล้ว' : 'แปล'}</span>
-                        </button>
-
                         {/* Audio Read Button (🔊) */}
                         <button
                           type="button"
@@ -710,27 +695,10 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                           title="ฟังเสียงอ่านข้อความนี้"
                         >
                           <SpeakerHigh size={12} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
-                          <span>{speakingPostId === post.id ? 'หยุด' : 'ฟัง'}</span>
+                          <span>{speakingPostId === post.id ? (t ? t('stopListen', 'หยุด') : 'หยุด') : (t ? t('listen', 'ฟัง') : 'ฟัง')}</span>
                         </button>
                       </div>
                     </div>
-
-                    {/* Translated Box */}
-                    {(translations[`post-${post.id}`]?.isVisible || autoTranslate) && (
-                      <div className="p-2 px-2.5 rounded-xl bg-[#F0F7FF] border border-[#BFDBFE] text-xs flex items-start gap-2 animate-enter-rise">
-                        <Globe size={14} className="text-[#3B82F6] shrink-0 mt-0.5" weight="bold" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between text-[10px] text-[#3B82F6] mb-0.5 font-bold">
-                            <span>{hasThaiCharacters(post.caption) ? 'แปลเป็น English 🇬🇧' : 'แปลเป็น ภาษาไทย 🇹🇭'}</span>
-                          </div>
-                          <p className="text-[#1E3A8A] font-medium leading-relaxed">
-                            {translations[`post-${post.id}`]?.isTranslating
-                              ? 'กำลังแปลภาษา...'
-                              : translations[`post-${post.id}`]?.text || 'กำลังโหลดคำแปล...'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -761,6 +729,17 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5">
+                                  {/* Comment Translate Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTranslate(`comment-${c.id}`, c.text)}
+                                    className="text-[10px] font-semibold text-[#3B82F6] hover:underline flex items-center gap-0.5 cursor-pointer"
+                                    title="แปลภาษาคอมเมนต์นี้"
+                                  >
+                                    <Globe size={11} />
+                                    <span>{translations[`comment-${c.id}`]?.isVisible ? (t ? t('translatedComment', 'แปลแล้ว') : 'แปลแล้ว') : (t ? t('translateComment', 'แปล') : 'แปล')}</span>
+                                  </button>
+
                                   <button
                                     type="button"
                                     onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
@@ -787,6 +766,18 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                                 </div>
                               </div>
                               <p className="text-[#3E3834] leading-relaxed break-words text-xs">{c.text}</p>
+
+                              {/* Translated Comment Box */}
+                              {translations[`comment-${c.id}`]?.isVisible && (
+                                <div className="mt-1 pt-1 border-t border-[#BFDBFE]/40 text-[11px] text-[#1E3A8A] flex items-start gap-1">
+                                  <Globe size={11} className="text-[#3B82F6] shrink-0 mt-0.5" />
+                                  <p className="font-medium">
+                                    {translations[`comment-${c.id}`]?.isTranslating
+                                      ? (t ? t('translating', 'กำลังแปล...') : 'กำลังแปล...')
+                                      : translations[`comment-${c.id}`]?.text || c.text}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );

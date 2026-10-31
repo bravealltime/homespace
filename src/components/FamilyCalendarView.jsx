@@ -43,7 +43,7 @@ const CATEGORIES = [
 ];
 
 export default function FamilyCalendarView({ onNavigateTab }) {
-  const { milestones, addMilestone, deleteMilestone, members, autoTranslate } = useApp();
+  const { milestones, addMilestone, deleteMilestone, members, t } = useApp();
   const { currentUser, isAdmin } = useAuth();
 
   const today = new Date();
@@ -53,41 +53,6 @@ export default function FamilyCalendarView({ onNavigateTab }) {
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [translations, setTranslations] = useState({});
-
-  const handleTranslate = async (id, text) => {
-    if (!text) return;
-    if (translations[id]?.isVisible) {
-      setTranslations((prev) => ({
-        ...prev,
-        [id]: { ...prev[id], isVisible: false },
-      }));
-      return;
-    }
-    if (translations[id]?.text) {
-      setTranslations((prev) => ({
-        ...prev,
-        [id]: { ...prev[id], isVisible: true },
-      }));
-      return;
-    }
-    setTranslations((prev) => ({
-      ...prev,
-      [id]: { isTranslating: true, isVisible: true, text: '' },
-    }));
-    try {
-      const translated = await translateText(text);
-      setTranslations((prev) => ({
-        ...prev,
-        [id]: { isTranslating: false, isVisible: true, text: translated },
-      }));
-    } catch {
-      setTranslations((prev) => ({
-        ...prev,
-        [id]: { isTranslating: false, isVisible: false, text },
-      }));
-    }
-  };
 
   // Form states
   const [formTitle, setFormTitle] = useState('');
@@ -246,8 +211,8 @@ export default function FamilyCalendarView({ onNavigateTab }) {
               📅
             </div>
             <div>
-              <h1 className="text-base font-black text-[#2D2825]">ปฏิทินวันสำคัญของบ้าน</h1>
-              <p className="text-[11px] text-[#746C65]">วันเกิด นัดหมอ กิจกรรม และแท็กคนที่ไปด้วยกัน 👥</p>
+              <h1 className="text-base font-black text-[#2D2825]">{t ? t('calendarTitle', 'ปฏิทินวันสำคัญของบ้าน') : 'ปฏิทินวันสำคัญของบ้าน'}</h1>
+              <p className="text-[11px] text-[#746C65]">{t ? t('calendarSubtitle', 'วันเกิด นัดหมอ กิจกรรม และแท็กคนที่ไปด้วยกัน 👥') : 'วันเกิด นัดหมอ กิจกรรม และแท็กคนที่ไปด้วยกัน 👥'}</p>
             </div>
           </div>
 
@@ -258,7 +223,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#FAF8F5] hover:bg-[#FFFBEB] text-[#CA8A04] border border-[#FDE047] text-xs font-bold shadow-2xs transition-all cursor-pointer"
             >
               <PushPin size={14} weight="fill" />
-              <span>ตู้เย็นโน้ต</span>
+              <span>{t ? t('tabFridge', 'ตู้เย็น') : 'ตู้เย็นโน้ต'}</span>
             </button>
           )}
         </div>
@@ -534,15 +499,6 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-xs font-black text-[#2D2825]">{m.title}</h3>
-                          <button
-                            type="button"
-                            onClick={() => handleTranslate(`mile-${m.id}`, m.title)}
-                            className="text-[10px] text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer font-bold"
-                            title="แปลภาษาระหว่างไทย ↔ อังกฤษ"
-                          >
-                            <Globe size={11} />
-                            <span>{translations[`mile-${m.id}`]?.isVisible || autoTranslate ? 'แปลแล้ว' : 'แปล'}</span>
-                          </button>
                           <span
                             className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                               isToday
@@ -555,18 +511,6 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                             {m.info?.text}
                           </span>
                         </div>
-
-                        {/* Translated Title Box */}
-                        {(translations[`mile-${m.id}`]?.isVisible || autoTranslate) && (
-                          <div className="mt-1 p-1.5 px-2 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[11px] text-[#1E3A8A] flex items-center gap-1.5 animate-enter-rise">
-                            <Globe size={11} className="text-[#3B82F6] shrink-0" />
-                            <span className="font-semibold">
-                              {translations[`mile-${m.id}`]?.isTranslating
-                                ? 'กำลังแปล...'
-                                : translations[`mile-${m.id}`]?.text || m.title}
-                            </span>
-                          </div>
-                        )}
 
                         <p className="text-[11px] text-[#746C65] mt-0.5">
                           📅 {new Date(m.date).toLocaleDateString('th-TH', {

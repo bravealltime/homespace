@@ -72,7 +72,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
 
 function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
-  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead, autoTranslate, toggleAutoTranslate } = useApp();
+  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead, language, toggleLanguage, t } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
@@ -83,6 +83,14 @@ function AppContent() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
   const scrollContainerRef = useRef(null);
+
+  const tabs = [
+    { id: 'home', label: t('tabHome', 'หน้าหลัก'), icon: House, subtitle: t('tabHomeSub', 'โหลคะแนน & งานบ้าน') },
+    { id: 'fridge', label: t('tabFridge', 'ตู้เย็น'), icon: PushPin, subtitle: t('tabFridgeSub', 'กระดานโน้ตตู้เย็น') },
+    { id: 'calendar', label: t('tabCalendar', 'ปฏิทิน'), icon: CalendarBlank, subtitle: t('tabCalendarSub', 'วันสำคัญ & แท็กคน') },
+    { id: 'my-feed', label: t('tabMyFeed', 'โพสต์ฉัน'), icon: UserCircle, subtitle: t('tabMyFeedSub', 'ฟีดและคอมเมนต์ของฉัน') },
+    { id: 'rewards', label: t('tabRewards', 'ของรางวัล'), icon: Gift, subtitle: t('tabRewardsSub', 'ปลดล็อก & โหวตของกิน') },
+  ];
 
   // Reset scroll position when changing tabs or profiles
   useEffect(() => {
@@ -141,11 +149,11 @@ function AppContent() {
           </div>
           <div>
             <h1 className="text-sm font-black text-[#2D2825] leading-tight tracking-tight">HomeSpace</h1>
-            <p className="text-[9px] text-[#746C65]">บันทึกความสุขของบ้าน</p>
+            <p className="text-[9px] text-[#746C65]">{t('appSubtitle', 'บันทึกความสุขของบ้าน')}</p>
           </div>
         </div>
 
-        {/* Right Actions: Senior Mode (🔤) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
+        {/* Right Actions: Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Switcher (👥) */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Senior & Easy-Reading Mode Toggle (โหมดสบายตา / ตัวหนังสือใหญ่) */}
           <button
@@ -159,22 +167,22 @@ function AppContent() {
             title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่ (กลับสู่ขนาดปกติ)' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตาสำหรับผู้ใหญ่)'}
           >
             <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
-            <span className="text-[10px] font-bold">{seniorMode ? 'สบายตา' : 'ตัวใหญ่'}</span>
+            <span className="text-[10px] font-bold">{seniorMode ? t('seniorModeOn', 'สบายตา') : t('seniorModeOff', 'ตัวใหญ่')}</span>
           </button>
 
-          {/* Auto Translate Toggle (แปลภาษาสำหรับคนต่างชาติ 🌐) */}
+          {/* Language Switcher for UX/UI (สลับภาษาไทย 🇹🇭 / English 🇬🇧) */}
           <button
             type="button"
-            onClick={toggleAutoTranslate}
+            onClick={toggleLanguage}
             className={`h-7 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border ${
-              autoTranslate
+              language === 'en'
                 ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs font-black'
                 : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
             }`}
-            title={autoTranslate ? 'ปิดการแปลอัตโนมัติ (กำลังเปิดโหมดแปลภาษาอัตโนมัติ)' : 'เปิดการแปลภาษาอัตโนมัติ (Auto-Translate for foreigners)'}
+            title={t('langToggleTitle', 'สลับภาษาไทย / Switch to English')}
           >
-            <Globe size={13} weight={autoTranslate ? 'bold' : 'regular'} />
-            <span className="text-[10px] font-bold">{autoTranslate ? 'EN/ไทย' : 'แปล'}</span>
+            <Globe size={13} weight={language === 'en' ? 'bold' : 'regular'} />
+            <span className="text-[10px] font-bold">{language === 'en' ? '🇬🇧 EN' : '🇹🇭 ไทย'}</span>
           </button>
           {/* Admin Family Requests & Invite Link Button */}
           {isAdmin && (
@@ -303,7 +311,7 @@ function AppContent() {
         className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 pointer-events-auto"
       >
         <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around">
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -532,11 +540,11 @@ function AppContent() {
                   <div className="flex items-center gap-2">
                     <span className="text-base">📲</span>
                     <div className="text-left leading-tight">
-                      <p className="text-xs font-black">ติดตั้งแอปลงมือถือ</p>
-                      <p className="text-[10px] text-white/80">iPhone & Android เปิดเต็มจอเหมือนแอปแท้</p>
+                      <p className="text-xs font-black">{t('installAppTitle', 'ติดตั้งแอปลงมือถือ')}</p>
+                      <p className="text-[10px] text-white/80">{t('installAppSubtitle', 'iPhone & Android เปิดเต็มจอเหมือนแอปแท้')}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">วิธีลง ↗</span>
+                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">{t('installAppBtn', 'วิธีลง ↗')}</span>
                 </button>
               </div>
 
@@ -551,14 +559,14 @@ function AppContent() {
                   className="text-xs text-red-500 hover:text-red-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <SignOut size={14} weight="bold" />
-                  <span>ออกจากระบบ</span>
+                  <span>{t('logout', 'ออกจากระบบ')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFamilyMembersOpen(false)}
                   className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#ECE7DF] text-xs font-bold text-[#746C65] border border-[#ECE7DF] shadow-2xs transition-colors cursor-pointer"
                 >
-                  ปิด
+                  {t('close', 'ปิด')}
                 </button>
               </div>
             </div>

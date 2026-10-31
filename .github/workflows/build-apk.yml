@@ -44,6 +44,7 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           mkdir -p android/capacitor-cordova-android-plugins
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" || true
 
       - name: Sync Capacitor Android
         run: |

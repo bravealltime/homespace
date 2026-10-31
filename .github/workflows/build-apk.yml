@@ -74,6 +74,18 @@ jobs:
           name: gradle-build-log
           path: gradle_build.log
 
+      - name: Save Log to Branch if Failed
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B build-log
+          if [ -f "gradle_build.log" ]; then
+            git add gradle_build.log -f
+            git commit -m "chore: save gradle build log for inspection [skip ci]" || true
+            git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git build-log || true
+          fi
+
       - name: Prepare APK Output
         run: |
           mkdir -p output

@@ -709,7 +709,7 @@ app.get('/api/posts', async (req, res) => {
       return {
         ...post,
         comments: postComments,
-        likes: likedSet.size > 0 ? likedSet.size : post.likes,
+        likes: likedSet.size,
         isLiked: currentMemberId ? likedSet.has(currentMemberId) : false,
       };
     });

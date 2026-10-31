@@ -136,13 +136,13 @@ export default function CreateStoryModal({ isOpen, onClose }) {
             </div>
             <div>
               <h3 className="text-sm font-black text-[#2D2825] flex items-center gap-1.5">
-                <span>ลงไฮไลท์สตอรี่ (แบบ IG)</span>
+                <span>แชร์สตอรี่ครอบครัว</span>
                 <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.5 rounded-full font-bold">
-                  แยกกับโพสต์ฟีด
+                  24 ชม.
                 </span>
               </h3>
               <p className="text-[10px] text-[#746C65]">
-                จะปรากฏที่วงกลมสตอรี่ด้านบน ไม่ปนกับโพสต์งานบ้าน
+                แชร์ช่วงเวลาดี ๆ ในวงกลมสตอรี่ให้ทุกคนในบ้านดู
               </p>
             </div>
           </div>
@@ -302,14 +302,14 @@ export default function CreateStoryModal({ isOpen, onClose }) {
                 )}
               </div>
 
-              {/* Supabase Storage Notice */}
+              {/* Storage Notice */}
               <div className="p-2.5 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/20 flex items-center justify-between text-[11px] text-[#5F8D75] font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <span>☁️</span>
-                  <span>บันทึกรูปลง Supabase Storage คมชัด โหลดเร็ว</span>
+                  <span>🔒</span>
+                  <span>บันทึกรูปคมชัด ปลอดภัยเฉพาะในบ้าน</span>
                 </span>
                 <span className="text-[10px] bg-white px-2 py-0.5 rounded-md font-bold shadow-2xs">
-                  ระบบคลาวด์
+                  ส่วนตัว
                 </span>
               </div>
             </div>

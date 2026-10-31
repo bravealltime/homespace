@@ -298,7 +298,7 @@ export default function FamilySummary() {
             </div>
             <div>
               <h3 className="text-sm font-black text-[#2D2825]">ผลงานที่ทำสำเร็จ</h3>
-              <p className="text-[11px] text-[#746C65]">ภาพความสะอาดที่สมาชิกช่วยกันดูแล</p>
+              <p className="text-[11px] text-[#746C65]">บันทึกงานบ้านและเรื่องราวความสุขของสมาชิก</p>
             </div>
           </div>
           <span className="text-[10px] font-black text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full">

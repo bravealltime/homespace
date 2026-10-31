@@ -1,6 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 import { MONTHLY_GOAL, REWARDS, PRAISE_STICKERS, generateInitialHistory } from '../data';
-import { PRESET_ROUTINES } from '../services/aiAdvisor';
 import { useAuth } from './AuthContext';
 import * as api from '../services/api';
 

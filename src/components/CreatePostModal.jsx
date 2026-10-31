@@ -420,7 +420,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
                 {mode === 'chore' ? 'รูปถ่ายผลงาน (ก่อนทำ & หลังทำ):' : 'รูปภาพประกอบ:'}
               </label>
               <span className="text-[10px] text-[#5F8D75] font-semibold">
-                บันทึกลง Supabase Storage ☁️
+                รูปคมชัด ปลอดภัยในบ้าน 🔒
               </span>
             </div>
 
@@ -586,7 +586,7 @@ export default function CreatePostModal({ isOpen, onClose, initialMode = 'routin
             {isSubmitting ? (
               <>
                 <CircleNotch size={16} className="animate-spin" />
-                <span>กำลังอัปโหลดรูปภาพไปยัง Supabase... ☁️</span>
+                <span>กำลังบันทึกและแชร์ให้ครอบครัว... ✨</span>
               </>
             ) : (
               <span>{mode === 'chore' ? 'ส่งงานบ้านให้ครอบครัวดูเลย ✨' : 'แชร์เรื่องราวให้ครอบครัวดูเลย 💖'}</span>

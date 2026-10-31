@@ -292,9 +292,9 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
         {/* Story Bar Subheader */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-[#2D2825]">ไฮไลท์สตอรี่ประจำวัน</span>
-            <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.2 rounded-full font-bold">
-              แบบ IG (แยกกับโพสต์ฟีด)
+            <span className="text-xs font-black text-[#2D2825]">สตอรี่ครอบครัว</span>
+            <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.5 rounded-full font-bold">
+              24 ชม.
             </span>
           </div>
           <button
@@ -604,9 +604,19 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
                 </div>
 
                 <div className="flex items-center gap-1.5 relative">
-                  <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
-                    +{post.points} แต้ม
-                  </span>
+                  {isChore ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-bold border border-[#5F8D75]/20 flex items-center gap-1">
+                      <span>{post.choreEmoji || '🧹'}</span>
+                      <span>{post.choreName || 'งานบ้าน'}</span>
+                      <span className="font-black">+{post.points} แต้ม</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#FFF5EB] text-[#E88D67] text-[10px] font-bold border border-[#E88D67]/20 flex items-center gap-1">
+                      <span>📸</span>
+                      <span>เรื่องราว</span>
+                      <span className="font-black">+{post.points} แต้ม</span>
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setActivePostMenuId(activePostMenuId === post.id ? null : post.id)}
@@ -744,9 +754,15 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile }) {
 
               {/* Likes Count */}
               <div className="px-3.5 pb-1.5">
-                <p className="text-xs font-bold text-[#2D2825]">
-                  ถูกใจ {post.likes || 1} คน
-                </p>
+                {(post.likes || 0) > 0 ? (
+                  <p className="text-xs font-bold text-[#2D2825]">
+                    ถูกใจ {post.likes} คน
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-[#9E958D]">
+                    ส่งหัวใจคนแรกให้โพสต์นี้ 💖
+                  </p>
+                )}
               </div>
 
               {/* Caption (Instagram Format: Username + Text) */}

@@ -538,7 +538,15 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
 
                 {/* Likes count */}
                 <div className="px-3.5 pb-1">
-                  <p className="text-xs font-bold text-[#2D2825]">ถูกใจ {post.likes || 1} คน</p>
+                  {(post.likes || 0) > 0 ? (
+                    <p className="text-xs font-bold text-[#2D2825]">
+                      ถูกใจ {post.likes} คน
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-[#9E958D]">
+                      ยังไม่มีคนกดถูกใจ
+                    </p>
+                  )}
                 </div>
 
                 {/* Caption */}

@@ -195,7 +195,7 @@ export default function SearchModal({ isOpen, onClose, onSelectMember }) {
                           {author?.name}: {post.caption || post.choreName}
                         </p>
                         <p className="text-[10px] text-[#9E958D]">
-                          {post.type === 'chore' ? '🧹 งานบ้าน' : '📸 กิจกรรม'} · ถูกใจ {post.likes || 1} คน
+                          {post.type === 'chore' ? '🧹 งานบ้าน' : '📸 กิจกรรม'}{(post.likes || 0) > 0 ? ` · ถูกใจ ${post.likes} คน` : ''}
                         </p>
                       </div>
                     </div>

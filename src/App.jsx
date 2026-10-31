@@ -174,7 +174,6 @@ function AppContent() {
     isViewingContent
   );
 
-  const isHeaderHidden = !isNavVisible || isViewingContent;
   const isBottomNavHidden = !isNavVisible || isAnyModalOpen;
 
   const myNotifications = (notifications || []).filter(
@@ -275,12 +274,10 @@ function AppContent() {
         />
       </div>
 
-      {/* 2. Mobile Top Header - Ultra Clean & Elegant (< 1024px) */}
+      {/* 2. Mobile Top Header - Ultra Clean & Stable (< 1024px) */}
       <header
-        className={`lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0 transition-all duration-300 ease-in-out ${
-          isHeaderHidden
-            ? '-translate-y-full opacity-0 pointer-events-none -mb-14'
-            : 'translate-y-0 opacity-100 mb-0'
+        className={`lg:hidden bg-white/95 backdrop-blur-md border-b border-[#ECE7DF] px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs safe-area-top shrink-0 z-30 ${
+          isViewingContent ? 'hidden' : ''
         }`}
       >
         <div
@@ -436,7 +433,7 @@ function AppContent() {
       {/* 5. Floating Mobile Bottom Navigation Island (< 1024px) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className={`lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 transition-all duration-300 ease-in-out ${
+        className={`lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 transition-transform duration-250 ease-out ${
           isBottomNavHidden
             ? 'translate-y-28 opacity-0 pointer-events-none'
             : 'translate-y-0 opacity-100 pointer-events-auto'

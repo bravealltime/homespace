@@ -7,6 +7,7 @@
   },
   "android": {
     "webContentsDebuggingEnabled": true,
-    "allowMixedContent": true
+    "allowMixedContent": true,
+    "adjustMarginsForEdgeToEdge": "auto"
   }
 }

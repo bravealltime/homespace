@@ -1290,18 +1290,37 @@ app.get('/api/notifications', (req, res) => {
   }
 });
 
-app.post('/api/notifications/read', (req, res) => {
+app.post('/api/notifications/read', async (req, res) => {
   try {
-    const { recipientId } = req.body;
-    if (recipientId) {
+    const { recipientId, notificationId } = req.body;
+    if (notificationId) {
+      db.prepare('UPDATE notifications SET isRead = 1 WHERE id = ?').run(notificationId);
+    } else if (recipientId) {
       db.prepare('UPDATE notifications SET isRead = 1 WHERE recipientId = ?').run(recipientId);
     } else {
       db.prepare('UPDATE notifications SET isRead = 1').run();
     }
+    await pushToCloud().catch(err => console.warn('Push cloud after notifs read:', err.message));
     res.json({ success: true });
   } catch (err) {
     console.error('Error marking notifications read:', err);
     res.status(500).json({ error: 'Failed to mark read' });
+  }
+});
+
+app.post('/api/notifications/clear', async (req, res) => {
+  try {
+    const { recipientId } = req.body;
+    if (recipientId) {
+      db.prepare('DELETE FROM notifications WHERE recipientId = ?').run(recipientId);
+    } else {
+      db.prepare('DELETE FROM notifications').run();
+    }
+    await pushToCloud().catch(err => console.warn('Push cloud after clear notifs:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error clearing notifications:', err);
+    res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
 

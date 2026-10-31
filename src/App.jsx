@@ -64,7 +64,7 @@ function HeaderAvatar({ member, size = 'sm' }) {
 
 function AppContent() {
   const { currentUser, members, logout, isAdmin, pendingRequests, removeMember, currentFamily } = useAuth();
-  const { notifications, seniorMode, toggleSeniorMode } = useApp();
+  const { notifications, seniorMode, toggleSeniorMode, markNotificationsRead } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);
   const [familyAdminOpen, setFamilyAdminOpen] = useState(false);
@@ -182,7 +182,12 @@ function AppContent() {
           {/* Notification Bell with Badge */}
           <button
             type="button"
-            onClick={() => setNotificationOpen(true)}
+            onClick={() => {
+              setNotificationOpen(true);
+              if (currentUser?.id && unreadCount > 0) {
+                markNotificationsRead(currentUser.id);
+              }
+            }}
             className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
             title="การแจ้งเตือน"
           >

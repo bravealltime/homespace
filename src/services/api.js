@@ -194,8 +194,15 @@ export async function fetchNotifications(recipientId) {
   return request(`/notifications${query}`);
 }
 
-export async function markNotificationsAsRead(recipientId) {
+export async function markNotificationsAsRead(recipientId, notificationId) {
   return request('/notifications/read', {
+    method: 'POST',
+    body: JSON.stringify({ recipientId, notificationId }),
+  });
+}
+
+export async function clearNotifications(recipientId) {
+  return request('/notifications/clear', {
     method: 'POST',
     body: JSON.stringify({ recipientId }),
   });

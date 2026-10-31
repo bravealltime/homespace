@@ -201,6 +201,13 @@ export function importJsonToDb(data) {
 
       // 9. Notifications
       if (Array.isArray(data.notifications)) {
+        if (data.notifications.length > 0) {
+          const ids = data.notifications.map(n => n.id);
+          const q = ids.map(() => '?').join(',');
+          db.prepare(`DELETE FROM notifications WHERE id NOT IN (${q})`).run(...ids);
+        } else {
+          db.prepare('DELETE FROM notifications').run();
+        }
         const stmt = db.prepare(`
           INSERT OR REPLACE INTO notifications (id, recipientId, senderId, type, postId, text, isRead, timestamp)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)

@@ -253,12 +253,31 @@ function reducer(state, action) {
     }
 
     case 'MARK_NOTIFICATIONS_READ': {
-      const { recipientId } = action.payload;
+      const { recipientId, notificationId } = action.payload || {};
       return {
         ...state,
-        notifications: (state.notifications || []).map((n) =>
-          !recipientId || n.recipientId === recipientId ? { ...n, isRead: true } : n
-        ),
+        notifications: (state.notifications || []).map((n) => {
+          if (notificationId && n.id === notificationId) {
+            return { ...n, isRead: true };
+          }
+          if (recipientId && n.recipientId === recipientId) {
+            return { ...n, isRead: true };
+          }
+          if (!recipientId && !notificationId) {
+            return { ...n, isRead: true };
+          }
+          return n;
+        }),
+      };
+    }
+
+    case 'CLEAR_NOTIFICATIONS': {
+      const { recipientId } = action.payload || {};
+      return {
+        ...state,
+        notifications: recipientId
+          ? (state.notifications || []).filter((n) => n.recipientId !== recipientId)
+          : [],
       };
     }
 
@@ -539,12 +558,21 @@ export function AppProvider({ children }) {
     }
   };
 
-  const markNotificationsRead = async (recipientId) => {
-    dispatch({ type: 'MARK_NOTIFICATIONS_READ', payload: { recipientId } });
+  const markNotificationsRead = async (recipientId, notificationId) => {
+    dispatch({ type: 'MARK_NOTIFICATIONS_READ', payload: { recipientId, notificationId } });
     try {
-      await api.markNotificationsAsRead(recipientId);
+      await api.markNotificationsAsRead(recipientId, notificationId);
     } catch (err) {
       console.warn('Backend notification read warning:', err.message);
+    }
+  };
+
+  const clearNotifications = async (recipientId) => {
+    dispatch({ type: 'CLEAR_NOTIFICATIONS', payload: { recipientId } });
+    try {
+      await api.clearNotifications(recipientId);
+    } catch (err) {
+      console.warn('Backend clear notifs warning:', err.message);
     }
   };
 
@@ -752,6 +780,7 @@ export function AppProvider({ children }) {
     addMilestone,
     deleteMilestone,
     markNotificationsRead,
+    clearNotifications,
     getWeeklyData,
     getMonthlyData,
     getYearlyData,

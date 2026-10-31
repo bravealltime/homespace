@@ -24,7 +24,7 @@ function timeAgo(timestamp) {
 
 export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed }) {
   const { currentUser } = useAuth();
-  const { members, notifications, markNotificationsRead } = useApp();
+  const { members, notifications, markNotificationsRead, clearNotifications } = useApp();
 
   // Filter notifications for current user
   const userNotifications = (notifications || []).filter(
@@ -32,6 +32,13 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
   );
 
   const unreadCount = userNotifications.filter((n) => !n.isRead).length;
+
+  // Auto-mark notifications as read when the modal is opened
+  useEffect(() => {
+    if (isOpen && currentUser?.id && unreadCount > 0) {
+      markNotificationsRead(currentUser.id);
+    }
+  }, [isOpen, currentUser?.id, unreadCount, markNotificationsRead]);
 
   const handleMarkAllRead = () => {
     if (currentUser?.id) {
@@ -41,7 +48,7 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
 
   const handleSelectNotif = (notif) => {
     if (currentUser?.id) {
-      markNotificationsRead(currentUser.id);
+      markNotificationsRead(currentUser.id, notif.id);
     }
     onClose();
     if (onNavigateToMyFeed) {
@@ -71,7 +78,7 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
             <div>
               <h2 className="text-sm font-black text-[#2D2825]">การแจ้งเตือน</h2>
               <p className="text-[10px] text-[#746C65]">
-                {unreadCount > 0 ? `มี ${unreadCount} รายการที่ยังไม่ได้อ่าน` : 'ไม่มีข้อความใหม่'}
+                {unreadCount > 0 ? `มี ${unreadCount} รายการที่ยังไม่ได้อ่าน` : 'อ่านครบทั้งหมดแล้ว'}
               </p>
             </div>
           </div>
@@ -171,22 +178,36 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
 
         {/* Bottom Actions */}
         {userNotifications.length > 0 && (
-          <div className="p-3 bg-[#FAF8F5] border-t border-[#ECE7DF] flex items-center justify-between">
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              disabled={unreadCount === 0}
-              className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              อ่านทั้งหมดแล้ว ✓
-            </button>
+          <div className="p-3 bg-[#FAF8F5] border-t border-[#ECE7DF] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                disabled={unreadCount === 0}
+                className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                อ่านทั้งหมดแล้ว ✓
+              </button>
+              <span className="text-[#D6CFC7] text-xs">|</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentUser?.id) {
+                    clearNotifications(currentUser.id);
+                  }
+                }}
+                className="text-xs font-medium text-[#746C65] hover:text-[#C84B31] transition-colors cursor-pointer"
+              >
+                ล้างทั้งหมด
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => {
                 onClose();
                 if (onNavigateToMyFeed) onNavigateToMyFeed();
               }}
-              className="text-xs font-bold text-[#2D2825] hover:underline"
+              className="text-xs font-bold text-[#2D2825] hover:underline cursor-pointer"
             >
               ไปที่ฟีดของฉัน →
             </button>

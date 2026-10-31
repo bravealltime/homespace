@@ -54,7 +54,7 @@ jobs:
       - name: Build Debug APK with Gradle
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace --no-daemon 2>&1 | tee gradle.log || {
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon 2>&1 | tee gradle.log || {
             ERR=$(grep -E -A 8 "FAILURE:|error:|FAILED" gradle.log | head -n 25 | tr '\r\n' '  ')
             echo "::error title=Gradle Fail::$ERR"
             exit 1
@@ -63,14 +63,9 @@ jobs:
       - name: Prepare APK Output
         run: |
           mkdir -p output
-          echo "=== Searching for APK ==="
-          APK_PATH=$(find . -name "*.apk" | head -n 1)
-          echo "Found APK: $APK_PATH"
-          if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK generated"
-            exit 1
-          fi
-          cp "$APK_PATH" output/HomeSpace.apk
+          echo "=== All APK files ==="
+          find . -name "*.apk" || true
+          cp android/app/build/outputs/apk/debug/app-debug.apk output/HomeSpace.apk
           ls -lh output/HomeSpace.apk
 
       - name: Upload APK Artifact

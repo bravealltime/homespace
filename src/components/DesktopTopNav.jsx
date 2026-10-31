@@ -11,6 +11,7 @@ import {
   TextAa,
   Globe,
   SignOut,
+  CaretDown,
 } from '@phosphor-icons/react';
 import HomeSpaceLogo from './HomeSpaceLogo';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +26,7 @@ export default function DesktopTopNav({
   onOpenMembers,
   onOpenProfile,
   onOpenSos,
+  onOpenQuickMenu,
 }) {
   const { currentUser, currentFamily, isAdmin, pendingRequests } = useAuth();
   const {
@@ -107,73 +109,28 @@ export default function DesktopTopNav({
         })}
       </nav>
 
-      {/* RIGHT: Actions + Notifications + Profile Pill */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Senior & Easy-Reading Mode */}
+      {/* RIGHT: Actions + Notifications + Profile Hub */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Red Emergency SOS Button */}
         <button
           type="button"
-          onClick={toggleSeniorMode}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
-            seniorMode
-              ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
-              : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-          }`}
-          title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตา)'}
+          onClick={onOpenSos}
+          className="h-8.5 px-3 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+          title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
         >
-          <TextAa size={16} weight={seniorMode ? 'bold' : 'regular'} />
-        </button>
-
-        {/* Language Switcher */}
-        <button
-          type="button"
-          onClick={toggleLanguage}
-          className={`h-8 px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border text-xs font-black ${
-            language === 'en'
-              ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs'
-              : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-          }`}
-          title="สลับภาษาไทย / Switch to English"
-        >
-          <Globe size={14} weight="bold" />
-          <span>{language === 'en' ? 'EN' : 'ไทย'}</span>
-        </button>
-
-        {/* Admin Family Requests Shield */}
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={onOpenAdmin}
-            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#5F8D75] bg-[#EEF4F0] hover:bg-[#E2EEE6] transition-colors cursor-pointer border border-[#5F8D75]/20"
-            title="จัดการครอบครัว & คำขอเข้าบ้าน"
-          >
-            <ShieldCheck size={18} weight="bold" />
-            {pendingRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
-                {pendingRequests.length}
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Household Members Button */}
-        <button
-          type="button"
-          onClick={onOpenMembers}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer"
-          title="รายชื่อสมาชิกในบ้าน"
-        >
-          <UsersThree size={17} weight="bold" />
+          <span className="text-sm">🚨</span>
+          <span className="tracking-wide">SOS</span>
         </button>
 
         {/* Notification Bell with Badge */}
         <button
           type="button"
           onClick={onOpenNotifications}
-          className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer"
+          className="relative w-8.5 h-8.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer"
           title="การแจ้งเตือน"
         >
           <Bell
-            size={17}
+            size={18}
             weight={unreadCount > 0 ? 'fill' : 'bold'}
             className={unreadCount > 0 ? 'text-[#E88D67]' : 'text-[#746C65]'}
           />
@@ -184,24 +141,14 @@ export default function DesktopTopNav({
           )}
         </button>
 
-        {/* Red Emergency SOS Button */}
+        {/* User Profile & House Center Pill (Avatar + Name + CaretDown) */}
         <button
           type="button"
-          onClick={onOpenSos}
-          className="h-8 px-3 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
-          title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
+          onClick={onOpenQuickMenu || onOpenProfile}
+          className="relative h-8.5 p-1 pr-3 rounded-full bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] hover:border-[#5F8D75]/40 flex items-center gap-2 cursor-pointer transition-all ml-0.5 shadow-2xs group"
+          title="ศูนย์จัดการบ้าน & ข้อมูลโปรไฟล์"
         >
-          <span className="text-sm">🚨</span>
-          <span className="tracking-wide">SOS</span>
-        </button>
-
-        {/* User Profile Pill (Avatar + Name) */}
-        <div
-          onClick={onOpenProfile}
-          className="p-1 pr-2.5 rounded-full bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] flex items-center gap-2 cursor-pointer transition-all ml-1"
-          title="โปรไฟล์และการตั้งค่า"
-        >
-          <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-[#ECE7DF] shrink-0">
+          <div className="w-6.5 h-6.5 rounded-full overflow-hidden bg-white border border-[#ECE7DF] shrink-0">
             {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
               <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -210,10 +157,18 @@ export default function DesktopTopNav({
               </div>
             )}
           </div>
-          <span className="text-xs font-black text-[#2D2825] max-w-[90px] truncate hidden md:block">
+          <span className="text-xs font-black text-[#2D2825] max-w-[100px] truncate">
             {currentUser?.name || 'คุณ'}
           </span>
-        </div>
+          <CaretDown size={12} weight="bold" className="text-[#9E958D] group-hover:text-[#2D2825] transition-transform" />
+
+          {/* Admin Pending Requests Warning Badge */}
+          {isAdmin && pendingRequests.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
+              {pendingRequests.length}
+            </span>
+          )}
+        </button>
       </div>
     </header>
   );

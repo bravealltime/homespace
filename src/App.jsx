@@ -42,6 +42,7 @@ import DesktopRightSidebar from './components/DesktopRightSidebar';
 import HomeHandbookModal from './components/HomeHandbookModal';
 import { FamilyGardenModal } from './components/FamilyTreeGarden';
 import EmergencySosModal, { EmergencySosBanner } from './components/EmergencySosModal';
+import QuickHouseMenu from './components/QuickHouseMenu';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -102,6 +103,7 @@ function AppContent() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
+  const [quickHouseMenuOpen, setQuickHouseMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
   const scrollContainerRef = useRef(null);
@@ -208,7 +210,8 @@ function AppContent() {
           }}
           onOpenAdmin={() => setFamilyAdminOpen(true)}
           onOpenMembers={() => setFamilyMembersOpen(true)}
-          onOpenProfile={() => setProfileOpen(true)}
+          onOpenProfile={() => setQuickHouseMenuOpen(true)}
+          onOpenQuickMenu={() => setQuickHouseMenuOpen(true)}
           onOpenSos={() => {
             setSosInitialCountdown(!activeSosAlert);
             setSosModalOpen(true);
@@ -232,79 +235,33 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right Actions: SOS (🚨) + Senior Mode (🔤) + Language Switcher (🌐) + Admin Shield (🛡️) + Search (🔍) + Notification (🔔) + User Avatar (👤) + Members (👥) */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Emergency SOS Button */}
+        {/* Right Actions: Clean, Uncluttered 4-Item Bar (SOS + Search + Notifications + Quick House Menu) */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* 1. Emergency SOS Button */}
           <button
             type="button"
             onClick={() => {
               setSosInitialCountdown(!activeSosAlert);
               setSosModalOpen(true);
             }}
-            className="h-7.5 px-2 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+            className="h-8 px-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
             title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
           >
             <span className="text-xs">🚨</span>
-            <span className="font-mono">SOS</span>
+            <span className="font-mono font-black tracking-tight">SOS</span>
           </button>
 
-          {/* Senior & Easy-Reading Mode Toggle */}
-          <button
-            type="button"
-            onClick={toggleSeniorMode}
-            className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
-              seniorMode
-                ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
-                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-            }`}
-            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตา)'}
-          >
-            <TextAa size={15} weight={seniorMode ? 'bold' : 'regular'} />
-          </button>
-
-          {/* Language Switcher */}
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            className={`h-7.5 px-1.5 sm:px-2 rounded-full flex items-center gap-1 transition-all cursor-pointer border text-[11px] font-black ${
-              language === 'en'
-                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs'
-                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-            }`}
-            title={t('langToggleTitle', 'สลับภาษาไทย / Switch to English')}
-          >
-            <Globe size={13} weight="bold" />
-            <span>{language === 'en' ? 'EN' : 'ไทย'}</span>
-          </button>
-
-          {/* Admin Family Requests & Invite Link Button */}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setFamilyAdminOpen(true)}
-              className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#5F8D75] hover:bg-[#EEF4F0] transition-colors cursor-pointer"
-              title={t('adminManage', 'จัดการคำขอเข้าครอบครัว & ลิงก์เชิญ')}
-            >
-              <ShieldCheck size={18} weight="bold" />
-              {pendingRequests.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
-                  {pendingRequests.length}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Search Button */}
+          {/* 2. Search Button */}
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-            title={t('searchTitle', 'ค้นหาคนในบ้าน หรืองานบ้าน')}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
+            title={t('searchTitle', 'ค้นหาในบ้าน')}
           >
-            <MagnifyingGlass size={17} weight="bold" />
+            <MagnifyingGlass size={16} weight="bold" />
           </button>
 
-          {/* Notification Bell with Badge */}
+          {/* 3. Notification Bell with Badge */}
           <button
             type="button"
             onClick={() => {
@@ -313,7 +270,7 @@ function AppContent() {
                 markNotificationsRead(currentUser.id);
               }
             }}
-            className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
             title={t('notificationsTitle', 'การแจ้งเตือน')}
           >
             <Bell
@@ -322,43 +279,31 @@ function AppContent() {
               className={unreadCount > 0 ? 'text-[#E88D67]' : 'text-[#746C65]'}
             />
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
                 {unreadCount}
               </span>
             )}
           </button>
 
-          {/* User Profile Avatar */}
+          {/* 4. Quick House Menu & Profile Avatar Hub */}
           <button
             type="button"
-            onClick={() => {
-              setViewingMember(null);
-              setActiveTab('my-feed');
-            }}
-            className={`w-7.5 h-7.5 rounded-full overflow-hidden border-2 transition-transform hover:scale-105 cursor-pointer shrink-0 ${
-              activeTab === 'my-feed' && !viewingMember
-                ? 'border-[#5F8D75] ring-2 ring-[#5F8D75]/30'
-                : 'border-[#ECE7DF]'
-            }`}
-            title={t('myProfileTitle', 'ไปที่โปรไฟล์ของฉัน')}
+            onClick={() => setQuickHouseMenuOpen(true)}
+            className="relative p-0.5 rounded-full border-2 border-[#5F8D75]/40 hover:border-[#5F8D75] transition-all hover:scale-105 cursor-pointer shrink-0 ml-0.5"
+            title="ศูนย์จัดการบ้าน & การตั้งค่า"
           >
-            {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
-              <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-xs font-bold">
-                {currentUser?.avatar || '😊'}
-              </div>
+            <div className="w-7.5 h-7.5 rounded-full overflow-hidden bg-white">
+              {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
+                <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-xs font-bold">
+                  {currentUser?.avatar || '😊'}
+                </div>
+              )}
+            </div>
+            {isAdmin && pendingRequests.length > 0 && (
+              <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
             )}
-          </button>
-
-          {/* Household Members Button */}
-          <button
-            type="button"
-            onClick={() => setFamilyMembersOpen(true)}
-            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer border border-[#ECE7DF] shrink-0"
-            title={t('familyMembersTitle', 'สมาชิกในบ้าน')}
-          >
-            <UsersThree size={16} weight="bold" />
           </button>
         </div>
       </header>
@@ -483,6 +428,19 @@ function AppContent() {
         isOpen={sosModalOpen}
         onClose={() => setSosModalOpen(false)}
         initialCountdown={sosInitialCountdown}
+      />
+      <QuickHouseMenu
+        isOpen={quickHouseMenuOpen}
+        onClose={() => setQuickHouseMenuOpen(false)}
+        onOpenProfile={() => setProfileOpen(true)}
+        onOpenAdmin={() => setFamilyAdminOpen(true)}
+        onOpenMembers={() => setFamilyMembersOpen(true)}
+        onOpenHandbook={() => setHomeHandbookOpen(true)}
+        onNavigateTab={(tab) => {
+          if (tab === 'my-feed') setViewingMember(null);
+          setActiveTab(tab);
+        }}
+        onLogout={() => setShowLogoutConfirm(true)}
       />
       <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
 

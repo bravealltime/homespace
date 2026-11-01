@@ -122,6 +122,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
     isStandalone,
     promptInstallApp,
     setIsViewingContent,
+    syncWithBackend,
   } = useApp();
 
   const [pwaBannerDismissed, setPwaBannerDismissed] = useState(() => {
@@ -207,11 +208,115 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
     };
   }, [storyViewer, viewingPhoto, setIsViewingContent]);
 
+  // Handle Android Native Back Button inside TodayHome
+  useEffect(() => {
+    const handleAndroidBack = (e) => {
+      if (viewingPhoto) {
+        setViewingPhoto(null);
+        e.preventDefault();
+        return;
+      }
+      if (storyViewer) {
+        setStoryViewer(null);
+        e.preventDefault();
+        return;
+      }
+      if (createPostModalOpen) {
+        setCreatePostModalOpen(false);
+        e.preventDefault();
+        return;
+      }
+      if (createStoryModalOpen) {
+        setCreateStoryModalOpen(false);
+        e.preventDefault();
+        return;
+      }
+      if (seniorHelpModalOpen) {
+        setSeniorHelpModalOpen(false);
+        e.preventDefault();
+        return;
+      }
+      if (activePostMenuId) {
+        setActivePostMenuId(null);
+        e.preventDefault();
+        return;
+      }
+      if (activeCommentPostId) {
+        setActiveCommentPostId(null);
+        e.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener('app:android-back', handleAndroidBack);
+    return () => window.removeEventListener('app:android-back', handleAndroidBack);
+  }, [
+    viewingPhoto,
+    storyViewer,
+    createPostModalOpen,
+    createStoryModalOpen,
+    seniorHelpModalOpen,
+    activePostMenuId,
+    activeCommentPostId,
+  ]);
+
   const storiesContainerRef = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeftState, setScrollLeftState] = useState(0);
   const isDraggingRef = useRef(false);
+
+  // Pull-to-Refresh State & Handlers
+  const [pullY, setPullY] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+  const isPullingRef = useRef(false);
+
+  const handleTouchStart = (e) => {
+    // Only pull when scrollable parent is at the very top
+    const scrollParent = e.currentTarget.closest('.scroll-area') || window;
+    const currentScrollTop = scrollParent.scrollTop || window.scrollY || 0;
+    if (currentScrollTop > 5) {
+      isPullingRef.current = false;
+      return;
+    }
+    touchStartYRef.current = e.touches[0].clientY;
+    isPullingRef.current = true;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPullingRef.current || isPullRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartYRef.current;
+    if (diff > 0) {
+      const distance = Math.min(diff * 0.42, 85);
+      setPullY(distance);
+    } else {
+      setPullY(0);
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPullingRef.current) return;
+    isPullingRef.current = false;
+    if (pullY >= 50 && !isPullRefreshing) {
+      setIsPullRefreshing(true);
+      setPullY(45);
+      try {
+        if (syncWithBackend) {
+          await syncWithBackend();
+        }
+      } catch (err) {
+        console.warn('Pull-to-refresh error:', err);
+      }
+      setTimeout(() => {
+        setIsPullRefreshing(false);
+        setPullY(0);
+      }, 500);
+    } else {
+      setPullY(0);
+    }
+  };
 
   const urgentMaintenance = (homeMaintenance || []).filter((item) => {
     const st = getMaintenanceStatus(item.nextDueDate);
@@ -478,7 +583,37 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
   const closestMilestone = sortedUpcomingMilestones[0] || null;
 
   return (
-    <div className="space-y-3 pb-24 relative">
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="space-y-3 pb-24 relative"
+    >
+      {/* Pull-to-Refresh Animated Native Badge */}
+      <div
+        className="overflow-hidden transition-all duration-200 flex items-center justify-center pointer-events-none select-none"
+        style={{
+          height: `${pullY}px`,
+          opacity: pullY > 10 ? 1 : 0,
+        }}
+      >
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-[#ECE7DF] shadow-xs text-xs font-bold text-[#5F8D75]">
+          <span
+            className={`inline-block transition-transform duration-200 text-sm ${
+              isPullRefreshing ? 'animate-spin' : pullY >= 50 ? 'rotate-180 scale-110' : ''
+            }`}
+          >
+            🔄
+          </span>
+          <span>
+            {isPullRefreshing
+              ? t('syncingData', 'กำลังดึงข้อมูลล่าสุดของบ้าน... 🏡')
+              : pullY >= 50
+              ? t('releaseToRefresh', '✨ ปล่อยมือเพื่ออัปเดตข้อมูล!')
+              : t('pullDownToRefresh', 'ดึงลงเพื่อรีเฟรช...')}
+          </span>
+        </div>
+      </div>
       {/* Floating Accessibility Toast (Feedback when elderly send blessings) */}
       {seniorToast && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#2D2825] text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl border border-white/20 animate-enter-rise flex items-center gap-2 pointer-events-none">

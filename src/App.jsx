@@ -22,6 +22,8 @@ import {
 } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 import LoginPage from './components/LoginPage';
 import ProfileModal from './components/ProfileModal';
 import TodayHome from './components/TodayHome';
@@ -158,6 +160,67 @@ function AppContent() {
       mobileScrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [activeTab, viewingMember]);
+
+  // Handle Android Native Hardware Back Button (Capacitor)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let lastBackPress = 0;
+    const backListenerPromise = CapApp.addListener('backButton', () => {
+      // 1. Let active child modals/views intercept the back gesture first
+      const backEvt = new CustomEvent('app:android-back', { cancelable: true });
+      window.dispatchEvent(backEvt);
+      if (backEvt.defaultPrevented) return;
+
+      // 2. Close AppContent level modals in priority order
+      if (showLogoutConfirm) { setShowLogoutConfirm(false); return; }
+      if (quickHouseMenuOpen) { setQuickHouseMenuOpen(false); return; }
+      if (familyMembersOpen) { setFamilyMembersOpen(false); return; }
+      if (searchOpen) { setSearchOpen(false); return; }
+      if (notificationOpen) { setNotificationOpen(false); return; }
+      if (sosModalOpen) { setSosModalOpen(false); return; }
+      if (familyGardenOpen) { setFamilyGardenOpen(false); return; }
+      if (homeHandbookOpen) { setHomeHandbookOpen(false); return; }
+      if (familyAdminOpen) { setFamilyAdminOpen(false); return; }
+      if (profileOpen) { setProfileOpen(false); return; }
+      if (installModalOpen) { setInstallModalOpen(false); return; }
+
+      // 3. Clear profile view in my-feed
+      if (viewingMember) { setViewingMember(null); return; }
+
+      // 4. Return to Home tab if on another tab
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return;
+      }
+
+      // 5. Double tap back within 2 seconds to exit app
+      const now = Date.now();
+      if (now - lastBackPress < 2000) {
+        CapApp.exitApp();
+      } else {
+        lastBackPress = now;
+      }
+    });
+
+    return () => {
+      backListenerPromise.then((sub) => sub.remove());
+    };
+  }, [
+    showLogoutConfirm,
+    quickHouseMenuOpen,
+    familyMembersOpen,
+    searchOpen,
+    notificationOpen,
+    sosModalOpen,
+    familyGardenOpen,
+    homeHandbookOpen,
+    familyAdminOpen,
+    profileOpen,
+    installModalOpen,
+    viewingMember,
+    activeTab,
+  ]);
 
   // Check if any modal or fullscreen content is open
   const isAnyModalOpen = Boolean(

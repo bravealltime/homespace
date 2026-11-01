@@ -361,13 +361,20 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
     return () => clearTimeout(timer);
   }, [storyViewer]);
 
+  const isStoryActive = (s) => {
+    if (!s || !s.timestamp) return false;
+    const age = Date.now() - Number(s.timestamp);
+    return age >= 0 && age < 24 * 60 * 60 * 1000;
+  };
+  const activeStories = (stories || []).filter(isStoryActive);
+
   const handleOpenMemberStory = (member) => {
-    const memberStories = (stories || []).filter((s) => s.memberId === member.id);
+    const memberStories = activeStories.filter((s) => s.memberId === member.id);
     if (memberStories.length === 0) {
       if (member.id === currentUser?.id) {
         setCreateStoryModalOpen(true);
       } else {
-        alert(`${member.name} ยังไม่มีไฮไลท์ใหม่ในขณะนี้ครับ ✨`);
+        alert(`${member.name} ยังไม่มีไฮไลท์ใหม่ในรอบ 24 ชั่วโมงครับ ✨`);
       }
       return;
     }
@@ -485,7 +492,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
 
   // Filter other family members (excluding currentUser so avatar isn't duplicated)
   const otherMembers = members.filter((m) => m.id !== currentUser?.id);
-  const myStories = (stories || []).filter((s) => s.memberId === currentUser?.id);
+  const myStories = activeStories.filter((s) => s.memberId === currentUser?.id);
 
   const handleSendComment = (postId) => {
     const text = commentText[postId]?.trim();
@@ -751,7 +758,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
 
           {/* Other Members Stories */}
           {otherMembers.map((member) => {
-            const memberStories = (stories || []).filter((s) => s.memberId === member.id);
+            const memberStories = activeStories.filter((s) => s.memberId === member.id);
             const hasStories = memberStories.length > 0;
             const theme = MEMBER_THEMES[member.id] || MEMBER_THEMES.default;
             return (

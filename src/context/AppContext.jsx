@@ -18,18 +18,31 @@ const DEFAULT_FEED_POSTS = [];
 const DEFAULT_NOTIFICATIONS = [];
 const DEFAULT_STORIES = [];
 
+// Helper to strictly enforce 24-hour expiration on Stories / Highlights
+export const isStoryWithin24h = (s) => {
+  if (!s || !s.timestamp) return false;
+  const age = Date.now() - Number(s.timestamp);
+  return age >= 0 && age < 24 * 60 * 60 * 1000;
+};
+
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_POSTS':
       return { ...state, feedPosts: action.payload };
 
     case 'SET_STORIES':
-      return { ...state, stories: action.payload };
+      return {
+        ...state,
+        stories: Array.isArray(action.payload) ? action.payload.filter(isStoryWithin24h) : [],
+      };
 
     case 'ADD_STORY':
       return {
         ...state,
-        stories: [action.payload, ...(state.stories || []).filter((s) => s.id !== action.payload.id)],
+        stories: [
+          action.payload,
+          ...(state.stories || []).filter((s) => s.id !== action.payload.id && isStoryWithin24h(s)),
+        ],
       };
 
     case 'DELETE_STORY':
@@ -372,7 +385,7 @@ function getInitialState() {
         return {
           history: Array.isArray(parsed.history) ? parsed.history : [],
           feedPosts: Array.isArray(parsed.feedPosts) && parsed.feedPosts.length > 0 ? parsed.feedPosts : getWarmDefaultPosts(),
-          stories: Array.isArray(parsed.stories) ? parsed.stories : [],
+          stories: Array.isArray(parsed.stories) ? parsed.stories.filter(isStoryWithin24h) : [],
           notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
           notes: Array.isArray(parsed.notes) && parsed.notes.length > 0 ? parsed.notes : getWarmDefaultNotes(),
           milestones: Array.isArray(parsed.milestones) && parsed.milestones.length > 0 ? parsed.milestones : getWarmDefaultMilestones(),

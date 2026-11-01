@@ -155,7 +155,12 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
   // Determine which profile is being viewed: currentUser or another member
   const activeMember = viewingMember || currentUser;
   const isMe = activeMember?.id === currentUser?.id;
-  const memberStories = (stories || []).filter((s) => s.memberId === activeMember?.id);
+  const isStoryActive = (s) => {
+    if (!s || !s.timestamp) return false;
+    const age = Date.now() - Number(s.timestamp);
+    return age >= 0 && age < 24 * 60 * 60 * 1000;
+  };
+  const memberStories = (stories || []).filter((s) => s.memberId === activeMember?.id && isStoryActive(s));
 
   // Filter posts that belong to this member
   // (Matches memberId, and also pairs member-big with the older sibling/Fluke)

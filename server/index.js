@@ -1057,17 +1057,35 @@ app.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
 });
 
 // ==========================================
-// 3.1 STORIES / HIGHLIGHTS (แยกกับโพสต์ฟีด)
+// 3.1 STORIES / HIGHLIGHTS (แยกกับโพสต์ฟีด - แสดงเฉพาะ 24 ชม. ล่าสุด)
 // ==========================================
 app.get('/api/stories', async (req, res) => {
   try {
     await pullFromCloud().catch(() => {});
-    const stories = db.prepare(`
-      SELECT s.*, m.name as memberName, m.avatar as memberAvatar, m.avatarType as memberAvatarType, m.avatarImage as memberAvatarImage, m.role as memberRole, m.color as memberColor
-      FROM stories s
-      LEFT JOIN members m ON s.memberId = m.id
-      ORDER BY s.timestamp DESC
-    `).all();
+    const now = Date.now();
+    const cutoff24h = now - (24 * 60 * 60 * 1000); // 24 hours ago
+    const includeExpired = req.query.includeExpired === 'true' || req.query.archive === 'true';
+
+    // Auto-clean very old stories older than 60 days to prevent database bloat
+    try {
+      const purgeCutoff = now - (60 * 24 * 60 * 60 * 1000);
+      db.prepare('DELETE FROM stories WHERE timestamp < ?').run(purgeCutoff);
+    } catch (_) {}
+
+    const query = includeExpired
+      ? `SELECT s.*, m.name as memberName, m.avatar as memberAvatar, m.avatarType as memberAvatarType, m.avatarImage as memberAvatarImage, m.role as memberRole, m.color as memberColor
+         FROM stories s
+         LEFT JOIN members m ON s.memberId = m.id
+         ORDER BY s.timestamp DESC`
+      : `SELECT s.*, m.name as memberName, m.avatar as memberAvatar, m.avatarType as memberAvatarType, m.avatarImage as memberAvatarImage, m.role as memberRole, m.color as memberColor
+         FROM stories s
+         LEFT JOIN members m ON s.memberId = m.id
+         WHERE s.timestamp >= ?
+         ORDER BY s.timestamp DESC`;
+
+    const stories = includeExpired
+      ? db.prepare(query).all()
+      : db.prepare(query).all(cutoff24h);
 
     const enriched = stories.map(s => ({
       id: s.id,

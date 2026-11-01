@@ -10,6 +10,14 @@ export function getApiBaseUrl() {
   if (typeof localStorage !== 'undefined') {
     const custom = localStorage.getItem('homespace_custom_api_url');
     if (custom && custom.trim()) {
+      // In Native Android APK, localhost/127.0.0.1/10.0.2.2 is unreachable on real devices; auto-reset to cloud Vercel
+      if (Capacitor.isNativePlatform()) {
+        const lower = custom.toLowerCase();
+        if (lower.includes('localhost') || lower.includes('127.0.0.1') || lower.includes('10.0.2.2')) {
+          localStorage.removeItem('homespace_custom_api_url');
+          return DEFAULT_ONLINE_API_URL;
+        }
+      }
       return custom.trim().replace(/\/+$/, '');
     }
   }

@@ -335,23 +335,23 @@ export function FamilyTreeCard({ onOpenGarden }) {
   return (
     <div
       onClick={onOpenGarden}
-      className="p-3.5 sm:p-4 rounded-3xl bg-white border border-[#ECE7DF] shadow-2xs hover:shadow-xs transition-all cursor-pointer group relative overflow-hidden"
+      className="p-3.5 sm:p-4 rounded-3xl bg-white border border-[#ECE7DF] shadow-2xs hover:shadow-xs transition-all cursor-pointer group relative overflow-hidden space-y-3"
     >
       {/* Soft background tint according to stage */}
       <div className={`absolute inset-0 bg-gradient-to-r ${stageInfo.bgGradient} opacity-60 pointer-events-none`} />
 
-      <div className="relative z-10 flex items-center justify-between gap-3">
-        {/* Left: Animated Tree Thumbnail */}
-        <div className="relative shrink-0 flex items-center justify-center p-1 rounded-2xl bg-white/80 border border-[#ECE7DF]/70 shadow-2xs group-hover:scale-105 transition-transform">
-          <TreeIllustration stage={stageInfo.key} isWatering={isWatering} size="sm" />
-          <span className="absolute -top-1 -right-1 text-xs">✨</span>
-        </div>
+      {/* Top Row: Tree + Name + Drops + Water Button */}
+      <div className="relative z-10 flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Animated Tree Thumbnail */}
+          <div className="relative shrink-0 flex items-center justify-center p-1 rounded-2xl bg-white/90 border border-[#ECE7DF]/80 shadow-2xs group-hover:scale-105 transition-transform">
+            <TreeIllustration stage={stageInfo.key} isWatering={isWatering} size="sm" />
+            <span className="absolute -top-1 -right-1 text-xs">✨</span>
+          </div>
 
-        {/* Center: Info & Progress */}
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${stageInfo.badgeBg}`}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-black shrink-0 ${stageInfo.badgeBg}`}>
                 Lv.{level}
               </span>
               <h3 className="text-xs sm:text-sm font-black text-[#2D2825] truncate">
@@ -360,58 +360,61 @@ export function FamilyTreeCard({ onOpenGarden }) {
             </div>
 
             {/* Available Water Drops Pill */}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-blue-600 text-[11px] font-black shrink-0">
-              <Drop size={13} weight="fill" className="text-blue-500 animate-pulse" />
-              <span>{waterDrops}</span>
-              <span className="text-[10px] font-normal text-blue-400">หยด</span>
+            <div className="flex items-center gap-1 mt-1 text-blue-600 text-xs font-bold">
+              <Drop size={14} weight="fill" className="text-blue-500 animate-pulse" />
+              <span>{waterDrops} หยดน้ำสะสม</span>
             </div>
           </div>
-
-          {/* Growth Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-[#746C65] font-semibold mb-1">
-              <span>การเติบโต ({progressPercent}%)</span>
-              <span className="font-mono text-[#5F8D75] font-black">
-                {exp} / {maxExp} 💧
-              </span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-[#FAF8F5] border border-[#ECE7DF] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#5F8D75] to-[#88B09A] transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Feedback messages */}
-          {justWateredToast && (
-            <p className="text-[11px] font-black text-emerald-600 animate-bounce">{justWateredToast}</p>
-          )}
-          {errorMsg && (
-            <p className="text-[10px] font-bold text-rose-500">{errorMsg}</p>
-          )}
         </div>
 
-        {/* Right: Quick Water Action Button */}
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          <button
-            type="button"
-            onClick={handleQuickWater}
-            disabled={isWatering}
-            className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer ${
-              waterDrops > 0
-                ? 'bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white shadow-blue-200'
-                : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] border border-[#ECE7DF]'
-            }`}
-            title="รดน้ำต้นไม้ 1 หยด"
-          >
-            <Drop size={15} weight="fill" className={waterDrops > 0 ? 'text-white' : 'text-blue-400'} />
-            <span className="hidden sm:inline">รดน้ำ</span>
-          </button>
-          <span className="text-[10px] text-[#9E958D] font-bold flex items-center gap-0.5 group-hover:text-[#5F8D75] transition-colors">
-            ดูสวน <CaretRight size={10} weight="bold" />
+        {/* Quick Water Action Button */}
+        <button
+          type="button"
+          onClick={handleQuickWater}
+          disabled={isWatering}
+          className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 ${
+            waterDrops > 0
+              ? 'bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white shadow-blue-200'
+              : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] border border-[#ECE7DF]'
+          }`}
+          title="รดน้ำต้นไม้ 1 หยด"
+        >
+          <Drop size={16} weight="fill" className={waterDrops > 0 ? 'text-white' : 'text-blue-400'} />
+          <span>รดน้ำ 💧</span>
+        </button>
+      </div>
+
+      {/* Bottom Row: Full-Width Growth Progress Bar */}
+      <div className="relative z-10 space-y-1.5 pt-0.5 border-t border-[#ECE7DF]/60">
+        <div className="flex items-center justify-between text-xs text-[#746C65] font-semibold">
+          <span className="flex items-center gap-1">
+            <span>🌱 การเติบโต</span>
+            <span className="font-bold text-[#5F8D75]">({progressPercent}%)</span>
           </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[#5F8D75] font-black">
+              {exp} / {maxExp} 💧
+            </span>
+            <span className="text-[#5F8D75] font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+              ดูสวน →
+            </span>
+          </div>
         </div>
+
+        <div className="w-full h-2 rounded-full bg-[#FAF8F5] border border-[#ECE7DF] overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#5F8D75] to-[#88B09A] transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {/* Feedback messages */}
+        {justWateredToast && (
+          <p className="text-xs font-black text-emerald-600 animate-bounce pt-1">{justWateredToast}</p>
+        )}
+        {errorMsg && (
+          <p className="text-xs font-bold text-rose-500 pt-1">{errorMsg}</p>
+        )}
       </div>
     </div>
   );

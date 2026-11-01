@@ -1084,50 +1084,64 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           </button>
         </div>
 
-        {/* 3 Big, Clear, High-Contrast Action Buttons for Elderly & Family */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Button 1: ส่งรูปภาพให้ลูกหลานดู */}
-          <button
-            type="button"
-            onClick={() => openCreatePost('photo')}
-            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/30 hover:border-[#5F8D75] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
-              <Camera size={22} weight="bold" />
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-black text-[#2D2825] leading-tight">ส่งรูปภาพ 📸</p>
-              <p className="text-[9px] text-[#5F8D75] font-bold">อวดลูกหลาน</p>
-            </div>
-          </button>
+        {/* 3 Clear, High-Contrast Action Cards for Elderly & Family (Spacious 2 + 1 Layout) */}
+        <div className="space-y-2">
+          {/* Top Row: 2 Big Touch Cards (Photo & Voice) */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+            {/* Button 1: ส่งรูปภาพให้ลูกหลานดู */}
+            <button
+              type="button"
+              onClick={() => openCreatePost('photo')}
+              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/35 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform">
+                <Camera size={26} weight="bold" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-black text-[#2D2825] leading-tight">ส่งรูปภาพ 📸</p>
+                <p className="text-xs text-[#5F8D75] font-bold mt-0.5">อวดลูกหลานในบ้าน</p>
+              </div>
+            </button>
 
-          {/* Button 2: พูดทักทายคนในบ้าน (Voice Greeting) */}
-          <button
-            type="button"
-            onClick={() => openCreatePost('voice')}
-            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/30 hover:border-[#E88D67] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
-              <Microphone size={22} weight="bold" />
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-black text-[#2D2825] leading-tight">พูดทักทาย 🎙️</p>
-              <p className="text-[9px] text-[#E88D67] font-bold">ไม่ต้องพิมพ์</p>
-            </div>
-          </button>
+            {/* Button 2: พูดทักทายคนในบ้าน (Voice Greeting) */}
+            <button
+              type="button"
+              onClick={() => openCreatePost('voice')}
+              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/35 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform">
+                <Microphone size={26} weight="bold" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-black text-[#2D2825] leading-tight">พูดทักทาย 🎙️</p>
+                <p className="text-xs text-[#E88D67] font-bold mt-0.5">ไม่ต้องพิมพ์ แตะแล้วพูด</p>
+              </div>
+            </button>
+          </div>
 
-          {/* Button 3: ส่งงานบ้าน (Chore Completion) */}
+          {/* Bottom Row: Full-Width Chore Completion Banner */}
           <button
             type="button"
             onClick={() => openCreatePost('chore')}
-            className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#EEF2F6] hover:from-[#EEF2F6] hover:to-[#DEE7F0] border border-[#3B82F6]/30 hover:border-[#3B82F6] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+            className="w-full p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-[#EEF2F6] to-[#FAF8F5] hover:from-[#EEF2F6] hover:to-[#DEE7F0] border border-[#3B82F6]/35 flex items-center justify-between gap-3 transition-all cursor-pointer active:scale-98 shadow-2xs group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[#3B82F6] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-110 transition-transform">
-              <Broom size={22} weight="bold" />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-[#3B82F6] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-108 transition-transform shrink-0">
+                <Broom size={22} weight="bold" />
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight truncate">
+                  ส่งงานบ้านประจำวัน 🧹
+                </p>
+                <p className="text-[11px] text-[#746C65] font-semibold truncate">
+                  ล้างจาน กวาดบ้าน ซักผ้า ทิ้งขยะ
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs font-black text-[#2D2825] leading-tight">ส่งงานบ้าน 🧹</p>
-              <p className="text-[9px] text-[#3B82F6] font-bold">+25 แต้มโหล</p>
+
+            <div className="px-2.5 py-1 rounded-xl bg-blue-500 text-white font-black text-xs shadow-2xs flex items-center gap-1 shrink-0 group-hover:scale-105 transition-transform">
+              <span>+25 แต้มโหล</span>
+              <span>→</span>
             </div>
           </button>
         </div>

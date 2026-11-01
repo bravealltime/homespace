@@ -390,7 +390,7 @@ export default function FamilyCalendarView({ onNavigateTab }) {
                 <div
                   key={`${cell.dateStr}-${idx}`}
                   onClick={() => setSelectedDateStr(cell.dateStr)}
-                  className={`min-h-[52px] sm:min-h-[62px] p-1 rounded-xl transition-all cursor-pointer flex flex-col justify-between relative group ${
+                  className={`min-h-[46px] sm:min-h-[56px] p-1 rounded-xl transition-all cursor-pointer flex flex-col justify-between relative group ${
                     isSelected
                       ? 'bg-white ring-2 ring-[#5F8D75] shadow-xs z-10'
                       : isToday

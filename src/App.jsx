@@ -360,8 +360,8 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right Actions: SOS + Senior Text (Aa) + Lang (🌐) + Search + Notifications + Profile Hub */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Right Actions: Clean & Spacious (SOS + Search + Notifications + Profile Hub) */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* 1. Emergency SOS Button */}
           <button
             type="button"
@@ -369,53 +369,24 @@ function AppContent() {
               setSosInitialCountdown(!activeSosAlert);
               setSosModalOpen(true);
             }}
-            className="h-7.5 px-2 sm:px-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-[11px] sm:text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
+            className="h-8 px-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95 animate-pulse shrink-0"
             title="ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)"
           >
             <span className="text-xs">🚨</span>
             <span className="font-mono font-black tracking-tight">SOS</span>
           </button>
 
-          {/* 2. Senior Mode (Aa Large Text Toggle) */}
-          <button
-            type="button"
-            onClick={toggleSeniorMode}
-            className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all cursor-pointer border shrink-0 ${
-              seniorMode
-                ? 'bg-[#5F8D75] text-white border-[#5F8D75] shadow-xs'
-                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-            }`}
-            title={seniorMode ? 'ปิดโหมดตัวหนังสือใหญ่' : 'เปิดโหมดตัวหนังสือใหญ่ (สบายตา)'}
-          >
-            <TextAa size={14} weight={seniorMode ? 'bold' : 'regular'} />
-          </button>
-
-          {/* 3. Language Switcher (EN / ไทย) */}
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            className={`h-7.5 px-1.5 sm:px-2 rounded-full flex items-center gap-0.5 sm:gap-1 transition-all cursor-pointer border text-[10px] sm:text-[11px] font-black shrink-0 ${
-              language === 'en'
-                ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-xs'
-                : 'bg-[#FAF8F5] text-[#746C65] hover:text-[#2D2825] border-[#ECE7DF]'
-            }`}
-            title={t('langToggleTitle', 'สลับภาษาไทย / Switch to English')}
-          >
-            <Globe size={13} weight="bold" />
-            <span>{language === 'en' ? 'EN' : 'TH'}</span>
-          </button>
-
-          {/* 4. Search Button */}
+          {/* 2. Search Button */}
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
             title={t('searchTitle', 'ค้นหาในบ้าน')}
           >
-            <MagnifyingGlass size={15} weight="bold" />
+            <MagnifyingGlass size={16} weight="bold" />
           </button>
 
-          {/* 5. Notification Bell with Badge */}
+          {/* 3. Notification Bell with Badge */}
           <button
             type="button"
             onClick={() => {
@@ -424,33 +395,33 @@ function AppContent() {
                 markNotificationsRead(currentUser.id);
               }
             }}
-            className="relative w-7.5 h-7.5 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#746C65] hover:text-[#2D2825] bg-[#FAF8F5] hover:bg-[#F2EFEA] border border-[#ECE7DF] transition-colors cursor-pointer shrink-0"
             title={t('notificationsTitle', 'การแจ้งเตือน')}
           >
             <Bell
-              size={16}
+              size={17}
               weight={unreadCount > 0 ? 'fill' : 'bold'}
               className={unreadCount > 0 ? 'text-[#E88D67]' : 'text-[#746C65]'}
             />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#E88D67] text-white text-[8px] font-black flex items-center justify-center border-2 border-white shadow-xs">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E88D67] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-xs">
                 {unreadCount}
               </span>
             )}
           </button>
 
-          {/* 6. Quick House Menu & Profile Avatar Hub */}
+          {/* 4. Quick House Menu & Profile Avatar Hub */}
           <button
             type="button"
             onClick={() => setQuickHouseMenuOpen(true)}
-            className="relative p-0.5 rounded-full border-2 border-[#5F8D75]/40 hover:border-[#5F8D75] transition-all hover:scale-105 cursor-pointer shrink-0 ml-0.5"
+            className="relative p-0.5 rounded-full border-2 border-[#5F8D75]/40 hover:border-[#5F8D75] transition-all hover:scale-105 cursor-pointer shrink-0"
             title="ศูนย์จัดการบ้าน & การตั้งค่า"
           >
-            <div className="w-7 h-7 rounded-full overflow-hidden bg-white">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-white">
               {currentUser?.avatarType === 'image' && currentUser?.avatarImage ? (
                 <img src={currentUser.avatarImage} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-xs font-bold">
+                <div className="w-full h-full bg-[#FAF8F5] flex items-center justify-center text-sm font-bold">
                   {currentUser?.avatar || '😊'}
                 </div>
               )}
@@ -520,21 +491,21 @@ function AppContent() {
           touchAction: 'pan-y',
         }}
       >
-        <main className="w-full px-3.5 pt-3 pb-36 sm:pb-40">
+        <main className="w-full px-3.5 pt-3 pb-24 sm:pb-28">
           {renderTabContent()}
         </main>
       </div>
 
-      {/* 5. Floating Mobile Bottom Navigation Island (< 1024px) */}
+      {/* 5. Modern Native Mobile Bottom Navigation (< 1024px) */}
       <nav
         aria-label="เมนูหลักมือถือ"
-        className={`lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-full max-w-[390px] px-3.5 transition-transform duration-250 ease-out ${
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 w-full bg-white/95 backdrop-blur-md border-t border-[#ECE7DF] shadow-md transition-transform duration-250 ease-out safe-area-bottom ${
           isBottomNavHidden
-            ? 'translate-y-28 opacity-0 pointer-events-none'
+            ? 'translate-y-full opacity-0 pointer-events-none'
             : 'translate-y-0 opacity-100 pointer-events-auto'
         }`}
       >
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-[#ECE7DF] p-1 shadow-2xl flex items-center justify-around">
+        <div className="max-w-md mx-auto flex items-center justify-around py-1.5 px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -548,14 +519,22 @@ function AppContent() {
                   }
                   setActiveTab(tab.id);
                 }}
-                className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-0.5 sm:px-1 rounded-2xl transition-all cursor-pointer ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-2xl transition-all cursor-pointer relative ${
                   isActive
-                    ? 'bg-[#5F8D75] text-white shadow-xs font-bold'
+                    ? 'text-[#5F8D75] font-black'
                     : 'text-[#746C65] hover:text-[#2D2825] font-semibold'
                 }`}
               >
-                <Icon size={18} weight={isActive ? 'fill' : 'regular'} />
-                <span className="text-[9.5px] sm:text-[10px] tracking-tight whitespace-nowrap">{tab.label}</span>
+                <div
+                  className={`p-1.5 rounded-xl transition-all ${
+                    isActive ? 'bg-[#EEF4F0] text-[#5F8D75] scale-105' : ''
+                  }`}
+                >
+                  <Icon size={22} weight={isActive ? 'fill' : 'regular'} />
+                </div>
+                <span className="text-[11px] font-bold tracking-tight whitespace-nowrap leading-none">
+                  {tab.label}
+                </span>
               </button>
             );
           })}

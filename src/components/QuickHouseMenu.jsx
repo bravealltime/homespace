@@ -20,7 +20,7 @@ import {
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { getApiBaseUrl, setCustomApiUrl, DEFAULT_LAN_API_URL } from '../services/api';
+import { getApiBaseUrl, setCustomApiUrl, DEFAULT_ONLINE_API_URL } from '../services/api';
 
 export default function QuickHouseMenu({
   isOpen,
@@ -64,7 +64,7 @@ export default function QuickHouseMenu({
 
   const handleResetServer = () => {
     setCustomApiUrl('');
-    setServerUrlInput(DEFAULT_LAN_API_URL);
+    setServerUrlInput(DEFAULT_ONLINE_API_URL);
     setServerSaveSuccess(true);
     setTimeout(() => {
       setServerSaveSuccess(false);
@@ -380,13 +380,13 @@ export default function QuickHouseMenu({
             {isEditingServer && (
               <form onSubmit={handleSaveServer} className="pt-2 border-t border-[#ECE7DF] space-y-2">
                 <label className="block text-[10px] font-bold text-[#746C65]">
-                  ระบุ IP คอมพิวเตอร์ เช่น http://192.168.1.42:3001/api
+                  ที่อยู่เซิร์ฟเวอร์หลัก (เช่น https://homespace-rose.vercel.app/api)
                 </label>
                 <input
                   type="text"
                   value={serverUrlInput}
                   onChange={(e) => setServerUrlInput(e.target.value)}
-                  placeholder="http://192.168.1.42:3001/api"
+                  placeholder="https://homespace-rose.vercel.app/api"
                   className="w-full px-3 py-1.5 rounded-xl border border-[#ECE7DF] text-xs font-mono bg-white focus:outline-hidden focus:border-[#5F8D75]"
                 />
                 <div className="flex items-center gap-2">

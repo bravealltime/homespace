@@ -1,11 +1,12 @@
 // HomeSpace Real Backend API Client
 import { Capacitor } from '@capacitor/core';
 
-// Default LAN IP for testing on mobile device over Wi-Fi
+// Production Online Vercel Backend URL (Accessible 24/7 anywhere on 4G/5G/Wi-Fi)
+export const DEFAULT_ONLINE_API_URL = 'https://homespace-rose.vercel.app/api';
 export const DEFAULT_LAN_API_URL = 'http://192.168.1.42:3001/api';
 
 export function getApiBaseUrl() {
-  // 1. In-app custom server configuration (set via Settings modal)
+  // 1. In-app custom server configuration (set via QuickHouseMenu Settings)
   if (typeof localStorage !== 'undefined') {
     const custom = localStorage.getItem('homespace_custom_api_url');
     if (custom && custom.trim()) {
@@ -13,17 +14,17 @@ export function getApiBaseUrl() {
     }
   }
 
-  // 2. Vite environment variable
+  // 2. Vite environment variable (if explicitly provided)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
   }
 
-  // 3. If running inside Native Android / iOS APK via Capacitor
+  // 3. If running inside Native Android APK via Capacitor -> Connect directly to Online Web App!
   if (Capacitor.isNativePlatform()) {
-    return DEFAULT_LAN_API_URL;
+    return DEFAULT_ONLINE_API_URL;
   }
 
-  // 4. Standard Web Browser / PWA: relative /api path
+  // 4. Standard Web Browser / PWA: relative /api path (proxied by Vite or Vercel serverless)
   return '/api';
 }
 

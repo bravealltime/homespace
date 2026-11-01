@@ -93,6 +93,7 @@ function AppContent() {
     promptInstallApp,
     isStandalone,
     isViewingContent,
+    activeSosAlert,
   } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [profileOpen, setProfileOpen] = useState(false);

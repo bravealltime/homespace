@@ -42,14 +42,14 @@ export default function QuickHouseMenu({
     t,
   } = useApp();
 
+  const [isEditingServer, setIsEditingServer] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(() => getApiBaseUrl());
+  const [serverSaveSuccess, setServerSaveSuccess] = useState(false);
+
   if (!isOpen) return null;
 
   const userScore = backendMemberScores?.[currentUser?.id] ?? currentUser?.points ?? 0;
   const activeMembersCount = (members || []).filter((m) => m.status !== 'pending').length;
-
-  const [isEditingServer, setIsEditingServer] = useState(false);
-  const [serverUrlInput, setServerUrlInput] = useState(() => getApiBaseUrl());
-  const [serverSaveSuccess, setServerSaveSuccess] = useState(false);
 
   const handleSaveServer = (e) => {
     e.preventDefault();

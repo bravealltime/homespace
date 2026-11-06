@@ -17,6 +17,7 @@ import {
   Broadcast,
   PencilSimple,
   ArrowClockwise,
+  BookBookmark,
 } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -31,6 +32,7 @@ export default function QuickHouseMenu({
   onOpenHandbook,
   onNavigateTab,
   onLogout,
+  onOpenLedger,
 }) {
   const { currentUser, currentFamily, isAdmin, pendingRequests, members } = useAuth();
   const {
@@ -320,6 +322,36 @@ export default function QuickHouseMenu({
                 </div>
               </div>
               <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-[#E88D67]" />
+            </button>
+
+            {/* 3.5 สมุดเงินทอง ครอบครัว (บันทึกรายรับ-รายจ่าย & คนแก่) */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onOpenLedger) onOpenLedger();
+              }}
+              className="w-full p-2.5 rounded-xl hover:bg-[#FAF8F5] transition-colors cursor-pointer flex items-center justify-between text-left group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                  <BookBookmark size={18} weight="bold" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-[#2D2825] group-hover:text-amber-800 transition-colors truncate">
+                      สมุดเงินทอง ครอบครัว
+                    </p>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 text-[9px] font-black">
+                      ใหม่ 📒
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#746C65] truncate">
+                    บันทึกรายรับ-รายจ่าย ตัวหนังสือโต มีเสียงอ่าน
+                  </p>
+                </div>
+              </div>
+              <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-amber-700" />
             </button>
 
             {/* 4. แก้ไขข้อมูลส่วนตัว & รหัส PIN */}

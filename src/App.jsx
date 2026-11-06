@@ -45,6 +45,7 @@ import HomeHandbookModal from './components/HomeHandbookModal';
 import { FamilyGardenModal } from './components/FamilyTreeGarden';
 import EmergencySosModal, { EmergencySosBanner } from './components/EmergencySosModal';
 import QuickHouseMenu from './components/QuickHouseMenu';
+import FamilyLedgerModal from './components/FamilyLedgerModal';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -108,6 +109,7 @@ function AppContent() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [familyMembersOpen, setFamilyMembersOpen] = useState(false);
   const [quickHouseMenuOpen, setQuickHouseMenuOpen] = useState(false);
+  const [familyLedgerOpen, setFamilyLedgerOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [viewingMember, setViewingMember] = useState(null);
 
@@ -174,6 +176,7 @@ function AppContent() {
 
       // 2. Close AppContent level modals in priority order
       if (showLogoutConfirm) { setShowLogoutConfirm(false); return; }
+      if (familyLedgerOpen) { setFamilyLedgerOpen(false); return; }
       if (quickHouseMenuOpen) { setQuickHouseMenuOpen(false); return; }
       if (familyMembersOpen) { setFamilyMembersOpen(false); return; }
       if (searchOpen) { setSearchOpen(false); return; }
@@ -280,12 +283,15 @@ function AppContent() {
           onNavigateTab={setActiveTab}
           onViewMemberProfile={handleViewMember}
           onOpenHandbook={() => setHomeHandbookOpen(true)}
+        onOpenLedger={() => setFamilyLedgerOpen(true)}
           onOpenGarden={() => setFamilyGardenOpen(true)}
+          onOpenLedger={() => setFamilyLedgerOpen(true)}
           onOpenSos={() => {
             setSosInitialCountdown(!activeSosAlert);
             setSosModalOpen(true);
           }}
           onOpenProfile={() => setProfileOpen(true)}
+          onOpenLedger={() => setFamilyLedgerOpen(true)}
         />
       )}
       {activeTab === 'fridge' && (
@@ -335,6 +341,7 @@ function AppContent() {
             setSosModalOpen(true);
           }}
           onOpenProfile={() => setProfileOpen(true)}
+          onOpenLedger={() => setFamilyLedgerOpen(true)}
         />
       </div>
 
@@ -454,7 +461,9 @@ function AppContent() {
           onOpenSummary={() => setActiveTab('summary')}
           onOpenInstall={() => setInstallModalOpen(true)}
           onOpenHandbook={() => setHomeHandbookOpen(true)}
+        onOpenLedger={() => setFamilyLedgerOpen(true)}
           onOpenGarden={() => setFamilyGardenOpen(true)}
+          onOpenLedger={() => setFamilyLedgerOpen(true)}
         />
 
         {/* Center Feed (Main Content, Scrollable) */}
@@ -575,6 +584,7 @@ function AppContent() {
         onOpenAdmin={() => setFamilyAdminOpen(true)}
         onOpenMembers={() => setFamilyMembersOpen(true)}
         onOpenHandbook={() => setHomeHandbookOpen(true)}
+        onOpenLedger={() => setFamilyLedgerOpen(true)}
         onNavigateTab={(tab) => {
           if (tab === 'my-feed') setViewingMember(null);
           setActiveTab(tab);
@@ -582,6 +592,7 @@ function AppContent() {
         onLogout={() => setShowLogoutConfirm(true)}
       />
       <InstallAppModal isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
+      <FamilyLedgerModal isOpen={familyLedgerOpen} onClose={() => setFamilyLedgerOpen(false)} />
 
         {/* Household Members Modal (Directory & Member Management) */}
         {familyMembersOpen && (

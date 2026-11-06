@@ -97,7 +97,7 @@ function timeAgo(timestamp, lang = 'th') {
   return `${days} วันที่แล้ว`;
 }
 
-export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden, onOpenSos, onOpenProfile }) {
+export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHandbook, onOpenGarden, onOpenSos, onOpenProfile, onOpenLedger }) {
   const { currentUser, isAdmin } = useAuth();
   const {
     members,
@@ -993,6 +993,52 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
 
       {/* 2.5 Family Happiness Garden (ต้นไม้ความสุขของบ้าน) */}
       <FamilyTreeCard onOpenGarden={onOpenGarden} />
+
+      {/* 2.6 Family Income & Expense Ledger Card (สมุดเงินทอง ครอบครัว) */}
+      <section className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-[#FFFDF9] via-white to-[#FDF8EE] border border-amber-200/80 shadow-xs hover:border-amber-300 transition-all">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100/80 border border-amber-300 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
+              📒
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm sm:text-base font-black text-[#2D2825]">
+                  สมุดเงินทอง ครอบครัว
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                  บัญชีคนแก่ & ทุกคน 👵
+                </span>
+              </div>
+              <p className="text-xs text-[#746C65] mt-0.5 truncate">
+                บันทึกรายรับ-รายจ่ายง่ายๆ ตัวหนังสือโต มีเสียงอ่าน แนบรูปสลิป
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenLedger}
+            className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs sm:text-sm shrink-0 shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+          >
+            <span>เปิดสมุด</span>
+            <span>→</span>
+          </button>
+        </div>
+
+        {/* Feature Badges */}
+        <div className="mt-2.5 pt-2 border-t border-amber-100 flex items-center gap-2 overflow-x-auto no-scrollbar text-[11px] text-[#746C65]">
+          <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded-lg border border-amber-200/60 font-semibold shrink-0">
+            🔒 รหัส PIN 4 ตัวแยกแต่ละคน
+          </span>
+          <span className="bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded-lg border border-emerald-200/60 font-semibold shrink-0">
+            📸 ถ่ายรูปใบเสร็จแนบได้
+          </span>
+          <span className="bg-blue-50 text-blue-900 px-2 py-0.5 rounded-lg border border-blue-200/60 font-semibold shrink-0">
+            🔊 กดฟังเสียงอ่านยอดเงิน
+          </span>
+        </div>
+      </section>
 
       {/* Progressive Disclosure: Urgent Home Maintenance Reminder (Auto-Hidden When All Safe) */}
       {urgentMaintenance.length > 0 && (

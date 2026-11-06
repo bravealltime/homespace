@@ -27,6 +27,7 @@ export default function DesktopTopNav({
   onOpenProfile,
   onOpenSos,
   onOpenQuickMenu,
+  onOpenLedger,
 }) {
   const { currentUser, currentFamily, isAdmin, pendingRequests } = useAuth();
   const {
@@ -120,6 +121,17 @@ export default function DesktopTopNav({
         >
           <span className="text-sm">🚨</span>
           <span className="tracking-wide">SOS</span>
+        </button>
+
+        {/* Family Ledger Quick Icon */}
+        <button
+          type="button"
+          onClick={onOpenLedger}
+          className="h-8.5 px-2.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          title="สมุดเงินทอง ครอบครัว (บันทึกรายรับ-รายจ่าย)"
+        >
+          <span className="text-sm">📒</span>
+          <span className="hidden xl:inline">สมุดเงิน</span>
         </button>
 
         {/* Notification Bell with Badge */}

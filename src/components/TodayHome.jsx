@@ -1335,10 +1335,18 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                     <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-black border border-emerald-200/80 whitespace-nowrap shrink-0 shadow-2xs">
                       +{post.points} {t('pts', 'แต้ม')}
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-[#FFFBEB] text-[#92400E] text-[11px] font-bold border border-amber-200/80 flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
-                      <span>✨</span>
-                      <span>สะอาดเรียบร้อย</span>
-                    </span>
+                    {post.sparkleScore ? (
+                      <span className="px-2.5 py-1 rounded-full bg-purple-50 text-purple-900 text-[11px] font-black border border-purple-200/80 flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span>{post.praiseEmoji || '🌟'}</span>
+                        <span>วิบวับ {post.sparkleScore}%</span>
+                        {post.sparkleBadge && <span className="font-semibold opacity-80">· {post.sparkleBadge}</span>}
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-[#FFFBEB] text-[#92400E] text-[11px] font-bold border border-amber-200/80 flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span>✨</span>
+                        <span>สะอาดเรียบร้อย</span>
+                      </span>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1383,6 +1391,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                           <span className="absolute bottom-2 left-2 bg-[#5F8D75] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-2xs">
                             หลังทำ ✨ 🔍
                           </span>
+                          {post.sparkleScore && (
+                            <span className="absolute top-2 right-2 bg-black/65 backdrop-blur-xs text-amber-300 text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs border border-white/20 flex items-center gap-1">
+                              <span>🤖 AI:</span>
+                              <span className="text-white">{post.sparkleScore}% ✨</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1400,6 +1414,12 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                         <span className="absolute bottom-2.5 left-2.5 bg-[#5F8D75] text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-sm">
                           {post.afterImage || post.imageUrl ? 'รูปผลงาน ✨' : 'รูปก่อนทำ 🔍'}
                         </span>
+                        {post.sparkleScore && (
+                          <span className="absolute top-2.5 right-2.5 bg-black/65 backdrop-blur-xs text-amber-300 text-[10px] font-black px-2.5 py-1 rounded-lg shadow-xs border border-white/20 flex items-center gap-1">
+                            <span>🤖 AI ตรวจผ่าน:</span>
+                            <span className="text-white">{post.sparkleScore}% ✨</span>
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

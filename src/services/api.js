@@ -182,6 +182,13 @@ export async function createChorePost(choreData) {
   });
 }
 
+export async function verifyChoreWithAi(payload) {
+  return request('/ai/verify-chore', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createRoutinePost(routineData) {
   return request('/posts/routine', {
     method: 'POST',

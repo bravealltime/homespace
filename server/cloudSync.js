@@ -113,8 +113,8 @@ export function importJsonToDb(data) {
           db.prepare('DELETE FROM posts').run();
         }
         const stmt = db.prepare(`
-          INSERT OR REPLACE INTO posts (id, type, memberId, caption, choreName, choreEmoji, points, praise, praiseEmoji, photo, beforeImage, afterImage, imageUrl, likes, timestamp)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO posts (id, type, memberId, caption, choreName, choreEmoji, points, praise, praiseEmoji, photo, beforeImage, afterImage, imageUrl, likes, timestamp, sparkleScore, sparkleBadge, aiPraise)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const p of data.posts) {
           stmt.run(
@@ -132,7 +132,10 @@ export function importJsonToDb(data) {
             p.afterImage || null,
             p.imageUrl || null,
             p.likes || 0,
-            p.timestamp || Date.now()
+            p.timestamp || Date.now(),
+            p.sparkleScore || null,
+            p.sparkleBadge || null,
+            p.aiPraise || null
           );
         }
       }

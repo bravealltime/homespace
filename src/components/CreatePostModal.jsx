@@ -123,6 +123,10 @@ export default function CreatePostModal({
   const [beforeImage, setBeforeImage] = useState(null);
   const [afterImage, setAfterImage] = useState(null);
 
+  // AI Chore Verification & Sparkle Score State
+  const [isAiScanning, setIsAiScanning] = useState(false);
+  const [sparkleResult, setSparkleResult] = useState(null);
+
   const [compressing, setCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -191,10 +195,43 @@ export default function CreatePostModal({
       setPhotos([]);
       setBeforeImage(null);
       setAfterImage(null);
+      setSparkleResult(null);
+      setIsAiScanning(false);
       setIsSubmitting(false);
       setCompressing(false);
     }
   }, [isOpen, initialMode, initialChoreId]);
+
+  // AI Chore Verification & Sparkle Score Handler
+  const handleScanChoreAi = async (overrideImg = null) => {
+    const targetImg = overrideImg || afterImage;
+    if (!targetImg) {
+      alert('กรุณาเลือกหรือถ่าย "รูปหลังทำ" ก่อนให้น้องสุขใจ AI ตรวจความสะอาดนะครับ 📸');
+      return;
+    }
+    setIsAiScanning(true);
+    try {
+      const choreName = isCustomChore ? customChoreName.trim() || 'งานบ้าน' : currentChore?.name || 'ล้างจานชาม';
+      const choreEmoji = isCustomChore ? '🧹' : currentChore?.emoji || '🧽';
+      const res = await api.verifyChoreWithAi({
+        choreName,
+        choreEmoji,
+        afterImage: targetImg,
+        beforeImage,
+        memberName: currentUser?.name || 'สมาชิกในบ้าน',
+      });
+      if (res && res.success) {
+        setSparkleResult(res);
+        if (!caption.trim() || caption.includes('เสร็จเรียบร้อย')) {
+          setCaption(res.praise);
+        }
+      }
+    } catch (err) {
+      console.warn('AI chore scan warning:', err);
+    } finally {
+      setIsAiScanning(false);
+    }
+  };
 
   // Upload Handlers with Automatic Client-Side Compression
   const handlePhotosUpload = async (e) => {
@@ -243,6 +280,8 @@ export default function CreatePostModal({
         setCompressing(true);
         const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.82 });
         setAfterImage(compressed);
+        // Automatically trigger AI verification
+        handleScanChoreAi(compressed);
       } catch (err) {
         console.warn('Compress after image warning:', err);
       } finally {
@@ -279,7 +318,7 @@ export default function CreatePostModal({
         const choreEmoji = isCustomChore ? '🧹' : currentChore?.emoji || '🧽';
 
         const finalCaption =
-          caption.trim() || `${choreName} เสร็จเรียบร้อยแล้วครับ สะอาดน่าอยู่ ✨`;
+          caption.trim() || sparkleResult?.praise || `${choreName} เสร็จเรียบร้อยแล้วครับ สะอาดน่าอยู่ ✨`;
 
         // Upload images directly to Supabase Storage if attached
         let finalBefore = null;
@@ -303,13 +342,20 @@ export default function CreatePostModal({
           }
         }
 
+        const basePoints = 25;
+        const bonusPoints = sparkleResult?.bonusPoints || 0;
+        const totalPoints = basePoints + bonusPoints;
+
         await addChoreEntry({
           memberId,
           choreName,
           choreEmoji,
-          points: 25,
-          praise: 'สะอาดเรียบร้อยดีมาก! ✨',
-          praiseEmoji: '✨',
+          points: totalPoints,
+          praise: sparkleResult?.praise || 'สะอาดเรียบร้อยดีมาก! ✨',
+          praiseEmoji: sparkleResult?.emoji || '✨',
+          sparkleScore: sparkleResult?.sparkleScore || null,
+          sparkleBadge: sparkleResult?.badge || (sparkleResult?.title ? `${sparkleResult.title}` : null),
+          aiPraise: sparkleResult?.praise || null,
           beforeImage: finalBefore,
           afterImage: finalAfter,
           imageUrl: finalAfter || finalBefore || null,
@@ -932,6 +978,91 @@ export default function CreatePostModal({
                     />
                   </div>
                 </div>
+
+                {/* AI Chore Verification & Sparkle Score Feature */}
+                {afterImage && (
+                  <div className="pt-1">
+                    {isAiScanning ? (
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border border-purple-300 shadow-xs flex items-center gap-3 animate-pulse">
+                        <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center text-xl shadow-xs shrink-0 animate-spin">
+                          ✨
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-black text-purple-950 flex items-center gap-1.5">
+                            <span>น้องสุขใจ AI กำลังส่องดูความสะอาด...</span>
+                          </p>
+                          <p className="text-[10.5px] text-purple-700 mt-0.5">
+                            กำลังคำนวณคะแนนความสะอาดวิบวับ & เขียนคำชมให้ครอบครัว
+                          </p>
+                        </div>
+                      </div>
+                    ) : sparkleResult ? (
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF5FF] via-white to-[#FDF4FF] border border-purple-300 shadow-xs space-y-2.5 animate-pop-stamp">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-2xl animate-bounce shrink-0">{sparkleResult.emoji || '🌟'}</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs sm:text-sm font-black text-purple-950 whitespace-nowrap">
+                                  ความสะอาดวิบวับ {sparkleResult.sparkleScore}%
+                                </span>
+                                <span className="text-[10px] bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full font-bold border border-purple-200 whitespace-nowrap shrink-0">
+                                  {sparkleResult.title}
+                                </span>
+                              </div>
+                              <p className="text-[10.5px] text-purple-700 font-semibold mt-0.5">
+                                🎉 ผ่านเกณฑ์วิบวับ! รับแต้มพิเศษ +{sparkleResult.bonusPoints} แต้ม (รวม {25 + sparkleResult.bonusPoints} แต้ม)
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleScanChoreAi()}
+                            className="text-[10px] text-purple-600 hover:text-purple-800 hover:underline cursor-pointer font-bold whitespace-nowrap shrink-0 ml-1.5"
+                            title="สแกนใหม่อีกครั้ง"
+                          >
+                            สแกนใหม่ ↺
+                          </button>
+                        </div>
+
+                        {/* AI Speech Bubble */}
+                        <div className="p-2.5 rounded-xl bg-purple-50/80 border border-purple-200 text-xs text-purple-950 flex items-start gap-2">
+                          <span className="text-lg shrink-0 mt-0.5">🤖</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[10px] text-purple-800">คำชมจากน้องสุขใจ AI ประจำบ้าน:</p>
+                            <p className="leading-relaxed break-words font-medium mt-0.5">"{sparkleResult.praise}"</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border border-purple-200 shadow-2xs flex items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-xs shrink-0">
+                            🤖
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-black text-purple-950 flex items-center gap-1.5">
+                              <span>ให้น้องสุขใจ AI ตรวจงานบ้าน</span>
+                              <span className="text-[9px] bg-purple-200 text-purple-900 px-1.5 py-0.2 rounded-full font-bold whitespace-nowrap shrink-0">+5 แต้ม</span>
+                            </p>
+                            <p className="text-[10px] text-purple-800 leading-tight">
+                              ประเมินความสะอาด & รับคำชมอัตโนมัติ ✨
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleScanChoreAi()}
+                          disabled={isAiScanning}
+                          className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
+                        >
+                          <Sparkle size={13} weight="fill" />
+                          <span>สแกนตรวจ ✨</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
@@ -946,7 +1077,9 @@ export default function CreatePostModal({
                     <span>กำลังบันทึกและส่งงานบ้าน... ✨</span>
                   </>
                 ) : (
-                  <span>🚀 ส่งงานบ้านรับ +25 แต้มโหล 🍯</span>
+                  <span>
+                    🚀 ส่งงานบ้านรับ {sparkleResult ? `+${25 + sparkleResult.bonusPoints} แต้ม (โบนัส AI +${sparkleResult.bonusPoints})` : '+25 แต้มโหล'} 🍯
+                  </span>
                 )}
               </button>
             </div>

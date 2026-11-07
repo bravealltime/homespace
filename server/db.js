@@ -300,10 +300,28 @@ export function initDb() {
       db.exec("ALTER TABLE members ADD COLUMN pin TEXT DEFAULT '1234'");
     }
 
-    // Ensure posts table has photos column
+    // Ensure posts table has photos, sparkleScore, sparkleBadge, aiPraise columns
     const postCols = db.prepare('PRAGMA table_info(posts)').all().map(c => c.name);
     if (!postCols.includes('photos')) {
       db.exec("ALTER TABLE posts ADD COLUMN photos TEXT");
+    }
+    if (!postCols.includes('sparkleScore')) {
+      db.exec("ALTER TABLE posts ADD COLUMN sparkleScore INTEGER");
+    }
+    if (!postCols.includes('sparkleBadge')) {
+      db.exec("ALTER TABLE posts ADD COLUMN sparkleBadge TEXT");
+    }
+    if (!postCols.includes('aiPraise')) {
+      db.exec("ALTER TABLE posts ADD COLUMN aiPraise TEXT");
+    }
+
+    // Ensure AI Mascot member exists
+    const aiMember = db.prepare("SELECT * FROM members WHERE id = 'member-ai-sookjai'").get();
+    if (!aiMember) {
+      db.prepare(`
+        INSERT OR REPLACE INTO members (id, phone, name, role, avatar, avatarType, avatarImage, color, createdAt, isAdmin, status, familyId, pin)
+        VALUES ('member-ai-sookjai', '0000000000', 'น้องสุขใจ AI', 'ผู้ช่วยประจำบ้าน 🤖', '🤖', 'emoji', NULL, '#8B5CF6', ?, 0, 'active', 'family-main', '0000')
+      `).run(Date.now() - 365 * 86400000);
     }
     // Ensure Fluke is the sole house owner & admin (0615678160)
     const fluke = db.prepare("SELECT * FROM members WHERE phone = '0615678160' OR id = 'member-fluke'").get();

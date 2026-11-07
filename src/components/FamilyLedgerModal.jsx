@@ -97,6 +97,9 @@ export default function FamilyLedgerModal({ isOpen, onClose }) {
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar font-medium">
             <span className="shrink-0 font-bold">💡 จุดเด่น:</span>
             <span className="shrink-0 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-200">
+              📊 ยอดคงเหลือสะสมทุกรายการ
+            </span>
+            <span className="shrink-0 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-200">
               👵 สลับสมุดแต่ละคนได้ (PIN 4 ตัว)
             </span>
             <span className="shrink-0 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-200">

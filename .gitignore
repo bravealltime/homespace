@@ -37,3 +37,4 @@ server/uploads/*
 !.env.example
 
 .vercel
+.env*

@@ -97,7 +97,7 @@ export default function DesktopTopNav({
             >
               <div className="flex flex-col items-center justify-center">
                 <Icon size={24} weight={isActive ? 'fill' : 'bold'} className="transition-transform group-hover:scale-110" />
-                <span className={`text-[10px] font-bold mt-0.5 hidden xl:block ${isActive ? 'text-[#5F8D75] font-black' : 'text-[#746C65]'}`}>
+                <span className={`text-[10px] font-bold mt-0.5 hidden xl:block whitespace-nowrap ${isActive ? 'text-[#5F8D75] font-black' : 'text-[#746C65]'}`}>
                   {tab.label}
                 </span>
               </div>

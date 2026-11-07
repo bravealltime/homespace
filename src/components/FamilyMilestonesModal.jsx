@@ -148,7 +148,7 @@ export default function FamilyMilestonesModal({ isOpen, onClose }) {
               className="w-full py-2.5 px-3 rounded-2xl bg-[#EEF4F0] hover:bg-[#DFEDE3] text-[#5F8D75] text-xs font-black flex items-center justify-center gap-1.5 border border-[#5F8D75]/30 shadow-2xs cursor-pointer transition-all"
             >
               <Plus size={14} weight="bold" />
-              <span>+ เพิ่มวันสำคัญ / นัดหมายใหม่</span>
+              <span className="whitespace-nowrap">+ เพิ่มวันสำคัญ / นัดหมายใหม่</span>
             </button>
           ) : (
             /* Add Form */
@@ -208,7 +208,7 @@ export default function FamilyMilestonesModal({ isOpen, onClose }) {
                       }`}
                     >
                       <span>{cat.emoji}</span>
-                      <span className="truncate">{cat.label}</span>
+                      <span className="whitespace-nowrap">{cat.label}</span>
                     </button>
                   ))}
                 </div>
@@ -281,7 +281,7 @@ export default function FamilyMilestonesModal({ isOpen, onClose }) {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-2xl shrink-0">{m.emoji || '🎂'}</span>
                     <div className="min-w-0">
-                      <p className="text-xs font-black text-[#2D2825] truncate">
+                      <p className="text-xs font-black text-[#2D2825] leading-snug break-words">
                         {m.title}
                       </p>
                       <p className="text-[10px] text-[#746C65]">
@@ -292,7 +292,7 @@ export default function FamilyMilestonesModal({ isOpen, onClose }) {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xs ${
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xs whitespace-nowrap shrink-0 ${
                         info.isToday
                           ? 'bg-[#E88D67] text-white animate-pulse'
                           : info.days <= 7
@@ -331,15 +331,15 @@ export default function FamilyMilestonesModal({ isOpen, onClose }) {
               </span>
               <div className="space-y-1 opacity-60">
                 {pastMilestones.slice(0, 3).map((m) => (
-                  <div key={m.id} className="p-2 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <span>{m.emoji}</span>
-                      <span className="truncate">{m.title}</span>
+                  <div key={m.id} className="p-2 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] flex items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="shrink-0">{m.emoji}</span>
+                      <span className="break-words leading-tight min-w-0">{m.title}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => deleteMilestone(m.id)}
-                      className="text-[#9E958D] hover:text-red-500 p-0.5"
+                      className="text-[#9E958D] hover:text-red-500 p-0.5 shrink-0"
                     >
                       <Trash size={12} />
                     </button>

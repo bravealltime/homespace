@@ -199,7 +199,7 @@ export default function DesktopLeftSidebar({
           <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#E88D67] flex items-center justify-center text-base shrink-0">
             <ChartBar size={18} weight="bold" />
           </div>
-          <span className="truncate flex-1">สรุปความร่วมมือของบ้าน</span>
+          <span className="flex-1 leading-tight break-words">สรุปความร่วมมือของบ้าน</span>
         </button>
 
         {/* Home Handbook & Maintenance Shortcut */}
@@ -211,7 +211,7 @@ export default function DesktopLeftSidebar({
           <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#5F8D75] flex items-center justify-center text-base shrink-0">
             <Wrench size={18} weight="bold" />
           </div>
-          <span className="truncate flex-1">สมุดคู่มือบ้าน & เบอร์ช่าง</span>
+          <span className="flex-1 leading-tight break-words">สมุดคู่มือบ้าน & เบอร์ช่าง</span>
         </button>
 
         {/* Family Ledger (สมุดเงินทอง ครอบครัว) */}
@@ -224,8 +224,8 @@ export default function DesktopLeftSidebar({
             <BookBookmark size={18} weight="bold" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="truncate block">สมุดเงินทอง ครอบครัว</span>
-            <span className="text-[10px] text-[#746C65] font-normal block truncate">รายรับ-รายจ่าย & บัญชีคนแก่</span>
+            <span className="block leading-tight break-words">สมุดเงินทอง ครอบครัว</span>
+            <span className="text-[10px] text-[#746C65] font-normal block leading-tight mt-0.5">รายรับ-รายจ่าย & บัญชีคนแก่</span>
           </div>
         </button>
 
@@ -239,7 +239,7 @@ export default function DesktopLeftSidebar({
             <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#5F8D75] flex items-center justify-center text-base shrink-0">
               <ShieldCheck size={18} weight="bold" />
             </div>
-            <span className="truncate flex-1">จัดการสมาชิก & รหัสบ้าน</span>
+            <span className="flex-1 leading-tight break-words">จัดการสมาชิก & รหัสบ้าน</span>
           </button>
         )}
 
@@ -252,7 +252,7 @@ export default function DesktopLeftSidebar({
           <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] text-[#3B82F6] flex items-center justify-center text-base shrink-0">
             <DeviceMobile size={18} weight="bold" />
           </div>
-          <span className="truncate flex-1">ติดตั้งแอปบนมือถือ (PWA / APK)</span>
+          <span className="flex-1 leading-tight break-words">ติดตั้งแอปบนมือถือ (PWA / APK)</span>
         </button>
       </nav>
 

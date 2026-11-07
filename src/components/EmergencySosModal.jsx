@@ -211,8 +211,8 @@ export default function EmergencySosModal({ isOpen, onClose, initialCountdown = 
                 onClick={handleActivateSos}
                 className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-300 transition-all cursor-pointer active:scale-95"
               >
-                <WarningOctagon size={22} weight="fill" />
-                <span>ส่งสัญญาณและโทรทันที (ไม่ต้องรอ 5 วิ)</span>
+                <WarningOctagon size={22} weight="fill" className="shrink-0" />
+                <span className="leading-snug break-words">ส่งสัญญาณและโทรทันที (ไม่ต้องรอ 5 วิ)</span>
               </button>
 
               <button
@@ -279,10 +279,10 @@ export default function EmergencySosModal({ isOpen, onClose, initialCountdown = 
 
                 <a
                   href="tel:1669"
-                  className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-base sm:text-lg flex items-center justify-center gap-3 shadow-lg shadow-red-200 transition-all cursor-pointer active:scale-95 text-center"
+                  className="w-full py-3.5 sm:py-4 px-4 sm:px-5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-sm sm:text-base md:text-lg flex items-center justify-center gap-2.5 shadow-lg shadow-red-200 transition-all cursor-pointer active:scale-95 text-center leading-snug"
                 >
-                  <PhoneCall size={26} weight="fill" className="animate-pulse" />
-                  <span>โทร 1669 (สายด่วนแพทย์กู้ชีพ)</span>
+                  <PhoneCall size={24} weight="fill" className="animate-pulse shrink-0" />
+                  <span className="leading-snug">โทร 1669 (สายด่วนแพทย์กู้ชีพ)</span>
                 </a>
 
                 <p className="text-[11px] text-red-800 text-center font-medium">
@@ -346,11 +346,11 @@ export default function EmergencySosModal({ isOpen, onClose, initialCountdown = 
                           {/* Direct Phone Call Button */}
                           <a
                             href={`tel:${m.phone}`}
-                            className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-95"
+                            className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
                             title={`โทรหา ${m.name}`}
                           >
-                            <PhoneCall size={16} weight="fill" />
-                            <span>โทร</span>
+                            <PhoneCall size={16} weight="fill" className="shrink-0" />
+                            <span className="whitespace-nowrap">โทร</span>
                           </a>
                         </div>
                       </div>
@@ -370,7 +370,7 @@ export default function EmergencySosModal({ isOpen, onClose, initialCountdown = 
                 </div>
 
                 <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE7DF] space-y-2">
-                  <p className="text-xs font-mono font-bold text-[#2D2825] break-all">
+                  <p className="text-xs font-mono font-bold text-[#2D2825] break-words">
                     {coords
                       ? `ละติจูด ${coords.latitude.toFixed(6)}, ลองจิจูด ${coords.longitude.toFixed(6)}`
                       : 'ที่อยู่: บ้านสุขใจ (Family Home)'}
@@ -476,10 +476,10 @@ export function EmergencySosBanner({ onOpenSosModal }) {
       <div className="flex items-center gap-2.5 min-w-0">
         <span className="text-lg shrink-0">🚨</span>
         <div className="min-w-0">
-          <p className="text-xs sm:text-sm font-black truncate">
+          <p className="text-xs sm:text-sm font-black leading-tight break-words">
             สัญญาณฉุกเฉิน SOS! {activeSosAlert.memberName} กำลังขอความช่วยเหลือ
           </p>
-          <p className="text-[10px] text-rose-100 truncate">
+          <p className="text-[10px] text-rose-100 leading-tight mt-0.5">
             {activeSosAlert.mapsUrl ? 'มีพิกัดดาวเทียม GPS พร้อมนำทาง' : 'แตะเพื่อเปิดดูพิกัด & โทรกลับทันที'}
           </p>
         </div>
@@ -487,7 +487,7 @@ export function EmergencySosBanner({ onOpenSosModal }) {
 
       <button
         type="button"
-        className="px-3 py-1 rounded-xl bg-white text-red-600 font-black text-xs shrink-0 shadow-xs hover:bg-rose-50 transition-colors"
+        className="px-3 py-1 rounded-xl bg-white text-red-600 font-black text-xs shrink-0 shadow-xs hover:bg-rose-50 transition-colors whitespace-nowrap ml-2"
       >
         ช่วยเหลือด่วน →
       </button>

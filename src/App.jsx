@@ -361,7 +361,7 @@ function AppContent() {
           <HomeSpaceLogo size={32} rounded="rounded-xl" className="shadow-xs shrink-0" />
           <div className="min-w-0">
             <h1 className="text-sm font-black text-[#2D2825] leading-none tracking-tight">HomeSpace</h1>
-            <p className="text-[9px] text-[#746C65] font-medium leading-none mt-0.5 truncate">
+            <p className="text-[9px] text-[#746C65] font-medium leading-none mt-0.5 whitespace-nowrap">
               {language === 'en' ? 'Our Family Space' : 'บันทึกความสุขของบ้าน'}
             </p>
           </div>

@@ -480,11 +480,11 @@ export default function FamilyCalendarView({ onNavigateTab }) {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <CalendarCheck size={18} className="text-[#5F8D75] shrink-0" weight="bold" />
-                <span className="text-xs sm:text-sm font-black text-[#2D2825] truncate">
+                <span className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight break-words">
                   วันที่ {parseLocalDate(selectedDateStr).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 {selectedDateStr === todayStr && (
-                  <span className="text-[10px] bg-[#E88D67] text-white font-black px-2 py-0.5 rounded-full shrink-0 shadow-2xs">
+                  <span className="text-[10px] bg-[#E88D67] text-white font-black px-2 py-0.5 rounded-full shrink-0 shadow-2xs whitespace-nowrap">
                     วันนี้
                   </span>
                 )}
@@ -494,10 +494,10 @@ export default function FamilyCalendarView({ onNavigateTab }) {
               <button
                 type="button"
                 onClick={() => openAddWithDate(selectedDateStr, false)}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#5F8D75] hover:bg-[#4E7661] text-white text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#5F8D75] hover:bg-[#4E7661] text-white text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
               >
                 <Plus size={14} weight="bold" />
-                <span>เพิ่มกิจกรรม</span>
+                <span className="whitespace-nowrap">เพิ่มกิจกรรม</span>
               </button>
             </div>
 

@@ -247,9 +247,9 @@ export default function ProfileModal({ isOpen, onClose }) {
           </div>
 
           {/* Phone (read-only) */}
-          <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7DF] flex items-center justify-between">
-            <span className="text-xs text-[#746C65]">เบอร์โทรศัพท์ประจำตัว:</span>
-            <span className="text-xs font-bold text-[#2D2825]">{formatPhoneDisplay(currentUser.phone)}</span>
+          <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7DF] flex items-center justify-between gap-2">
+            <span className="text-xs text-[#746C65] whitespace-nowrap">เบอร์โทรศัพท์ประจำตัว:</span>
+            <span className="text-xs font-bold text-[#2D2825] whitespace-nowrap">{formatPhoneDisplay(currentUser.phone)}</span>
           </div>
 
           {/* 4-Digit PIN */}
@@ -262,10 +262,10 @@ export default function ProfileModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                className="text-[11px] text-[#746C65] hover:text-[#2D2825] flex items-center gap-1 font-medium transition-colors"
+                className="text-[11px] text-[#746C65] hover:text-[#2D2825] flex items-center gap-1 font-medium transition-colors whitespace-nowrap shrink-0"
               >
                 {showPin ? <EyeSlash size={14} /> : <Eye size={14} />}
-                <span>{showPin ? 'ซ่อนรหัส' : 'ดูรหัส PIN'}</span>
+                <span className="whitespace-nowrap">{showPin ? 'ซ่อนรหัส' : 'ดูรหัส PIN'}</span>
               </button>
             </div>
             <div className="relative">
@@ -287,23 +287,23 @@ export default function ProfileModal({ isOpen, onClose }) {
             {pinError ? (
               <p className="text-[11px] text-red-500 font-medium mt-1">{pinError}</p>
             ) : (
-              <p className="text-[10px] text-[#9E9589] mt-1">ใช้ตัวเลข 4 หลักเพื่อความสะดวกรวดเร็วในการเข้าสู่ระบบครั้งถัดไป</p>
+              <p className="text-[10px] text-[#9E9589] mt-1 leading-snug break-words">ใช้ตัวเลข 4 หลักเพื่อความสะดวกรวดเร็วในการเข้าสู่ระบบครั้งถัดไป</p>
             )}
           </div>
 
           {/* Senior & Easy-Reading Mode Toggle in Profile */}
-          <div className="p-3 bg-[#EEF4F0]/60 rounded-2xl border border-[#5F8D75]/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">👓</span>
-              <div>
-                <p className="text-xs font-bold text-[#2D2825]">โหมดสบายตา (ตัวหนังสือใหญ่)</p>
-                <p className="text-[10px] text-[#746C65]">ขยายตัวหนังสือและปุ่มกดให้อ่านง่ายสำหรับผู้ใหญ่</p>
+          <div className="p-3 bg-[#EEF4F0]/60 rounded-2xl border border-[#5F8D75]/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl shrink-0">👓</span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[#2D2825] break-words">โหมดสบายตา (ตัวหนังสือใหญ่)</p>
+                <p className="text-[10px] text-[#746C65] leading-snug break-words">ขยายตัวหนังสือและปุ่มกดให้อ่านง่ายสำหรับผู้ใหญ่</p>
               </div>
             </div>
             <button
               type="button"
               onClick={toggleSeniorMode}
-              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
                 seniorMode ? 'bg-[#5F8D75]' : 'bg-[#ECE7DF]'
               }`}
             >
@@ -320,7 +320,7 @@ export default function ProfileModal({ isOpen, onClose }) {
             type="button"
             onClick={handleSave}
             disabled={!name.trim() || isSaving}
-            className={`w-full py-3.5 text-base font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${
+            className={`w-full py-3.5 text-base font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap ${
               saved
                 ? 'bg-[#5F8D75] text-white'
                 : 'bg-[#E88D67] hover:bg-[#CF6E46] text-white disabled:opacity-40'
@@ -329,15 +329,15 @@ export default function ProfileModal({ isOpen, onClose }) {
             {saved ? (
               <>
                 <Check size={20} weight="bold" />
-                <span>บันทึกเรียบร้อยแล้ว!</span>
+                <span className="whitespace-nowrap">บันทึกเรียบร้อยแล้ว!</span>
               </>
             ) : isSaving ? (
               <>
                 <CircleNotch size={20} className="animate-spin" />
-                <span>กำลังบันทึกและอัปโหลดรูปภาพ...</span>
+                <span className="whitespace-nowrap">กำลังบันทึกและอัปโหลดรูปภาพ...</span>
               </>
             ) : (
-              <span>บันทึกการเปลี่ยนแปลง</span>
+              <span className="whitespace-nowrap">บันทึกการเปลี่ยนแปลง</span>
             )}
           </button>
         </div>

@@ -129,7 +129,7 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
 
                   {/* Notification Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-[#2D2825] leading-snug">
+                    <p className="text-xs text-[#2D2825] leading-snug break-words">
                       <span className="font-bold">{sender?.name || 'สมาชิกในบ้าน'}</span>{' '}
                       {isComment ? (
                         <span>
@@ -141,16 +141,16 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
                     </p>
 
                     {notif.postSnippet && (
-                      <p className="text-[10px] text-[#9E958D] truncate mt-0.5">
+                      <p className="text-[10px] text-[#9E958D] leading-snug mt-0.5 break-words">
                         ในโพสต์: "{notif.postSnippet}"
                       </p>
                     )}
 
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[9px] text-[#B0A79E] font-medium">
+                      <span className="text-[9px] text-[#B0A79E] font-medium whitespace-nowrap shrink-0">
                         {timeAgo(notif.timestamp)}
                       </span>
-                      <span className="text-[10px] font-bold text-[#5F8D75] hover:underline">
+                      <span className="text-[10px] font-bold text-[#5F8D75] hover:underline whitespace-nowrap shrink-0">
                         ดูโพสต์ →
                       </span>
                     </div>
@@ -179,12 +179,12 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
         {/* Bottom Actions */}
         {userNotifications.length > 0 && (
           <div className="p-3 bg-[#FAF8F5] border-t border-[#ECE7DF] flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={handleMarkAllRead}
                 disabled={unreadCount === 0}
-                className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 อ่านทั้งหมดแล้ว ✓
               </button>
@@ -196,7 +196,7 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
                     clearNotifications(currentUser.id);
                   }
                 }}
-                className="text-xs font-medium text-[#746C65] hover:text-[#C84B31] transition-colors cursor-pointer"
+                className="text-xs font-medium text-[#746C65] hover:text-[#C84B31] transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 ล้างทั้งหมด
               </button>
@@ -207,7 +207,7 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
                 onClose();
                 if (onNavigateToMyFeed) onNavigateToMyFeed();
               }}
-              className="text-xs font-bold text-[#2D2825] hover:underline cursor-pointer"
+              className="text-xs font-bold text-[#2D2825] hover:underline cursor-pointer whitespace-nowrap shrink-0"
             >
               ไปที่ฟีดของฉัน →
             </button>

@@ -136,15 +136,15 @@ export default function MonthlyRewards() {
         <button
           type="button"
           onClick={() => setSubTab('rewards')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
             subTab === 'rewards'
               ? 'bg-[#5F8D75] text-white shadow-xs scale-100'
               : 'text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5]'
           }`}
         >
           <span>🎁</span>
-          <span>ของรางวัลครอบครัว</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+          <span className="whitespace-nowrap">ของรางวัลครอบครัว</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap shrink-0 ${
             subTab === 'rewards' ? 'bg-white/25 text-white' : 'bg-[#FAF8F5] text-[#746C65]'
           }`}>
             {unlockedRewards.length}/{rewards.length}
@@ -154,14 +154,14 @@ export default function MonthlyRewards() {
         <button
           type="button"
           onClick={() => setSubTab('summary')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
             subTab === 'summary'
               ? 'bg-[#5F8D75] text-white shadow-xs scale-100'
               : 'text-[#746C65] hover:text-[#2D2825] hover:bg-[#FAF8F5]'
           }`}
         >
           <span>📊</span>
-          <span>สถิติบ้าน & อันดับ MVP</span>
+          <span className="whitespace-nowrap">สถิติบ้าน & อันดับ MVP</span>
         </button>
       </div>
 
@@ -343,7 +343,7 @@ export default function MonthlyRewards() {
                           )}
                         </div>
 
-                        <h3 className="text-sm sm:text-base font-black text-[#2D2825] leading-tight truncate">
+                        <h3 className="text-sm sm:text-base font-black text-[#2D2825] leading-tight">
                           {reward.name}
                         </h3>
 
@@ -357,15 +357,15 @@ export default function MonthlyRewards() {
                         <button
                           type="button"
                           onClick={() => handleVote(reward.id)}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer active:scale-90 shrink-0 shadow-2xs border ${
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer active:scale-90 shrink-0 shadow-2xs border whitespace-nowrap ${
                             isVotedByMe
                               ? 'bg-[#E88D67] text-white border-[#E88D67] shadow-xs'
                               : 'bg-[#FAF8F5] hover:bg-[#FFF5EB] text-[#E88D67] border-[#E88D67]/30'
                           }`}
                           title={isVotedByMe ? 'แตะเพื่อยกเลิกการโหวต' : 'แตะเพื่อโหวตรางวัลนี้'}
                         >
-                          <Heart size={16} weight={isVotedByMe ? 'fill' : 'bold'} />
-                          <span>{votes > 0 ? votes : 'โหวต'}</span>
+                          <Heart size={16} weight={isVotedByMe ? 'fill' : 'bold'} className="shrink-0" />
+                          <span className="whitespace-nowrap">{votes > 0 ? votes : 'โหวต'}</span>
                         </button>
                       )}
                     </div>

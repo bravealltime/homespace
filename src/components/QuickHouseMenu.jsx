@@ -313,15 +313,15 @@ export default function QuickHouseMenu({
                   <Wrench size={18} weight="bold" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-black text-[#2D2825] group-hover:text-[#E88D67] transition-colors truncate">
+                  <p className="text-xs font-black text-[#2D2825] group-hover:text-[#E88D67] transition-colors leading-tight">
                     สมุดคู่มือบ้าน & เบอร์ช่าง
                   </p>
-                  <p className="text-[10px] text-[#746C65] truncate">
+                  <p className="text-[10.5px] text-[#746C65] leading-tight mt-0.5">
                     เบอร์ช่างแอร์ ช่างไฟ & ประวัติซ่อมบำรุง
                   </p>
                 </div>
               </div>
-              <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-[#E88D67]" />
+              <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-[#E88D67] shrink-0" />
             </button>
 
             {/* 3.5 สมุดเงินทอง ครอบครัว (บันทึกรายรับ-รายจ่าย & คนแก่) */}
@@ -338,20 +338,20 @@ export default function QuickHouseMenu({
                   <BookBookmark size={18} weight="bold" />
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-black text-[#2D2825] group-hover:text-amber-800 transition-colors truncate">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-xs font-black text-[#2D2825] group-hover:text-amber-800 transition-colors leading-tight">
                       สมุดเงินทอง ครอบครัว
                     </p>
-                    <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 text-[9px] font-black">
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 text-[9px] font-black whitespace-nowrap">
                       ใหม่ 📒
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#746C65] truncate">
+                  <p className="text-[10.5px] text-[#746C65] leading-tight mt-0.5">
                     บันทึกรายรับ-รายจ่าย ตัวหนังสือโต มีเสียงอ่าน
                   </p>
                 </div>
               </div>
-              <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-amber-700" />
+              <CaretRight size={14} weight="bold" className="text-[#9E958D] group-hover:text-amber-700 shrink-0" />
             </button>
 
             {/* 4. แก้ไขข้อมูลส่วนตัว & รหัส PIN */}
@@ -368,15 +368,15 @@ export default function QuickHouseMenu({
                   <GearSix size={18} weight="bold" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-black text-[#2D2825] group-hover:text-[#2D2825] transition-colors truncate">
+                  <p className="text-xs font-black text-[#2D2825] group-hover:text-[#2D2825] transition-colors leading-tight">
                     แก้ไขโปรไฟล์ & รหัส PIN
                   </p>
-                  <p className="text-[10px] text-[#746C65] truncate">
+                  <p className="text-[10.5px] text-[#746C65] leading-tight mt-0.5">
                     เปลี่ยนรูปภาพ ชื่อ และรหัสผ่าน 4 หลัก
                   </p>
                 </div>
               </div>
-              <CaretRight size={14} weight="bold" className="text-[#9E958D]" />
+              <CaretRight size={14} weight="bold" className="text-[#9E958D] shrink-0" />
             </button>
           </div>
 
@@ -404,7 +404,7 @@ export default function QuickHouseMenu({
               </button>
             </div>
 
-            <div className="p-2 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-[11px] font-mono text-[#57534E] break-all flex items-center justify-between gap-2">
+            <div className="p-2 rounded-xl bg-[#FAF8F5] border border-[#ECE7DF] text-[11px] font-mono text-[#57534E] break-words flex items-center justify-between gap-2">
               <span className="truncate">{getApiBaseUrl()}</span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="พร้อมเชื่อมต่อ" />
             </div>

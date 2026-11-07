@@ -84,7 +84,7 @@ export default function DesktopRightSidebar({
                     <p className="text-[10px] text-[#746C65] truncate">{m.role || 'สมาชิก'}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-[#E88D67] bg-[#FDF1EB] px-1.5 py-0.5 rounded-md shrink-0">
+                <span className="text-[10px] font-bold text-[#E88D67] bg-[#FDF1EB] px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
                   {score} แต้ม
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function DesktopRightSidebar({
                     <p className="text-[10px] text-[#746C65]">{m.date}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-black text-[#3B82F6] bg-[#EFF6FF] px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[10px] font-black text-[#3B82F6] bg-[#EFF6FF] px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
                   {getDaysLeft(m.date)}
                 </span>
               </div>

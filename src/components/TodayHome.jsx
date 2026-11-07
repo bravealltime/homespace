@@ -637,11 +637,11 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               📲
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-black truncate">{t('installPwaTitle', 'ติดตั้งแอป HomeSpace บนมือถือ')}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-xs font-black">{t('installPwaTitle', 'ติดตั้งแอป HomeSpace บนมือถือ')}</p>
                 <span className="text-[9px] bg-white/25 text-white px-1.5 py-0.2 rounded-full font-bold shrink-0">PWA</span>
               </div>
-              <p className="text-[10.5px] text-white/85 truncate">
+              <p className="text-[10.5px] text-white/85 leading-tight mt-0.5">
                 {t('installPwaSub', 'เปิดเต็มจอ ลื่นไหล ไม่ต้องเข้าผ่านเบราว์เซอร์')}
               </p>
             </div>
@@ -847,13 +847,13 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           </div>
 
           {/* Unlocked Reward Hint / Goal Subtitle */}
-          <div className="flex items-center justify-between mt-1.5 text-[10px]">
-            <span className="text-[#E88D67] font-bold truncate">
+          <div className="flex items-center justify-between gap-2 mt-1.5 text-[10px]">
+            <span className="text-[#E88D67] font-bold min-w-0 break-words leading-tight">
               {unlockedRewards.length > 0
                 ? `🎉 ${unlockedRewards[0].emoji} ${unlockedRewards[0].name}`
                 : `${t('collectMore', 'สะสมอีก')} ${Math.max(0, monthlyGoal - totalScoreMonth)} ${t('toUnlockReward', 'แต้ม เพื่อปลดล็อกรางวัล')}`}
             </span>
-            <span className="text-[#9E958D] font-medium shrink-0">{t('familyRewards', 'รางวัลครอบครัว')} →</span>
+            <span className="text-[#9E958D] font-medium shrink-0 whitespace-nowrap">{t('familyRewards', 'รางวัลครอบครัว')} →</span>
           </div>
         </div>
 
@@ -973,18 +973,18 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               🚨
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-black truncate flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-black flex items-center gap-2 flex-wrap">
                 <span>ปุ่มขอความช่วยเหลือฉุกเฉิน (SOS)</span>
-                <span className="text-[10px] bg-white text-red-600 px-2 py-0.5 rounded-full font-black">1-Tap</span>
+                <span className="text-[10px] bg-white text-red-600 px-2 py-0.5 rounded-full font-black whitespace-nowrap">1-Tap</span>
               </h3>
-              <p className="text-xs text-rose-100 truncate">
+              <p className="text-xs text-rose-100 leading-snug mt-0.5">
                 โทร 1669 กู้ชีพ และส่งพิกัด GPS ถึงทุกคนในบ้านทันที
               </p>
             </div>
           </div>
           <button
             type="button"
-            className="px-3.5 py-2 rounded-xl bg-white text-red-600 font-black text-xs sm:text-sm shrink-0 shadow-xs group-hover:scale-105 transition-transform"
+            className="px-3.5 py-2 rounded-xl bg-white text-red-600 font-black text-xs sm:text-sm shrink-0 shadow-xs group-hover:scale-105 transition-transform whitespace-nowrap"
           >
             ขอความช่วยเหลือ →
           </button>
@@ -1006,11 +1006,11 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                 <h3 className="text-sm sm:text-base font-black text-[#2D2825]">
                   สมุดเงินทอง ครอบครัว
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold whitespace-nowrap">
                   บัญชีคนแก่ & ทุกคน 👵
                 </span>
               </div>
-              <p className="text-xs text-[#746C65] mt-0.5 truncate">
+              <p className="text-xs text-[#746C65] mt-0.5 leading-snug">
                 บันทึกรายรับ-รายจ่ายง่ายๆ ตัวหนังสือโต มีเสียงอ่าน แนบรูปสลิป
               </p>
             </div>
@@ -1044,25 +1044,28 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
       {urgentMaintenance.length > 0 && (
         <section
           onClick={onOpenHandbook}
-          className="p-3 rounded-2xl bg-amber-50 hover:bg-amber-100/70 border border-amber-200 shadow-2xs flex items-center justify-between transition-all cursor-pointer group animate-fadeIn"
+          className="p-3 sm:p-3.5 rounded-2xl bg-amber-50 hover:bg-amber-100/70 border border-amber-200 shadow-2xs flex flex-col gap-2 transition-all cursor-pointer group animate-fadeIn"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xl shrink-0">{urgentMaintenance[0].emoji || '🛠️'}</span>
-            <div className="min-w-0">
-              <p className="text-xs font-black text-amber-950 truncate flex items-center gap-1.5">
-                <span>เตือนดูแลบ้าน: {urgentMaintenance[0].title}</span>
-                <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-1.5 py-0.5 rounded-md shrink-0">
-                  {getMaintenanceStatus(urgentMaintenance[0].nextDueDate).text}
-                </span>
-              </p>
-              <p className="text-[10px] text-amber-800 mt-0.5">
-                แตะเพื่อดูเบอร์ช่าง หรือบันทึกว่าทำเสร็จแล้ว (+25 แต้มโหลของบ้าน)
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl shrink-0">{urgentMaintenance[0].emoji || '🛠️'}</span>
+              <p className="text-xs sm:text-sm font-black text-amber-950 truncate">
+                เตือนดูแลบ้าน: {urgentMaintenance[0].title}
               </p>
             </div>
+            <span className="text-xs font-black text-amber-900 shrink-0 group-hover:translate-x-0.5 transition-transform">
+              เปิดดู →
+            </span>
           </div>
-          <span className="text-xs font-black text-amber-900 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
-            เปิดดู →
-          </span>
+
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-[11px] text-amber-800 font-bold bg-amber-100/90 border border-amber-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 shadow-2xs">
+              {getMaintenanceStatus(urgentMaintenance[0].nextDueDate).text}
+            </span>
+            <p className="text-[11px] text-amber-800 leading-tight">
+              แตะเพื่อดูเบอร์ช่าง หรือบันทึกว่าทำเสร็จแล้ว (+25 แต้ม)
+            </p>
+          </div>
         </section>
       )}
 
@@ -1074,10 +1077,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               📸
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-black text-[#2D2825] truncate">
+              <p className="text-xs font-black text-[#2D2825] leading-snug">
                 ใส่รูปถ่ายของคุณ เพื่อให้ลูกหลานจำได้ง่ายๆ ❤️
               </p>
-              <p className="text-[10px] text-[#746C65] truncate">
+              <p className="text-[10px] sm:text-[11px] text-[#746C65] leading-snug mt-0.5">
                 แตะปุ่มนี้เพื่อถ่ายรูปตัวเอง หรือเลือกรูปจากมือถือได้ทันที
               </p>
             </div>
@@ -1088,7 +1091,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               onClick={() => {
                 if (onOpenProfile) onOpenProfile();
               }}
-              className="px-3 py-1.5 bg-[#E88D67] hover:bg-[#CF6E46] text-white text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+              className="px-3 py-1.5 bg-[#E88D67] hover:bg-[#CF6E46] text-white text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap"
             >
               ใส่รูปเลย 📸
             </button>
@@ -1117,10 +1120,10 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               <MemberAvatar member={currentUser} size="md" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight truncate">
+              <h3 className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight">
                 {currentUser?.name ? `สวัสดีครับ ${currentUser.name}` : 'ส่งเรื่องราวให้คนในบ้าน'} ✨
               </h3>
-              <p className="text-[10px] text-[#746C65] truncate">
+              <p className="text-[10.5px] sm:text-[11px] text-[#746C65] leading-snug">
                 {seniorMode ? 'แตะปุ่มด้านล่างเพื่อส่งรูป หรือพูดทักทายลูกหลานจ้า' : 'แชร์รูปกิจกรรม ส่งงานบ้าน หรือทักทายคนในครอบครัว'}
               </p>
             </div>
@@ -1130,7 +1133,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           <button
             type="button"
             onClick={() => setSeniorHelpModalOpen(true)}
-            className="px-2.5 py-1 rounded-full bg-[#FFF5EB] hover:bg-[#FDE7D3] text-[#E88D67] text-[10px] sm:text-xs font-bold border border-[#E88D67]/30 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+            className="px-2.5 py-1 rounded-full bg-[#FFF5EB] hover:bg-[#FDE7D3] text-[#E88D67] text-[10px] sm:text-xs font-bold border border-[#E88D67]/30 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0 whitespace-nowrap"
             title="วิธีเล่นง่ายๆ สำหรับผู้สูงวัย"
           >
             <span>💡 วิธีใช้งาน</span>
@@ -1145,14 +1148,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
             <button
               type="button"
               onClick={() => openCreatePost('photo')}
-              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/35 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#EEF4F0] hover:from-[#EEF4F0] hover:to-[#DFEDE3] border border-[#5F8D75]/35 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform">
-                <Camera size={26} weight="bold" />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#5F8D75] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform shrink-0">
+                <Camera size={24} weight="bold" />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-black text-[#2D2825] leading-tight">ส่งรูปภาพ 📸</p>
-                <p className="text-xs text-[#5F8D75] font-bold mt-0.5">อวดลูกหลานในบ้าน</p>
+              <div className="text-center w-full min-w-0">
+                <p className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight whitespace-nowrap">ส่งรูปภาพ 📸</p>
+                <p className="text-[10.5px] sm:text-xs text-[#5F8D75] font-bold mt-0.5 leading-snug">อวดลูกหลานในบ้าน</p>
               </div>
             </button>
 
@@ -1160,14 +1163,14 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
             <button
               type="button"
               onClick={() => openCreatePost('voice')}
-              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/35 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs group"
+              className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FFF5EB] hover:from-[#FFF5EB] hover:to-[#FDE7D3] border border-[#E88D67]/35 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform">
-                <Microphone size={26} weight="bold" />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#E88D67] text-white flex items-center justify-center text-xl shadow-xs group-hover:scale-110 transition-transform shrink-0">
+                <Microphone size={24} weight="bold" />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-black text-[#2D2825] leading-tight">พูดทักทาย 🎙️</p>
-                <p className="text-xs text-[#E88D67] font-bold mt-0.5">ไม่ต้องพิมพ์ แตะแล้วพูด</p>
+              <div className="text-center w-full min-w-0">
+                <p className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight whitespace-nowrap">พูดทักทาย 🎙️</p>
+                <p className="text-[10.5px] sm:text-xs text-[#E88D67] font-bold mt-0.5 leading-snug">ไม่ต้องพิมพ์ แตะแล้วพูด</p>
               </div>
             </button>
           </div>
@@ -1176,24 +1179,25 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
           <button
             type="button"
             onClick={() => openCreatePost('chore')}
-            className="w-full p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-[#EEF2F6] to-[#FAF8F5] hover:from-[#EEF2F6] hover:to-[#DEE7F0] border border-[#3B82F6]/35 flex items-center justify-between gap-3 transition-all cursor-pointer active:scale-98 shadow-2xs group"
+            className="w-full p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-[#EEF2F6] to-[#FAF8F5] hover:from-[#EEF2F6] hover:to-[#DEE7F0] border border-[#3B82F6]/35 flex items-center justify-between gap-2.5 transition-all cursor-pointer active:scale-98 shadow-2xs group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-[#3B82F6] text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-108 transition-transform shrink-0">
                 <Broom size={22} weight="bold" />
               </div>
               <div className="text-left min-w-0">
-                <p className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight truncate">
+                <p className="text-xs sm:text-sm font-black text-[#2D2825] leading-tight whitespace-nowrap">
                   ส่งงานบ้านประจำวัน 🧹
                 </p>
-                <p className="text-[11px] text-[#746C65] font-semibold truncate">
-                  ล้างจาน กวาดบ้าน ซักผ้า ทิ้งขยะ
+                <p className="text-[10.5px] sm:text-[11px] text-[#556987] font-semibold leading-tight mt-0.5 truncate">
+                  ล้างจาน · กวาดบ้าน · ซักผ้า · ทิ้งขยะ
                 </p>
               </div>
             </div>
 
-            <div className="px-2.5 py-1 rounded-xl bg-blue-500 text-white font-black text-xs shadow-2xs flex items-center gap-1 shrink-0 group-hover:scale-105 transition-transform">
-              <span>+25 แต้มโหล</span>
+            <div className="px-2.5 py-1.5 rounded-xl bg-blue-500 text-white font-black text-xs shadow-2xs flex items-center gap-1 shrink-0 group-hover:scale-105 transition-transform whitespace-nowrap">
+              <span>+25 แต้ม</span>
+              <span className="text-[10px] opacity-80">(โหลบ้าน)</span>
               <span>→</span>
             </div>
           </button>
@@ -1258,7 +1262,7 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
               className="bg-white rounded-3xl border border-[#ECE7DF] shadow-xs overflow-hidden"
             >
               {/* Post Header */}
-              <div className="p-3.5 flex items-center justify-between">
+              <div className="p-3.5 pb-2 flex items-center justify-between">
                 <div
                   onClick={() => onViewMemberProfile && onViewMemberProfile(author)}
                   className="flex items-center gap-2.5 min-w-0 cursor-pointer group"
@@ -1266,36 +1270,27 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                 >
                   <MemberAvatar member={author} size="md" />
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[#2D2825] group-hover:text-[#5F8D75] truncate transition-colors">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs sm:text-sm font-bold text-[#2D2825] group-hover:text-[#5F8D75] whitespace-nowrap transition-colors">
                         {author?.name || t('familyMember', 'สมาชิกในบ้าน')}
                       </span>
-                      <span className="text-[10px] text-[#9E958D]">({author?.role})</span>
+                      {author?.role && (
+                        <span className="text-[10px] text-[#746C65] bg-[#FAF8F5] px-1.5 py-0.5 rounded-md border border-[#ECE7DF] whitespace-nowrap shrink-0">
+                          {author.role}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[10px] text-[#9E958D]">
+                    <p className="text-[10px] sm:text-[11px] text-[#9E958D] whitespace-nowrap mt-0.5">
                       {timeAgo(post.timestamp, language)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 relative">
-                  {isChore ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-bold border border-[#5F8D75]/20 flex items-center gap-1">
-                      <span>{post.choreEmoji || '🧹'}</span>
-                      <span>{post.choreName || t('choreTag', 'งานบ้าน')}</span>
-                      <span className="font-black">+{post.points} {t('pts', 'แต้ม')}</span>
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#FFF5EB] text-[#E88D67] text-[10px] font-bold border border-[#E88D67]/20 flex items-center gap-1">
-                      <span>📸</span>
-                      <span>{t('storyTag', 'เรื่องราว')}</span>
-                      <span className="font-black">+{post.points} {t('pts', 'แต้ม')}</span>
-                    </span>
-                  )}
+                <div className="relative shrink-0 ml-2">
                   <button
                     type="button"
                     onClick={() => setActivePostMenuId(activePostMenuId === post.id ? null : post.id)}
-                    className="p-1 rounded-full text-[#9E958D] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#9E958D] hover:text-[#2D2825] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                     title="ตัวเลือกโพสต์"
                   >
                     <DotsThree size={20} weight="bold" />
@@ -1327,6 +1322,35 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Dedicated Activity & Points Badges Row */}
+              <div className="px-3.5 pb-2.5 flex items-center gap-1.5 flex-wrap">
+                {isChore ? (
+                  <>
+                    <span className="px-2.5 py-1 rounded-full bg-[#EEF4F0] text-[#3B5D4C] text-[11px] font-bold border border-[#5F8D75]/25 flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                      <span>{post.choreEmoji || '🧹'}</span>
+                      <span>{post.choreName || t('choreTag', 'งานบ้าน')}</span>
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-black border border-emerald-200/80 whitespace-nowrap shrink-0 shadow-2xs">
+                      +{post.points} {t('pts', 'แต้ม')}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-[#FFFBEB] text-[#92400E] text-[11px] font-bold border border-amber-200/80 flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
+                      <span>✨</span>
+                      <span>สะอาดเรียบร้อย</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="px-2.5 py-1 rounded-full bg-[#FFF5EB] text-[#C84B31] text-[11px] font-bold border border-[#E88D67]/25 flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                      <span>📸</span>
+                      <span>{t('storyTag', 'เรื่องราว')}</span>
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 text-[11px] font-black border border-orange-200/80 whitespace-nowrap shrink-0 shadow-2xs">
+                      +{post.points} {t('pts', 'แต้ม')}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* POST MEDIA / PHOTO */}
@@ -1393,168 +1417,158 @@ export default function TodayHome({ onNavigateTab, onViewMemberProfile, onOpenHa
                 )
               )}
 
-              {/* Social Action Bar (Like & Comment Icons) */}
-              <div className="px-3.5 pt-3 pb-1 flex items-center justify-between">
+              {/* Social Action Bar (Like, Comment & Audio Read) */}
+              <div className="px-3.5 pt-2.5 pb-1.5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => likePost(post.id)}
-                    className="flex items-center gap-1 text-[#2D2825] hover:text-[#E88D67] transition-all active:scale-125"
+                    className="flex items-center gap-1.5 text-[#2D2825] hover:text-[#E88D67] transition-all active:scale-125 cursor-pointer"
                   >
                     <Heart
                       size={22}
                       weight={post.isLiked ? 'fill' : 'regular'}
                       className={post.isLiked ? 'text-[#E88D67]' : 'text-[#2D2825]'}
                     />
+                    <span className="text-xs font-bold text-[#2D2825]">
+                      {post.likes || 0}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveCommentPostId(isCommentOpen ? null : post.id)}
-                    className="flex items-center gap-1 text-[#2D2825] hover:text-[#5F8D75] transition-colors"
+                    className="flex items-center gap-1.5 text-[#2D2825] hover:text-[#5F8D75] transition-colors cursor-pointer"
                   >
                     <ChatCircle size={22} weight="regular" />
+                    <span className="text-xs font-bold text-[#2D2825]">
+                      {commentsList.length}
+                    </span>
                   </button>
                 </div>
 
-                {isChore && (
-                  <span className="text-[10px] font-bold text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#5F8D75]/20">
-                    <span>✨</span>
-                    <span>สะอาดเรียบร้อย</span>
-                  </span>
+                {/* Audio Read Button (Moved cleanly to Action Bar) */}
+                {post.caption && (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSpeakPost(post.id, `${author?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
+                    className={`px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 border text-xs font-bold whitespace-nowrap shrink-0 ${
+                      speakingPostId === post.id
+                        ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
+                        : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#5F8D75] hover:text-[#476E5B] border-[#5F8D75]/30'
+                    }`}
+                    title={speakingPostId === post.id ? 'แตะเพื่อหยุดอ่าน' : 'แตะเพื่อให้มือถืออ่านข้อความให้ฟัง'}
+                  >
+                    <SpeakerHigh size={14} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
+                    <span className="whitespace-nowrap">{speakingPostId === post.id ? t('stopListen', 'หยุดฟัง') : t('listen', 'ฟังเสียง')}</span>
+                  </button>
                 )}
               </div>
 
-              {/* Likes Count */}
-              <div className="px-3.5 pb-1.5">
-                {(post.likes || 0) > 0 ? (
-                  <p className="text-xs font-bold text-[#2D2825]">
-                    ถูกใจ {post.likes} คน
+              {/* Likes Subtitle */}
+              {(post.likes || 0) > 0 && (
+                <div className="px-3.5 pb-1">
+                  <p className="text-[11px] text-[#746C65] font-semibold">
+                    ถูกใจโดยคนในบ้าน {post.likes} คน
                   </p>
-                ) : (
-                  <p className="text-[11px] text-[#9E958D]">
-                    ส่งหัวใจคนแรกให้โพสต์นี้ 💖
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Caption (Instagram Format: Username + Text) with Audio Read */}
+              {/* Caption (Full width, undisturbed typography flow) */}
               {post.caption && (
-                <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825]">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold mr-1.5">{author?.name || 'สมาชิก'}</span>
-                      <span>{post.caption}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      {/* Audio Read Button (🔊 ฟังเสียงอ่านภาษาไทยสำหรับผู้ใหญ่) */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleSpeakPost(post.id, `${author?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
-                        className={`px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
-                          speakingPostId === post.id
-                            ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
-                            : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#5F8D75] border-[#ECE7DF]'
-                        }`}
-                        title={speakingPostId === post.id ? 'แตะเพื่อหยุดอ่าน' : 'แตะเพื่อให้มือถืออ่านข้อความให้ฟัง'}
-                      >
-                        <SpeakerHigh size={12} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
-                        <span>{speakingPostId === post.id ? t('stopListen', 'หยุด') : t('listen', 'ฟัง')}</span>
-                      </button>
-                    </div>
-                  </div>
+                <div className="px-3.5 pb-2.5 text-xs sm:text-sm leading-relaxed text-[#2D2825] break-words">
+                  <span className="font-bold text-[#2D2825] mr-1.5">{author?.name || 'สมาชิก'}:</span>
+                  <span className="text-[#3E3834] break-words">{post.caption}</span>
                 </div>
               )}
 
               {/* Comments Section */}
               <div className="px-3.5 pb-3.5 pt-2 border-t border-[#ECE7DF]/60 space-y-2.5">
                 {commentsList.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {commentsList.map((c) => {
                       const commenter = members.find((m) => m.id === c.memberId);
                       return (
-                        <div key={c.id} className="flex items-start gap-2 group">
-                          {/* Commenter Avatar (Clickable to view their profile) */}
+                        <div key={c.id} className="flex items-start gap-2.5 group">
+                          {/* Commenter Avatar */}
                           <div
                             onClick={() => onViewMemberProfile && onViewMemberProfile(commenter)}
-                            className="cursor-pointer hover:scale-105 transition-transform shrink-0"
+                            className="cursor-pointer hover:scale-105 transition-transform shrink-0 mt-0.5"
                             title={`ดูโปรไฟล์ของ ${commenter?.name}`}
                           >
                             <MemberAvatar member={commenter} size="comment" />
                           </div>
 
-                          {/* Comment Bubble (Instagram / Facebook Style) */}
-                          <div className="flex-1 bg-[#FAF8F5] rounded-2xl rounded-tl-xs px-3 py-2 border border-[#ECE7DF]/80 text-xs shadow-2xs">
-                            <div className="flex items-center justify-between gap-1 mb-0.5">
-                              <div
-                                onClick={() => onViewMemberProfile && onViewMemberProfile(commenter)}
-                                className="flex items-center gap-1.5 cursor-pointer hover:opacity-80"
-                              >
-                                <span className="font-bold text-[#2D2825] text-xs">
-                                  {commenter?.name || 'สมาชิก'}
+                          {/* Comment Content Area */}
+                          <div className="flex-1 min-w-0">
+                            <div className="bg-[#FAF8F5] rounded-2xl rounded-tl-xs px-3.5 py-2.5 border border-[#ECE7DF] shadow-2xs">
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="font-bold text-[#2D2825] text-xs truncate">
+                                    {commenter?.name || 'สมาชิก'}
+                                  </span>
+                                  {commenter?.role && (
+                                    <span className="text-[10px] text-[#746C65] bg-white px-1.5 py-0.5 rounded border border-[#ECE7DF] whitespace-nowrap shrink-0 font-medium">
+                                      {commenter.role}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-[#9E958D] whitespace-nowrap shrink-0">
+                                  {timeAgo(c.timestamp, language)}
                                 </span>
-                                {commenter?.role && (
-                                  <span className="text-[10px] text-[#9E958D]">
-                                    ({commenter.role})
-                                  </span>
-                                )}
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                {/* Comment Translate Button (เฉพาะคอมเมนต์) */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleTranslate(`comment-${c.id}`, c.text)}
-                                  className="text-[10px] font-semibold text-[#3B82F6] hover:underline flex items-center gap-0.5 cursor-pointer"
-                                  title="แปลภาษาคอมเมนต์นี้"
-                                >
-                                  <Globe size={11} />
-                                  <span>{translations[`comment-${c.id}`]?.isVisible ? t('translatedComment', 'แปลแล้ว') : t('translateComment', 'แปล')}</span>
-                                </button>
 
-                                {/* Comment Audio Speaker */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
-                                  className={`p-0.5 rounded-full transition-colors cursor-pointer ${
-                                    speakingCommentId === c.id ? 'text-[#5F8D75] animate-pulse font-bold' : 'text-[#B0A79E] hover:text-[#5F8D75]'
-                                  }`}
-                                  title="ฟังเสียงคอมเมนต์นี้"
-                                >
-                                  <SpeakerHigh size={13} weight={speakingCommentId === c.id ? 'fill' : 'regular'} />
-                                </button>
-                                {c.timestamp && (
-                                  <span className="text-[9px] text-[#B0A79E]">
-                                    {timeAgo(c.timestamp, language)}
-                                  </span>
-                                )}
-                                {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteComment(post.id, c.id)}
-                                    className="text-[#B0A79E] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
-                                    title="ลบคอมเมนต์"
-                                  >
-                                    <Trash size={12} />
-                                  </button>
-                                )}
-                              </div>
+                              <p className="text-[#2D2825] text-xs sm:text-[13px] leading-relaxed break-words">
+                                {c.text}
+                              </p>
+
+                              {/* Translated Comment Box */}
+                              {translations[`comment-${c.id}`]?.isVisible && (
+                                <div className="mt-2 pt-1.5 border-t border-[#BFDBFE]/50 text-xs text-[#1E3A8A] flex items-start gap-1.5 bg-blue-50/60 p-2 rounded-xl">
+                                  <Globe size={13} className="text-[#3B82F6] shrink-0 mt-0.5" />
+                                  <p className="font-medium break-words leading-snug">
+                                    {translations[`comment-${c.id}`]?.isTranslating
+                                      ? t('translating', 'กำลังแปล...')
+                                      : translations[`comment-${c.id}`]?.text || c.text}
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            <p className="text-[#3E3834] leading-relaxed break-words text-xs">
-                              {c.text}
-                            </p>
 
-                            {/* Translated Comment Box (เฉพาะเมื่อกดปุ่มแปล) */}
-                            {translations[`comment-${c.id}`]?.isVisible && (
-                              <div className="mt-1 pt-1 border-t border-[#BFDBFE]/40 text-[11px] text-[#1E3A8A] flex items-start gap-1">
-                                <Globe size={11} className="text-[#3B82F6] shrink-0 mt-0.5" />
-                                <p className="font-medium">
-                                  {translations[`comment-${c.id}`]?.isTranslating
-                                    ? t('translating', 'กำลังแปล...')
-                                    : translations[`comment-${c.id}`]?.text || c.text}
-                                </p>
-                              </div>
-                            )}
+                            {/* Comment Action Links Below Bubble */}
+                            <div className="flex items-center gap-3 px-2 pt-1 text-[11px] text-[#746C65]">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
+                                className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                                  speakingCommentId === c.id ? 'text-[#5F8D75] font-bold animate-pulse' : 'hover:text-[#5F8D75]'
+                                }`}
+                              >
+                                <SpeakerHigh size={12} weight={speakingCommentId === c.id ? 'fill' : 'bold'} />
+                                <span>ฟัง</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleTranslate(`comment-${c.id}`, c.text)}
+                                className="flex items-center gap-1 text-[#3B82F6] hover:underline cursor-pointer"
+                              >
+                                <Globe size={12} />
+                                <span>{translations[`comment-${c.id}`]?.isVisible ? t('translatedComment', 'แปลแล้ว') : t('translateComment', 'แปล')}</span>
+                              </button>
+
+                              {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่') || isAdmin) && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteComment(post.id, c.id)}
+                                  className="flex items-center gap-1 text-[#9E958D] hover:text-red-500 cursor-pointer ml-auto transition-colors"
+                                  title="ลบคอมเมนต์"
+                                >
+                                  <Trash size={12} />
+                                  <span>ลบ</span>
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

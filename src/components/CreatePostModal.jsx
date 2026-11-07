@@ -448,7 +448,7 @@ export default function CreatePostModal({
               }`}
             >
               <Camera size={16} weight={mode === 'photo' ? 'fill' : 'bold'} />
-              <span className="text-[11px] sm:text-xs">ส่งรูปภาพ</span>
+              <span className="text-[11px] sm:text-xs whitespace-nowrap">ส่งรูปภาพ</span>
             </button>
 
             {/* Tab 2: พูดทักทาย */}
@@ -462,7 +462,7 @@ export default function CreatePostModal({
               }`}
             >
               <Microphone size={16} weight={mode === 'voice' ? 'fill' : 'bold'} />
-              <span className="text-[11px] sm:text-xs">พูดทักทาย</span>
+              <span className="text-[11px] sm:text-xs whitespace-nowrap">พูดทักทาย</span>
             </button>
 
             {/* Tab 3: ส่งงานบ้าน */}
@@ -476,7 +476,7 @@ export default function CreatePostModal({
               }`}
             >
               <Broom size={16} weight={mode === 'chore' ? 'fill' : 'bold'} />
-              <span className="text-[11px] sm:text-xs">ส่งงานบ้าน</span>
+              <span className="text-[11px] sm:text-xs whitespace-nowrap">ส่งงานบ้าน</span>
             </button>
           </div>
 
@@ -617,7 +617,7 @@ export default function CreatePostModal({
                       key={idx}
                       type="button"
                       onClick={() => setCaption(chip)}
-                      className="text-[11px] font-medium text-[#5F8D75] bg-[#FAF8F5] hover:bg-[#EEF4F0] px-2.5 py-1 rounded-xl border border-[#ECE7DF] hover:border-[#5F8D75]/40 transition-colors cursor-pointer"
+                      className="text-[11px] font-medium text-[#5F8D75] bg-[#FAF8F5] hover:bg-[#EEF4F0] px-2.5 py-1 rounded-xl border border-[#ECE7DF] hover:border-[#5F8D75]/40 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
                       {chip}
                     </button>
@@ -722,7 +722,7 @@ export default function CreatePostModal({
                           : 'bg-[#FAF8F5] text-[#2D2825] border-[#ECE7DF] hover:bg-[#FFF5EB] hover:border-[#E88D67]/40'
                       }`}
                     >
-                      <span className="truncate">{phrase}</span>
+                      <span className="leading-snug break-words">{phrase}</span>
                       {caption === phrase && <Check size={14} weight="bold" className="shrink-0" />}
                     </button>
                   ))}
@@ -778,7 +778,7 @@ export default function CreatePostModal({
                         }`}
                       >
                         <span className="text-2xl">{chore.emoji}</span>
-                        <span className="text-xs leading-tight text-center font-bold break-words">
+                        <span className="text-[11px] sm:text-xs leading-tight text-center font-bold whitespace-nowrap">
                           {chore.name}
                         </span>
                       </button>
@@ -798,7 +798,7 @@ export default function CreatePostModal({
                     }`}
                   >
                     <PencilSimple size={24} weight="bold" />
-                    <span className="text-xs leading-tight text-center font-bold">พิมพ์เอง...</span>
+                    <span className="text-[11px] sm:text-xs leading-tight text-center font-bold whitespace-nowrap">พิมพ์เอง...</span>
                   </button>
                 </div>
 
@@ -828,7 +828,7 @@ export default function CreatePostModal({
                           key={idx}
                           type="button"
                           onClick={() => setCaption(phrase)}
-                          className="text-[10.5px] text-[#2E7D32] bg-[#EEF4F0] hover:bg-[#E2EFE6] px-2.5 py-1 rounded-lg border border-[#2E7D32]/20 transition-colors text-left cursor-pointer"
+                          className="text-[11px] text-[#2E7D32] bg-[#EEF4F0] hover:bg-[#E2EFE6] px-2.5 py-1.5 rounded-xl border border-[#2E7D32]/20 transition-colors text-left cursor-pointer leading-snug break-words"
                         >
                           "{phrase}"
                         </button>

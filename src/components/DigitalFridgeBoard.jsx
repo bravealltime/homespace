@@ -277,18 +277,18 @@ export default function DigitalFridgeBoard({ isFullPage = false, onNavigateTab }
           <button
             type="button"
             onClick={() => toggleNoteAck(note.id)}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
+            className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap shrink-0 ${
               isAckedByMe
                 ? 'bg-[#5F8D75] text-white shadow-2xs'
                 : 'bg-white/80 hover:bg-white text-[#2D2825] border border-black/10'
             }`}
           >
             <Check size={11} weight="bold" />
-            <span>{isAckedByMe ? 'รับทราบแล้ว 👍' : 'แตะรับทราบ'}</span>
+            <span className="whitespace-nowrap">{isAckedByMe ? 'รับทราบแล้ว 👍' : 'แตะรับทราบ'}</span>
           </button>
 
           {acks.length > 0 && (
-            <span className="text-[10px] text-[#746C65] font-bold truncate">
+            <span className="text-[10px] text-[#746C65] font-bold whitespace-nowrap shrink-0">
               เห็นแล้ว {acks.length} คน
             </span>
           )}

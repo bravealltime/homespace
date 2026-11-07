@@ -45,13 +45,13 @@ export default function FamilyLedgerModal({ isOpen, onClose }) {
               📒
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-black text-[#2D2825] truncate flex items-center gap-1.5">
+              <h2 className="text-sm sm:text-base font-black text-[#2D2825] flex items-center gap-1.5 flex-wrap">
                 <span>สมุดเงินทอง ครอบครัว</span>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold whitespace-nowrap">
                   เชื่อมต่อแล้ว 🟢
                 </span>
               </h2>
-              <p className="text-[11px] text-[#746C65] truncate">
+              <p className="text-[11px] text-[#746C65] leading-snug mt-0.5">
                 บัญชีรายรับ-รายจ่ายครอบครัว ปรับตัวหนังสือโต & มีเสียงอ่านคนแก่
               </p>
             </div>

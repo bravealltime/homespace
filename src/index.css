@@ -25,6 +25,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -33,30 +39,35 @@ html, body {
   padding: 0;
   overflow: hidden;
   overscroll-behavior: none;
-  -webkit-text-size-adjust: 100%;
-  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
   letter-spacing: -0.01em;
 }
 
-/* Ensure proper vertical metrics for Thai vowels and tone marks */
+/* Ensure proper vertical metrics and dictionary-based Thai word breaking */
 p, span, h1, h2, h3, h4, h5, h6, button, input, textarea, label {
-  line-height: 1.45;
+  line-height: 1.5;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: normal;
 }
 
-/* Eliminate microscopic squeezed font sizes on mobile phones */
+/* Better balanced font sizes for mobile phones & pills */
 .text-\[9px\], .text-\[9\.5px\] {
+  font-size: 0.6875rem !important; /* 11px */
+  line-height: 1.35 !important;
+}
+
+.text-\[10px\] {
   font-size: 0.75rem !important; /* 12px */
   line-height: 1.4 !important;
 }
 
-.text-\[10px\] {
-  font-size: 0.8125rem !important; /* 13px */
-  line-height: 1.45 !important;
-}
-
 .text-\[11px\] {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.45 !important;
+  font-size: 0.8125rem !important; /* 13px */
+  line-height: 1.4 !important;
 }
 
 #root {
@@ -110,14 +121,43 @@ button, a, [role="button"] {
   }
 }
 
-/* Typography polish */
+/* Typography & Line Break System for Thai Language */
 h1, h2, h3, h4, h5, h6 {
-  text-wrap: balance;
   letter-spacing: -0.015em;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: normal;
 }
 
-p, span, label {
-  text-wrap: pretty;
+@media (min-width: 640px) {
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+}
+
+p, span, label, div {
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: normal;
+}
+
+/* Prevent awkward word wrapping for badges, chips, tabs, and action button labels */
+.badge,
+.chip,
+[role="tab"],
+.nowrap-badge {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+/* Speech bubbles, quotes, and spoken dialogs */
+.speech-bubble,
+.quote-text {
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: normal;
+  line-height: 1.6;
 }
 
 /* Scanning line animation for chore verification */

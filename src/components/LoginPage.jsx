@@ -432,7 +432,7 @@ export default function LoginPage() {
                   setGeneralError('');
                   setMode('login');
                 }}
-                className="text-[11px] font-bold text-[#5F8D75] hover:underline cursor-pointer"
+                className="text-[11px] font-bold text-[#5F8D75] hover:underline cursor-pointer whitespace-nowrap shrink-0"
               >
                 มีบัญชีแล้ว? ล็อกอิน
               </button>

@@ -136,8 +136,8 @@ export default function CreateStoryModal({ isOpen, onClose }) {
             </div>
             <div>
               <h3 className="text-sm font-black text-[#2D2825] flex items-center gap-1.5">
-                <span>แชร์สตอรี่ครอบครัว</span>
-                <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.5 rounded-full font-bold">
+                <span className="whitespace-nowrap">แชร์สตอรี่ครอบครัว</span>
+                <span className="text-[10px] bg-[#EEF4F0] text-[#5F8D75] px-2 py-0.5 rounded-full font-bold whitespace-nowrap shrink-0">
                   24 ชม.
                 </span>
               </h3>
@@ -163,26 +163,26 @@ export default function CreateStoryModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={() => setMode('photo')}
-              className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap text-xs ${
                 mode === 'photo'
-                  ? 'bg-white text-[#2D2825] shadow-xs'
+                  ? 'bg-white text-[#2D2825] shadow-xs font-bold'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <Camera size={16} weight="bold" />
-              <span>โหมดรูปภาพ (Photo)</span>
+              <Camera size={16} weight="bold" className="shrink-0" />
+              <span className="whitespace-nowrap">โหมดรูปภาพ (Photo)</span>
             </button>
             <button
               type="button"
               onClick={() => setMode('gradient')}
-              className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap text-xs ${
                 mode === 'gradient'
-                  ? 'bg-white text-[#2D2825] shadow-xs'
+                  ? 'bg-white text-[#2D2825] shadow-xs font-bold'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <PaintBrush size={16} weight="bold" />
-              <span>โหมดสีการ์ด (Create)</span>
+              <PaintBrush size={16} weight="bold" className="shrink-0" />
+              <span className="whitespace-nowrap">โหมดสีการ์ด (Create)</span>
             </button>
           </div>
 
@@ -240,7 +240,7 @@ export default function CreateStoryModal({ isOpen, onClose }) {
               <div className="relative z-10 my-auto text-center px-2">
                 {caption && (
                   <div
-                    className={`inline-block max-w-[230px] rounded-2xl px-3 py-2 text-xs font-bold leading-relaxed shadow-sm transition-all ${
+                    className={`inline-block max-w-[230px] rounded-2xl px-3 py-2 text-xs font-bold leading-relaxed break-words shadow-sm transition-all ${
                       textBadge ? 'bg-black/60 backdrop-blur-md text-white' : ''
                     }`}
                     style={{ color: textBadge ? '#ffffff' : textColor }}
@@ -303,12 +303,12 @@ export default function CreateStoryModal({ isOpen, onClose }) {
               </div>
 
               {/* Storage Notice */}
-              <div className="p-2.5 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/20 flex items-center justify-between text-[11px] text-[#5F8D75] font-semibold">
-                <span className="flex items-center gap-1.5">
-                  <span>🔒</span>
-                  <span>บันทึกรูปคมชัด ปลอดภัยเฉพาะในบ้าน</span>
+              <div className="p-2.5 rounded-2xl bg-[#EEF4F0] border border-[#5F8D75]/20 flex items-center justify-between text-[11px] text-[#5F8D75] font-semibold gap-2">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="shrink-0">🔒</span>
+                  <span className="break-words leading-tight">บันทึกรูปคมชัด ปลอดภัยเฉพาะในบ้าน</span>
                 </span>
-                <span className="text-[10px] bg-white px-2 py-0.5 rounded-md font-bold shadow-2xs">
+                <span className="text-[10px] bg-white px-2 py-0.5 rounded-md font-bold shadow-2xs whitespace-nowrap shrink-0">
                   ส่วนตัว
                 </span>
               </div>
@@ -344,12 +344,12 @@ export default function CreateStoryModal({ isOpen, onClose }) {
             <div className="flex items-center justify-between">
               <label htmlFor="story-caption" className="text-xs font-bold text-[#2D2825] flex items-center gap-1">
                 <TextT size={14} weight="bold" className="text-[#E88D67]" />
-                <span>ข้อความบนสตอรี่</span>
+                <span className="whitespace-nowrap">ข้อความบนสตอรี่</span>
               </label>
               <button
                 type="button"
                 onClick={() => setTextBadge(!textBadge)}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   textBadge
                     ? 'bg-[#2D2825] text-white border-[#2D2825]'
                     : 'bg-[#FAF8F5] text-[#746C65] border-[#ECE7DF]'
@@ -400,7 +400,7 @@ export default function CreateStoryModal({ isOpen, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-[#ECE7DF] bg-white hover:bg-[#F2ECE4] text-xs font-bold text-[#746C65] transition-colors cursor-pointer"
+            className="flex-1 py-3 rounded-2xl border border-[#ECE7DF] bg-white hover:bg-[#F2ECE4] text-xs font-bold text-[#746C65] transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
             ยกเลิก
           </button>
@@ -409,14 +409,14 @@ export default function CreateStoryModal({ isOpen, onClose }) {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || (mode === 'photo' && !photo && !caption.trim()) || (mode === 'gradient' && !caption.trim())}
-            className="flex-2 py-3 rounded-2xl bg-gradient-to-r from-[#E88D67] to-[#F15BB5] hover:opacity-95 text-white text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-40 cursor-pointer active:scale-[0.98]"
+            className="flex-2 py-3 rounded-2xl bg-gradient-to-r from-[#E88D67] to-[#F15BB5] hover:opacity-95 text-white text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-40 cursor-pointer active:scale-[0.98] whitespace-nowrap shrink-0"
           >
             {isSubmitting ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                <Sparkle size={16} weight="fill" />
-                <span>แชร์ลงไฮไลท์สตอรี่ ✨</span>
+                <Sparkle size={16} weight="fill" className="shrink-0" />
+                <span className="whitespace-nowrap">แชร์ลงไฮไลท์สตอรี่ ✨</span>
               </>
             )}
           </button>

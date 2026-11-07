@@ -65,28 +65,28 @@ export default function InstallAppModal({ isOpen, onClose }) {
 
         {/* Tab switch between iOS & Android */}
         <div className="p-3 pb-0">
-          <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF]">
+          <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] gap-1">
             <button
               type="button"
               onClick={() => setActivePlatform('ios')}
-              className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activePlatform === 'ios'
                   ? 'bg-white text-[#2D2825] shadow-xs'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <span>🍎 iPhone / iPad</span>
+              <span className="whitespace-nowrap">🍎 iPhone / iPad</span>
             </button>
             <button
               type="button"
               onClick={() => setActivePlatform('android')}
-              className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activePlatform === 'android'
                   ? 'bg-white text-[#2D2825] shadow-xs'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <span>🤖 Android</span>
+              <span className="whitespace-nowrap">🤖 Android</span>
             </button>
           </div>
         </div>

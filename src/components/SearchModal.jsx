@@ -191,7 +191,7 @@ export default function SearchModal({ isOpen, onClose, onSelectMember }) {
                       )}
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-[#2D2825] truncate">
+                        <p className="text-xs font-bold text-[#2D2825] leading-tight break-words">
                           {author?.name}: {post.caption || post.choreName}
                         </p>
                         <p className="text-[10px] text-[#9E958D]">

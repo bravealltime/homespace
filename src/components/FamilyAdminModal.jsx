@@ -129,20 +129,20 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex p-1 bg-[#FAF8F5] border-b border-[#ECE7DF] text-xs font-bold">
+        <div className="flex p-1 bg-[#FAF8F5] border-b border-[#ECE7DF] text-xs font-bold gap-1">
           <button
             type="button"
             onClick={() => setActiveTab('requests')}
-            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'requests'
                 ? 'bg-white text-[#2D2825] shadow-xs'
                 : 'text-[#746C65] hover:text-[#2D2825]'
             }`}
           >
-            <Clock size={15} weight="bold" />
-            <span>คำขอเข้าบ้าน</span>
+            <Clock size={15} weight="bold" className="shrink-0" />
+            <span className="whitespace-nowrap">คำขอเข้าบ้าน</span>
             {pendingRequests.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-[#E88D67] text-white text-[9px] font-black">
+              <span className="px-1.5 py-0.2 rounded-full bg-[#E88D67] text-white text-[9px] font-black shrink-0">
                 {pendingRequests.length}
               </span>
             )}
@@ -151,14 +151,14 @@ export default function FamilyAdminModal({ isOpen, onClose }) {
           <button
             type="button"
             onClick={() => setActiveTab('invite')}
-            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'invite'
                 ? 'bg-white text-[#2D2825] shadow-xs'
                 : 'text-[#746C65] hover:text-[#2D2825]'
             }`}
           >
-            <LinkSimple size={15} weight="bold" />
-            <span>ลิงก์เชิญ & สมาชิก</span>
+            <LinkSimple size={15} weight="bold" className="shrink-0" />
+            <span className="whitespace-nowrap">ลิงก์เชิญ & สมาชิก</span>
           </button>
         </div>
 

@@ -197,30 +197,30 @@ export default function HomeHandbookModal({ isOpen, onClose }) {
 
         {/* Tab Switcher: เบอร์ติดต่อสำคัญ vs บันทึกการดูแลบ้าน */}
         <div className="p-3 pb-0 bg-white border-b border-[#ECE7DF] shrink-0">
-          <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] text-xs font-bold">
+          <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] rounded-2xl border border-[#ECE7DF] text-xs font-bold gap-1">
             <button
               type="button"
               onClick={() => setActiveTab('contacts')}
-              className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 px-2 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap text-[11px] sm:text-xs ${
                 activeTab === 'contacts'
                   ? 'bg-white text-[#2D2825] shadow-xs font-black'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <PhoneCall size={16} weight="bold" className="text-[#5F8D75]" />
-              <span>เบอร์ช่าง & ฉุกเฉิน ({homeContacts.length})</span>
+              <PhoneCall size={16} weight="bold" className="text-[#5F8D75] shrink-0" />
+              <span className="whitespace-nowrap">เบอร์ช่าง & ฉุกเฉิน ({homeContacts.length})</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('maintenance')}
-              className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 px-2 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap text-[11px] sm:text-xs ${
                 activeTab === 'maintenance'
                   ? 'bg-white text-[#2D2825] shadow-xs font-black'
                   : 'text-[#746C65] hover:text-[#2D2825]'
               }`}
             >
-              <Wrench size={16} weight="bold" className="text-[#E88D67]" />
-              <span>บันทึกดูแลบ้าน ({homeMaintenance.length})</span>
+              <Wrench size={16} weight="bold" className="text-[#E88D67] shrink-0" />
+              <span className="whitespace-nowrap">บันทึกดูแลบ้าน ({homeMaintenance.length})</span>
             </button>
           </div>
         </div>
@@ -440,7 +440,7 @@ export default function HomeHandbookModal({ isOpen, onClose }) {
                           </div>
                         </div>
 
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full border shrink-0 ${status.badgeClass}`}>
+                        <span className={`text-[10px] px-2.5 py-1 rounded-full border shrink-0 whitespace-nowrap ${status.badgeClass}`}>
                           {status.text}
                         </span>
                       </div>
@@ -468,10 +468,10 @@ export default function HomeHandbookModal({ isOpen, onClose }) {
                         {m.technicianPhone ? (
                           <a
                             href={`tel:${m.technicianPhone}`}
-                            className="text-[11px] font-bold text-[#5F8D75] hover:underline flex items-center gap-1 no-underline"
+                            className="text-[11px] font-bold text-[#5F8D75] hover:underline flex items-center gap-1 no-underline whitespace-nowrap"
                           >
-                            <PhoneCall size={13} weight="fill" />
-                            <span>โทรหาช่าง ({m.technicianPhone})</span>
+                            <PhoneCall size={13} weight="fill" className="shrink-0" />
+                            <span className="whitespace-nowrap">โทรหาช่าง ({m.technicianPhone})</span>
                           </a>
                         ) : (
                           <span />
@@ -494,10 +494,10 @@ export default function HomeHandbookModal({ isOpen, onClose }) {
                             type="button"
                             disabled={completingId === m.id}
                             onClick={() => handleCompleteItem(m)}
-                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#5F8D75] to-[#4E7661] text-white text-xs font-black shadow-xs hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#5F8D75] to-[#4E7661] text-white text-xs font-black shadow-xs hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                           >
-                            <CheckCircle size={15} weight="bold" />
-                            <span>{completingId === m.id ? 'กำลังบันทึก...' : 'บันทึกว่าทำแล้ว (+25 แต้ม)'}</span>
+                            <CheckCircle size={15} weight="bold" className="shrink-0" />
+                            <span className="whitespace-nowrap">{completingId === m.id ? 'กำลังบันทึก...' : 'บันทึกว่าทำแล้ว (+25 แต้ม)'}</span>
                           </button>
                         </div>
                       </div>

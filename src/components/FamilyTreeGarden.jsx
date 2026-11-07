@@ -360,9 +360,9 @@ export function FamilyTreeCard({ onOpenGarden }) {
             </div>
 
             {/* Available Water Drops Pill */}
-            <div className="flex items-center gap-1 mt-1 text-blue-600 text-xs font-bold">
-              <Drop size={14} weight="fill" className="text-blue-500 animate-pulse" />
-              <span>{waterDrops} หยดน้ำสะสม</span>
+            <div className="flex items-center gap-1 mt-1 text-blue-600 text-xs font-bold whitespace-nowrap">
+              <Drop size={14} weight="fill" className="text-blue-500 animate-pulse shrink-0" />
+              <span className="whitespace-nowrap">{waterDrops} หยดน้ำสะสม</span>
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ export function FamilyTreeCard({ onOpenGarden }) {
           type="button"
           onClick={handleQuickWater}
           disabled={isWatering}
-          className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 ${
+          className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 whitespace-nowrap ${
             waterDrops > 0
               ? 'bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white shadow-blue-200'
               : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] border border-[#ECE7DF]'
@@ -380,7 +380,7 @@ export function FamilyTreeCard({ onOpenGarden }) {
           title="รดน้ำต้นไม้ 1 หยด"
         >
           <Drop size={16} weight="fill" className={waterDrops > 0 ? 'text-white' : 'text-blue-400'} />
-          <span>รดน้ำ 💧</span>
+          <span className="whitespace-nowrap">รดน้ำ 💧</span>
         </button>
       </div>
 
@@ -543,7 +543,7 @@ export function FamilyGardenModal({ isOpen, onClose }) {
             </div>
 
             {/* Tree Description */}
-            <p className="text-xs sm:text-sm text-center text-[#554D47] font-medium max-w-xs mt-1 z-10">
+            <p className="text-xs sm:text-sm text-center text-[#554D47] font-medium max-w-sm mt-1 z-10 leading-relaxed break-words px-2">
               "{stageInfo.desc}"
             </p>
 
@@ -604,33 +604,33 @@ export function FamilyGardenModal({ isOpen, onClose }) {
                 type="button"
                 onClick={() => handleWater(1)}
                 disabled={isWatering || waterDrops < 1}
-                className="py-3 px-2 rounded-2xl bg-white hover:bg-blue-50 border border-[#ECE7DF] hover:border-blue-300 text-[#2D2825] font-black text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-2xs"
+                className="py-3 px-1.5 sm:px-2 rounded-2xl bg-white hover:bg-blue-50 border border-[#ECE7DF] hover:border-blue-300 text-[#2D2825] font-black text-[11px] sm:text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-2xs"
               >
                 <span className="text-lg">💧</span>
-                <span>รด 1 หยด</span>
-                <span className="text-[10px] text-emerald-600 font-bold">+10 แต้ม</span>
+                <span className="whitespace-nowrap">รด 1 หยด</span>
+                <span className="text-[10px] text-emerald-600 font-bold whitespace-nowrap">+10 แต้ม</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleWater(3)}
                 disabled={isWatering || waterDrops < 3}
-                className="py-3 px-2 rounded-2xl bg-white hover:bg-blue-50 border border-[#ECE7DF] hover:border-blue-300 text-[#2D2825] font-black text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-2xs"
+                className="py-3 px-1.5 sm:px-2 rounded-2xl bg-white hover:bg-blue-50 border border-[#ECE7DF] hover:border-blue-300 text-[#2D2825] font-black text-[11px] sm:text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-2xs"
               >
                 <span className="text-lg">💧💧💧</span>
-                <span>รด 3 หยด</span>
-                <span className="text-[10px] text-emerald-600 font-bold">+30 แต้ม</span>
+                <span className="whitespace-nowrap">รด 3 หยด</span>
+                <span className="text-[10px] text-emerald-600 font-bold whitespace-nowrap">+30 แต้ม</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleWater(Math.min(waterDrops, 5))}
                 disabled={isWatering || waterDrops <= 0}
-                className="py-3 px-2 rounded-2xl bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white font-black text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-sm"
+                className="py-3 px-1.5 sm:px-2 rounded-2xl bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white font-black text-[11px] sm:text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex flex-col items-center justify-center gap-1 shadow-sm"
               >
                 <span className="text-lg">🚿</span>
-                <span>รด {Math.min(waterDrops, 5)} หยด</span>
-                <span className="text-[10px] text-white/90 font-bold">+{Math.min(waterDrops, 5) * 10} แต้ม</span>
+                <span className="whitespace-nowrap">รด {Math.min(waterDrops, 5)} หยด</span>
+                <span className="text-[10px] text-white/90 font-bold whitespace-nowrap">+{Math.min(waterDrops, 5) * 10} แต้ม</span>
               </button>
             </div>
           </div>

@@ -137,7 +137,7 @@ export default function FamilySummary() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
                 isActive
                   ? 'bg-[#5F8D75] text-white shadow-2xs'
                   : 'text-[#746C65] hover:bg-[#FAF8F5] hover:text-[#2D2825]'
@@ -232,7 +232,7 @@ export default function FamilySummary() {
                   <p className="text-xs font-black text-[#2D2825] mt-1.5 truncate max-w-full">
                     {ranking[1].name}
                   </p>
-                  <span className="text-xs font-black text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-lg mt-0.5">
+                  <span className="text-xs font-black text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-lg mt-0.5 whitespace-nowrap">
                     {ranking[1].score} แต้ม
                   </span>
 
@@ -255,7 +255,7 @@ export default function FamilySummary() {
                   <p className="text-sm font-black text-[#2D2825] mt-1.5 truncate max-w-full">
                     {ranking[0].name}
                   </p>
-                  <span className="text-xs font-black text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-lg mt-0.5 shadow-2xs">
+                  <span className="text-xs font-black text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-lg mt-0.5 shadow-2xs whitespace-nowrap">
                     {ranking[0].score} แต้ม
                   </span>
 
@@ -278,7 +278,7 @@ export default function FamilySummary() {
                   <p className="text-xs font-black text-[#2D2825] mt-1.5 truncate max-w-full">
                     {ranking[2].name}
                   </p>
-                  <span className="text-xs font-black text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-lg mt-0.5">
+                  <span className="text-xs font-black text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-lg mt-0.5 whitespace-nowrap">
                     {ranking[2].score} แต้ม
                   </span>
 

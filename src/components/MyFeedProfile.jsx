@@ -612,35 +612,65 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                 className="bg-white rounded-3xl border border-[#ECE7DF] shadow-xs overflow-hidden"
               >
                 {/* Post Header */}
-                <div className="p-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
+                <div className="p-3.5 pb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <MemberAvatar member={activeMember} size="md" />
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-[#2D2825]">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs sm:text-sm font-bold text-[#2D2825] whitespace-nowrap">
                           {activeMember?.name}
                         </span>
-                        <span className="text-[10px] text-[#9E958D]">({activeMember?.role})</span>
+                        {activeMember?.role && (
+                          <span className="text-[10px] text-[#746C65] bg-[#FAF8F5] px-1.5 py-0.5 rounded-md border border-[#ECE7DF] whitespace-nowrap shrink-0">
+                            {activeMember.role}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[10px] text-[#9E958D]">{timeAgo(post.timestamp)}</p>
+                      <p className="text-[10px] sm:text-[11px] text-[#9E958D] whitespace-nowrap mt-0.5">{timeAgo(post.timestamp)}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full bg-[#EEF4F0] text-[#5F8D75] text-[10px] font-black border border-[#5F8D75]/20">
-                      +{post.points} แต้ม
-                    </span>
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     {isMe && (
                       <button
                         type="button"
                         onClick={() => handleDeletePost(post.id)}
-                        className="p-1 text-[#9E958D] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        className="p-1.5 text-[#9E958D] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                         title="ลบโพสต์นี้"
                       >
                         <Trash size={16} weight="bold" />
                       </button>
                     )}
                   </div>
+                </div>
+
+                {/* Dedicated Activity & Points Badges Row */}
+                <div className="px-3.5 pb-2.5 flex items-center gap-1.5 flex-wrap">
+                  {isChore ? (
+                    <>
+                      <span className="px-2.5 py-1 rounded-full bg-[#EEF4F0] text-[#3B5D4C] text-[11px] font-bold border border-[#5F8D75]/25 flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span>{post.choreEmoji || '🧹'}</span>
+                        <span>{post.choreName || (t ? t('choreTag', 'งานบ้าน') : 'งานบ้าน')}</span>
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-black border border-emerald-200/80 whitespace-nowrap shrink-0 shadow-2xs">
+                        +{post.points} แต้ม
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-[#FFFBEB] text-[#92400E] text-[11px] font-bold border border-amber-200/80 flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span>✨</span>
+                        <span>สะอาดเรียบร้อย</span>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="px-2.5 py-1 rounded-full bg-[#FFF5EB] text-[#C84B31] text-[11px] font-bold border border-[#E88D67]/25 flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span>📸</span>
+                        <span>{t ? t('storyTag', 'เรื่องราว') : 'เรื่องราว'}</span>
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 text-[11px] font-black border border-orange-200/80 whitespace-nowrap shrink-0 shadow-2xs">
+                        +{post.points} แต้ม
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Post Media */}
@@ -682,73 +712,61 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                   )
                 )}
 
-                {/* Action Bar (Likes & Comments Count) */}
-                <div className="px-3.5 pt-3 pb-1 flex items-center justify-between">
+                {/* Social Action Bar (Like, Comment & Audio Read) */}
+                <div className="px-3.5 pt-2.5 pb-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => likePost(post.id, currentUser?.id)}
-                      className="flex items-center gap-1 text-[#2D2825] hover:text-[#E88D67] transition-all active:scale-125 cursor-pointer"
+                      className="flex items-center gap-1.5 text-[#2D2825] hover:text-[#E88D67] transition-all active:scale-125 cursor-pointer"
                     >
                       <Heart
                         size={22}
                         weight={post.isLiked ? 'fill' : 'regular'}
                         className={post.isLiked ? 'text-[#E88D67]' : 'text-[#2D2825]'}
                       />
+                      <span className="text-xs font-bold text-[#2D2825]">
+                        {post.likes || 0}
+                      </span>
                     </button>
-                    <span className="flex items-center gap-1 text-xs text-[#746C65] font-bold">
+                    <span className="flex items-center gap-1.5 text-xs text-[#2D2825] font-bold">
                       <ChatCircle size={22} weight="regular" />
                       <span>{commentsList.length}</span>
                     </span>
                   </div>
 
-                  {isChore && (
-                    <span className="text-[10px] font-bold text-[#5F8D75] bg-[#EEF4F0] px-2 py-0.5 rounded-full flex items-center gap-1 border border-[#5F8D75]/20">
-                      <span>✨</span>
-                      <span>สะอาดเรียบร้อย</span>
-                    </span>
+                  {/* Audio Read Button (Cleanly in Action Bar) */}
+                  {post.caption && (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSpeakPost(post.id, `${activeMember?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
+                      className={`shrink-0 px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 border text-xs font-bold whitespace-nowrap ${
+                        speakingPostId === post.id
+                          ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
+                          : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#5F8D75] hover:text-[#476E5B] border-[#5F8D75]/30'
+                      }`}
+                      title="ฟังเสียงอ่านข้อความนี้"
+                    >
+                      <SpeakerHigh size={14} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
+                      <span className="whitespace-nowrap">{speakingPostId === post.id ? (t ? t('stopListen', 'หยุดฟัง') : 'หยุดฟัง') : (t ? t('listen', 'ฟังเสียง') : 'ฟังเสียง')}</span>
+                    </button>
                   )}
                 </div>
 
                 {/* Likes count */}
-                <div className="px-3.5 pb-1">
-                  {(post.likes || 0) > 0 ? (
-                    <p className="text-xs font-bold text-[#2D2825]">
-                      ถูกใจ {post.likes} คน
+                {(post.likes || 0) > 0 && (
+                  <div className="px-3.5 pb-1">
+                    <p className="text-[11px] text-[#746C65] font-semibold">
+                      ถูกใจโดยคนในบ้าน {post.likes} คน
                     </p>
-                  ) : (
-                    <p className="text-[11px] text-[#9E958D]">
-                      ยังไม่มีคนกดถูกใจ
-                    </p>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {/* Caption with Audio Speaker */}
+                {/* Caption (Full Width Typography) */}
                 {post.caption && (
-                  <div className="px-3.5 pb-2 text-xs leading-relaxed text-[#2D2825]">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <span className="font-bold mr-1.5">{activeMember?.name}:</span>
-                        <span>{post.caption}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* Audio Read Button (🔊) */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSpeakPost(post.id, `${activeMember?.name || 'สมาชิก'} เล่าว่า ${post.caption}`)}
-                          className={`shrink-0 px-2 py-0.5 rounded-full transition-all cursor-pointer flex items-center gap-1 border text-[10px] font-bold ${
-                            speakingPostId === post.id
-                              ? 'bg-[#5F8D75] text-white border-[#5F8D75] animate-pulse shadow-xs'
-                              : 'bg-[#FAF8F5] hover:bg-[#EEF4F0] text-[#746C65] hover:text-[#5F8D75] border-[#ECE7DF]'
-                          }`}
-                          title="ฟังเสียงอ่านข้อความนี้"
-                        >
-                          <SpeakerHigh size={12} weight={speakingPostId === post.id ? 'fill' : 'bold'} />
-                          <span>{speakingPostId === post.id ? (t ? t('stopListen', 'หยุด') : 'หยุด') : (t ? t('listen', 'ฟัง') : 'ฟัง')}</span>
-                        </button>
-                      </div>
-                    </div>
+                  <div className="px-3.5 pb-2.5 text-xs sm:text-sm leading-relaxed text-[#2D2825] break-words">
+                    <span className="font-bold text-[#2D2825] mr-1.5">{activeMember?.name}:</span>
+                    <span className="text-[#3E3834] break-words">{post.caption}</span>
                   </div>
                 )}
 
@@ -762,72 +780,81 @@ export default function MyFeedProfile({ onNavigateTab, viewingMember, onBackToMe
                   </p>
 
                   {commentsList.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {commentsList.map((c) => {
                         const commenter = members.find((m) => m.id === c.memberId);
                         return (
-                          <div key={c.id} className="flex items-start gap-2">
+                          <div key={c.id} className="flex items-start gap-2.5">
                             <MemberAvatar member={commenter} size="comment" />
-                            <div className="flex-1 bg-[#FAF8F5] rounded-2xl rounded-tl-xs px-3 py-2 border border-[#ECE7DF]/80 text-xs shadow-2xs">
-                              <div className="flex items-center justify-between gap-1 mb-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-[#2D2825] text-xs">
-                                    {commenter?.name || 'สมาชิก'}
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-[#FAF8F5] rounded-2xl rounded-tl-xs px-3.5 py-2.5 border border-[#ECE7DF] shadow-2xs">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="font-bold text-[#2D2825] text-xs truncate">
+                                      {commenter?.name || 'สมาชิก'}
+                                    </span>
+                                    {commenter?.role && (
+                                      <span className="text-[10px] text-[#746C65] bg-white px-1.5 py-0.5 rounded border border-[#ECE7DF] whitespace-nowrap shrink-0 font-medium">
+                                        {commenter.role}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-[#9E958D] whitespace-nowrap shrink-0">
+                                    {timeAgo(c.timestamp, language)}
                                   </span>
-                                  {commenter?.role && (
-                                    <span className="text-[10px] text-[#9E958D]">({commenter.role})</span>
-                                  )}
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                  {/* Comment Translate Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleTranslate(`comment-${c.id}`, c.text)}
-                                    className="text-[10px] font-semibold text-[#3B82F6] hover:underline flex items-center gap-0.5 cursor-pointer"
-                                    title="แปลภาษาคอมเมนต์นี้"
-                                  >
-                                    <Globe size={11} />
-                                    <span>{translations[`comment-${c.id}`]?.isVisible ? (t ? t('translatedComment', 'แปลแล้ว') : 'แปลแล้ว') : (t ? t('translateComment', 'แปล') : 'แปล')}</span>
-                                  </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
-                                    className={`p-0.5 rounded-full transition-colors cursor-pointer ${
-                                      speakingCommentId === c.id ? 'text-[#5F8D75] animate-pulse font-bold' : 'text-[#B0A79E] hover:text-[#5F8D75]'
-                                    }`}
-                                    title="ฟังเสียงคอมเมนต์นี้"
-                                  >
-                                    <SpeakerHigh size={13} weight={speakingCommentId === c.id ? 'fill' : 'regular'} />
-                                  </button>
-                                  {c.timestamp && (
-                                    <span className="text-[9px] text-[#B0A79E]">{timeAgo(c.timestamp, language)}</span>
-                                  )}
-                                  {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => deleteComment(post.id, c.id)}
-                                      className="text-[#B0A79E] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
-                                      title="ลบคอมเมนต์"
-                                    >
-                                      <Trash size={12} />
-                                    </button>
-                                  )}
-                                </div>
+                                <p className="text-[#2D2825] text-xs sm:text-[13px] leading-relaxed break-words">
+                                  {c.text}
+                                </p>
+
+                                {/* Translated Comment Box */}
+                                {translations[`comment-${c.id}`]?.isVisible && (
+                                  <div className="mt-2 pt-1.5 border-t border-[#BFDBFE]/50 text-xs text-[#1E3A8A] flex items-start gap-1.5 bg-blue-50/60 p-2 rounded-xl">
+                                    <Globe size={13} className="text-[#3B82F6] shrink-0 mt-0.5" />
+                                    <p className="font-medium break-words leading-snug">
+                                      {translations[`comment-${c.id}`]?.isTranslating
+                                        ? (t ? t('translating', 'กำลังแปล...') : 'กำลังแปล...')
+                                        : translations[`comment-${c.id}`]?.text || c.text}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-[#3E3834] leading-relaxed break-words text-xs">{c.text}</p>
 
-                              {/* Translated Comment Box */}
-                              {translations[`comment-${c.id}`]?.isVisible && (
-                                <div className="mt-1 pt-1 border-t border-[#BFDBFE]/40 text-[11px] text-[#1E3A8A] flex items-start gap-1">
-                                  <Globe size={11} className="text-[#3B82F6] shrink-0 mt-0.5" />
-                                  <p className="font-medium">
-                                    {translations[`comment-${c.id}`]?.isTranslating
-                                      ? (t ? t('translating', 'กำลังแปล...') : 'กำลังแปล...')
-                                      : translations[`comment-${c.id}`]?.text || c.text}
-                                  </p>
-                                </div>
-                              )}
+                              {/* Comment Action Links Below Bubble */}
+                              <div className="flex items-center gap-3 px-2 pt-1 text-[11px] text-[#746C65]">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSpeakComment(c.id, `${commenter?.name || 'สมาชิก'} บอกว่า ${c.text}`)}
+                                  className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                                    speakingCommentId === c.id ? 'text-[#5F8D75] font-bold animate-pulse' : 'hover:text-[#5F8D75]'
+                                  }`}
+                                >
+                                  <SpeakerHigh size={12} weight={speakingCommentId === c.id ? 'fill' : 'bold'} />
+                                  <span>ฟัง</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleTranslate(`comment-${c.id}`, c.text)}
+                                  className="flex items-center gap-1 text-[#3B82F6] hover:underline cursor-pointer"
+                                >
+                                  <Globe size={12} />
+                                  <span>{translations[`comment-${c.id}`]?.isVisible ? (t ? t('translatedComment', 'แปลแล้ว') : 'แปลแล้ว') : (t ? t('translateComment', 'แปล') : 'แปล')}</span>
+                                </button>
+
+                                {(c.memberId === currentUser?.id || post.memberId === currentUser?.id || currentUser?.role?.includes('พ่อ') || currentUser?.role?.includes('แม่')) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteComment(post.id, c.id)}
+                                    className="flex items-center gap-1 text-[#9E958D] hover:text-red-500 cursor-pointer ml-auto transition-colors"
+                                    title="ลบคอมเมนต์"
+                                  >
+                                    <Trash size={12} />
+                                    <span>ลบ</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );

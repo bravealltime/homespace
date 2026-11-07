@@ -229,6 +229,40 @@ export function initDb() {
       FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS ledger_books (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      name TEXT NOT NULL,
+      icon TEXT DEFAULT '👴',
+      description TEXT,
+      pin TEXT DEFAULT '1234',
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ledger_transactions (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      bookId TEXT NOT NULL,
+      type TEXT NOT NULL,
+      amount REAL NOT NULL,
+      category TEXT NOT NULL,
+      note TEXT,
+      date TEXT NOT NULL,
+      receiptPhoto TEXT,
+      createdAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ledger_reminders (
+      id TEXT PRIMARY KEY,
+      familyId TEXT DEFAULT 'family-main',
+      bookId TEXT,
+      title TEXT NOT NULL,
+      amount REAL DEFAULT 0,
+      dueDate TEXT NOT NULL,
+      paid INTEGER DEFAULT 0,
+      createdAt INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS family_sos_alerts (
       id TEXT PRIMARY KEY,
       familyId TEXT DEFAULT 'family-main',

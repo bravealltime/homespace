@@ -2137,6 +2137,170 @@ app.post('/api/sos/:id/resolve', async (req, res) => {
   }
 });
 
+// ========================================================
+// 17. FAMILY LEDGER API (สมุดเงินทอง ครอบครัว)
+// ========================================================
+
+// 1. Get full ledger state (books + transactions + reminders)
+app.get('/api/ledger/state', (req, res) => {
+  try {
+    const familyId = req.query.familyId || 'family-main';
+    const books = db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId);
+    const transactions = db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId);
+    const reminders = db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId);
+
+    res.json({
+      success: true,
+      familyId,
+      books,
+      transactions,
+      reminders
+    });
+  } catch (err) {
+    console.error('Error fetching ledger state:', err);
+    res.status(500).json({ error: 'Failed to fetch ledger state' });
+  }
+});
+
+// 2. Full synchronization / batch push (used on first connect or sync)
+app.post('/api/ledger/sync', async (req, res) => {
+  try {
+    const { familyId = 'family-main', books = [], transactions = [], reminders = [] } = req.body;
+
+    const tx = db.transaction(() => {
+      // Books
+      if (Array.isArray(books) && books.length > 0) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_books (id, familyId, name, icon, description, pin, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const b of books) {
+          stmt.run(b.id, familyId, b.name, b.icon || '👴', b.description || '', b.pin || '1234', b.createdAt || Date.now());
+        }
+      }
+
+      // Transactions
+      if (Array.isArray(transactions) && transactions.length > 0) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_transactions (id, familyId, bookId, type, amount, category, note, date, receiptPhoto, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const t of transactions) {
+          stmt.run(t.id, familyId, t.bookId, t.type, Number(t.amount || 0), t.category, t.note || '', t.date, t.receiptPhoto || null, t.createdAt || Date.now());
+        }
+      }
+
+      // Reminders
+      if (Array.isArray(reminders) && reminders.length > 0) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_reminders (id, familyId, bookId, title, amount, dueDate, paid, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const r of reminders) {
+          stmt.run(r.id, familyId, r.bookId || null, r.title, Number(r.amount || 0), r.dueDate, r.paid ? 1 : 0, r.createdAt || Date.now());
+        }
+      }
+    });
+
+    tx();
+    await pushToCloud().catch(err => console.warn('Push cloud after ledger sync:', err.message));
+
+    // Return the merged fresh state from DB
+    const allBooks = db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId);
+    const allTransactions = db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId);
+    const allReminders = db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId);
+
+    res.json({
+      success: true,
+      books: allBooks,
+      transactions: allTransactions,
+      reminders: allReminders
+    });
+  } catch (err) {
+    console.error('Error syncing ledger:', err);
+    res.status(500).json({ error: 'Failed to sync ledger data' });
+  }
+});
+
+// 3. Add or update single transaction
+app.post('/api/ledger/transaction', async (req, res) => {
+  try {
+    const { id, familyId = 'family-main', bookId, type, amount, category, note = '', date, receiptPhoto = null, createdAt } = req.body;
+    if (!bookId || !type || amount === undefined || !category || !date) {
+      return res.status(400).json({ error: 'Missing required transaction fields' });
+    }
+
+    const txId = id || `tx-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const txCreated = createdAt || Date.now();
+
+    db.prepare(`
+      INSERT OR REPLACE INTO ledger_transactions (id, familyId, bookId, type, amount, category, note, date, receiptPhoto, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(txId, familyId, bookId, type, Number(amount), category, note, date, receiptPhoto, txCreated);
+
+    await pushToCloud().catch(err => console.warn('Push cloud after transaction:', err.message));
+
+    const saved = db.prepare('SELECT * FROM ledger_transactions WHERE id = ?').get(txId);
+    res.json({ success: true, transaction: saved });
+  } catch (err) {
+    console.error('Error saving transaction:', err);
+    res.status(500).json({ error: 'Failed to save transaction' });
+  }
+});
+
+// 4. Delete single transaction
+app.delete('/api/ledger/transaction/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM ledger_transactions WHERE id = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete transaction:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting transaction:', err);
+    res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+});
+
+// 5. Add or update single book (profile)
+app.post('/api/ledger/book', async (req, res) => {
+  try {
+    const { id, familyId = 'family-main', name, icon = '👴', description = '', pin = '1234', createdAt } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Book name required' });
+    }
+
+    const bookId = id || `book-${Date.now()}`;
+    const bookCreated = createdAt || Date.now();
+
+    db.prepare(`
+      INSERT OR REPLACE INTO ledger_books (id, familyId, name, icon, description, pin, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(bookId, familyId, name, icon, description, pin, bookCreated);
+
+    await pushToCloud().catch(err => console.warn('Push cloud after book save:', err.message));
+
+    const saved = db.prepare('SELECT * FROM ledger_books WHERE id = ?').get(bookId);
+    res.json({ success: true, book: saved });
+  } catch (err) {
+    console.error('Error saving book:', err);
+    res.status(500).json({ error: 'Failed to save book' });
+  }
+});
+
+// 6. Delete book
+app.delete('/api/ledger/book/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM ledger_books WHERE id = ?').run(id);
+    db.prepare('DELETE FROM ledger_transactions WHERE bookId = ?').run(id);
+    await pushToCloud().catch(err => console.warn('Push cloud after delete book:', err.message));
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting book:', err);
+    res.status(500).json({ error: 'Failed to delete book' });
+  }
+});
+
 // Start Express Server (only when not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, '0.0.0.0', () => {

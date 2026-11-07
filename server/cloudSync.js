@@ -40,6 +40,9 @@ export function exportDbToJson() {
       family_tree: db.prepare('SELECT * FROM family_tree').all(),
       tree_watering_log: db.prepare('SELECT * FROM tree_watering_log').all(),
       family_sos_alerts: db.prepare('SELECT * FROM family_sos_alerts').all(),
+      ledger_books: db.prepare('SELECT * FROM ledger_books').all(),
+      ledger_transactions: db.prepare('SELECT * FROM ledger_transactions').all(),
+      ledger_reminders: db.prepare('SELECT * FROM ledger_reminders').all(),
     };
   } catch (err) {
     console.error('[CloudSync] exportDbToJson error:', err.message);
@@ -334,6 +337,39 @@ export function importJsonToDb(data) {
         `);
         for (const l of data.tree_watering_log) {
           stmt.run(l.id, l.treeId || 'tree-main', l.memberId, l.amount || 1, l.message || null, l.timestamp || Date.now());
+        }
+      }
+
+      // 19. Ledger Books (สมุดบัญชี)
+      if (Array.isArray(data.ledger_books)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_books (id, familyId, name, icon, description, pin, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const b of data.ledger_books) {
+          stmt.run(b.id, b.familyId || 'family-main', b.name, b.icon || '👴', b.description || '', b.pin || '1234', b.createdAt || Date.now());
+        }
+      }
+
+      // 20. Ledger Transactions (รายการเงินรับ-จ่าย)
+      if (Array.isArray(data.ledger_transactions)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_transactions (id, familyId, bookId, type, amount, category, note, date, receiptPhoto, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const t of data.ledger_transactions) {
+          stmt.run(t.id, t.familyId || 'family-main', t.bookId, t.type, Number(t.amount || 0), t.category, t.note || '', t.date, t.receiptPhoto || null, t.createdAt || Date.now());
+        }
+      }
+
+      // 21. Ledger Reminders (การแจ้งเตือนบิล)
+      if (Array.isArray(data.ledger_reminders)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO ledger_reminders (id, familyId, bookId, title, amount, dueDate, paid, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const r of data.ledger_reminders) {
+          stmt.run(r.id, r.familyId || 'family-main', r.bookId || null, r.title, Number(r.amount || 0), r.dueDate, r.paid ? 1 : 0, r.createdAt || Date.now());
         }
       }
 

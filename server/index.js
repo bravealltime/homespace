@@ -2315,9 +2315,19 @@ app.post('/api/sos/:id/resolve', async (req, res) => {
 app.get('/api/ledger/state', (req, res) => {
   try {
     const familyId = req.query.familyId || 'family-main';
-    const books = db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId);
-    const transactions = db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId);
-    const reminders = db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId);
+    const isLegacyMain = familyId === 'family-main';
+
+    const books = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_books WHERE familyId = ? ORDER BY createdAt ASC').all(familyId);
+
+    const transactions = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? ORDER BY date DESC, createdAt DESC').all(familyId);
+
+    const reminders = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? ORDER BY dueDate ASC').all(familyId);
 
     res.json({
       success: true,
@@ -2376,9 +2386,18 @@ app.post('/api/ledger/sync', async (req, res) => {
     await pushToCloud().catch(err => console.warn('Push cloud after ledger sync:', err.message));
 
     // Return the merged fresh state from DB
-    const allBooks = db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId);
-    const allTransactions = db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId);
-    const allReminders = db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId);
+    const isLegacyMain = familyId === 'family-main';
+    const allBooks = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_books WHERE familyId = ? OR familyId IS NULL ORDER BY createdAt ASC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_books WHERE familyId = ? ORDER BY createdAt ASC').all(familyId);
+
+    const allTransactions = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? OR familyId IS NULL ORDER BY date DESC, createdAt DESC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_transactions WHERE familyId = ? ORDER BY date DESC, createdAt DESC').all(familyId);
+
+    const allReminders = isLegacyMain
+      ? db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? OR familyId IS NULL ORDER BY dueDate ASC').all(familyId)
+      : db.prepare('SELECT * FROM ledger_reminders WHERE familyId = ? ORDER BY dueDate ASC').all(familyId);
 
     res.json({
       success: true,

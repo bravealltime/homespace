@@ -8,6 +8,12 @@ import { fileURLToPath } from 'url';
 import db, { initDb } from './db.js';
 import { isSupabaseConfigured, uploadBufferToSupabase, uploadBase64ToSupabase } from './supabase.js';
 import { pullFromCloud, pushToCloud, ensureCloudSynced } from './cloudSync.js';
+import {
+  saveDeviceToken,
+  removeDeviceToken,
+  sendPushToMembers,
+  isFirebaseConfigured,
+} from './pushService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -374,6 +380,15 @@ app.post('/api/auth/register-request', async (req, res) => {
       );
     }
 
+    if (admins.length > 0) {
+      sendPushToMembers({
+        memberIds: admins.map(a => a.id),
+        title: '👋 มีคำขอเข้าร่วมครอบครัวใหม่',
+        body: `${name.trim()} (${role || 'สมาชิก'}) ส่งคำขอเข้าร่วมครอบครัว กรุณาตรวจสอบและอนุมัติ`,
+        data: { type: 'join_request', memberId: newId },
+      }).catch(err => console.warn('Join request push error:', err.message));
+    }
+
     // Immediately push new pending member to Supabase cloud storage
     await pushToCloud();
 
@@ -473,6 +488,13 @@ app.post('/api/families/:familyId/approve', async (req, res) => {
       senderId,
       Date.now()
     );
+
+    sendPushToMembers({
+      memberIds: [memberId],
+      title: '🎉 ยินดีต้อนรับสู่ครอบครัว!',
+      body: 'คุณได้รับการอนุมัติให้เข้าสู่ครอบครัวเรียบร้อยแล้ว สามารถเข้าใช้งาน HomeSpace ได้ทันที',
+      data: { type: 'approval' },
+    }).catch(err => console.warn('Approval push error:', err.message));
 
     // Sync approved member to Supabase Cloud Storage
     await pushToCloud();
@@ -985,6 +1007,14 @@ app.post('/api/posts/chore', async (req, res) => {
     tx();
     await pushToCloud().catch(err => console.warn('Push cloud after chore post:', err.message));
 
+    const author = db.prepare('SELECT name FROM members WHERE id = ?').get(memberId);
+    sendPushToMembers({
+      excludeMemberId: memberId,
+      title: '✨ ภารกิจบ้านสำเร็จ!',
+      body: `${author?.name || 'สมาชิก'} ทำงานบ้าน "${choreName || 'งานบ้าน'}" สำเร็จแล้ว (+${points} คะแนน) 🎉`,
+      data: { type: 'chore', postId },
+    }).catch(err => console.warn('Chore push error:', err.message));
+
     const created = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     res.json({
       success: true,
@@ -1074,6 +1104,14 @@ app.post('/api/posts/routine', async (req, res) => {
     tx();
     await pushToCloud().catch(err => console.warn('Push cloud after chore post:', err.message));
 
+    const author = db.prepare('SELECT name FROM members WHERE id = ?').get(memberId);
+    sendPushToMembers({
+      excludeMemberId: memberId,
+      title: '✨ ภารกิจบ้านสำเร็จ!',
+      body: `${author?.name || 'สมาชิก'} ทำงานบ้าน "${choreName || 'งานบ้าน'}" สำเร็จแล้ว (+${points} คะแนน) 🎉`,
+      data: { type: 'chore', postId },
+    }).catch(err => console.warn('Chore push error:', err.message));
+
     const created = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     res.json({
       success: true,
@@ -1118,6 +1156,7 @@ app.post('/api/posts/:id/like', (req, res) => {
         if (post.memberId !== memberId) {
           const sender = db.prepare('SELECT name FROM members WHERE id = ?').get(memberId);
           const notifId = `notif-${Date.now()}`;
+          const notifText = `${sender?.name || 'สมาชิก'} ได้กดถูกใจโพสต์ของคุณ`;
           db.prepare(`
             INSERT INTO notifications (id, recipientId, senderId, type, postId, text, isRead, timestamp)
             VALUES (?, ?, ?, 'like', ?, ?, 0, ?)
@@ -1126,9 +1165,16 @@ app.post('/api/posts/:id/like', (req, res) => {
             post.memberId,
             memberId,
             id,
-            `${sender?.name || 'สมาชิก'} ได้กดถูกใจโพสต์ของคุณ`,
+            notifText,
             Date.now()
           );
+
+          sendPushToMembers({
+            memberIds: [post.memberId],
+            title: '❤️ มีคนถูกใจโพสต์ของคุณ',
+            body: notifText,
+            data: { type: 'like', postId: id },
+          }).catch(err => console.warn('Like push error:', err.message));
         }
       }
     });
@@ -1171,6 +1217,7 @@ app.post('/api/posts/:id/comment', (req, res) => {
       if (post.memberId !== memberId) {
         const sender = db.prepare('SELECT name FROM members WHERE id = ?').get(memberId);
         const notifId = `notif-${timestamp}`;
+        const notifText = `${sender?.name || 'สมาชิก'} ได้แสดงความคิดเห็น: "${text.trim().slice(0, 40)}"`;
         db.prepare(`
           INSERT INTO notifications (id, recipientId, senderId, type, postId, text, isRead, timestamp)
           VALUES (?, ?, ?, 'comment', ?, ?, 0, ?)
@@ -1179,9 +1226,16 @@ app.post('/api/posts/:id/comment', (req, res) => {
           post.memberId,
           memberId,
           id,
-          `${sender?.name || 'สมาชิก'} ได้แสดงความคิดเห็น: "${text.trim().slice(0, 40)}"`,
+          notifText,
           timestamp
         );
+
+        sendPushToMembers({
+          memberIds: [post.memberId],
+          title: '💬 ความคิดเห็นใหม่บนโพสต์ของคุณ',
+          body: notifText,
+          data: { type: 'comment', postId: id },
+        }).catch(err => console.warn('Comment push error:', err.message));
       }
     });
 
@@ -1556,6 +1610,64 @@ app.post('/api/notifications/clear', async (req, res) => {
 });
 
 // ==========================================
+// 5.1 PUSH NOTIFICATIONS (FCM / MOBILE)
+// ==========================================
+app.get('/api/push/status', (req, res) => {
+  try {
+    const configured = isFirebaseConfigured();
+    const tokenCount = db.prepare('SELECT COUNT(*) as count FROM device_tokens').get()?.count || 0;
+    res.json({ configured, tokenCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/push/register', async (req, res) => {
+  try {
+    const { token, memberId, familyId, platform } = req.body;
+    if (!token || !memberId) {
+      return res.status(400).json({ error: 'Token and memberId are required' });
+    }
+    const success = saveDeviceToken({ token, memberId, familyId, platform });
+    await pushToCloud().catch(() => {});
+    res.json({ success });
+  } catch (err) {
+    console.error('Error registering device token:', err);
+    res.status(500).json({ error: 'Failed to register token' });
+  }
+});
+
+app.post('/api/push/unregister', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (token) {
+      removeDeviceToken(token);
+      await pushToCloud().catch(() => {});
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error unregistering device token:', err);
+    res.status(500).json({ error: 'Failed to unregister token' });
+  }
+});
+
+app.post('/api/push/test', async (req, res) => {
+  try {
+    const { memberId, title, body } = req.body;
+    const result = await sendPushToMembers({
+      memberIds: memberId ? [memberId] : undefined,
+      title: title || '🔔 ทดสอบการแจ้งเตือน HomeSpace',
+      body: body || 'ระบบแจ้งเตือนเข้าสู่โทรศัพท์ของคุณทำงานได้สมบูรณ์แบบแล้วครับ! 🎉',
+      data: { type: 'test', timestamp: String(Date.now()) },
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Error sending test push:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
 // 6. STATISTICS & SUMMARY
 // ==========================================
 app.get('/api/stats/summary', (req, res) => {
@@ -1639,6 +1751,14 @@ app.post('/api/notes', async (req, res) => {
     `).run(id, memberId || 'member-fluke', text.trim(), color, isPinned ? 1 : 0, timestamp);
 
     await pushToCloud().catch(err => console.warn('Push cloud after note:', err.message));
+
+    const author = memberId ? db.prepare('SELECT name FROM members WHERE id = ?').get(memberId) : null;
+    sendPushToMembers({
+      excludeMemberId: memberId,
+      title: '📌 โน้ตใหม่บนกระดานตู้เย็น',
+      body: `${author?.name || 'สมาชิกในบ้าน'}: "${text.trim().substring(0, 45)}"`,
+      data: { type: 'note', noteId: id },
+    }).catch(err => console.warn('Note push error:', err.message));
     const created = db.prepare('SELECT * FROM family_notes WHERE id = ?').get(id);
     res.json({
       success: true,
@@ -1748,6 +1868,15 @@ app.post('/api/milestones', async (req, res) => {
             Date.now()
           );
         }
+      }
+      const validTagged = taggedMemberIds.filter(tId => tId !== memberId);
+      if (validTagged.length > 0) {
+        sendPushToMembers({
+          memberIds: validTagged,
+          title: '📅 มีคนแท็กคุณในวันสำคัญของบ้าน',
+          body: `${creatorName} ได้แท็กคุณในนัดหมาย: "${title.trim()}" (${dateRangeText})`,
+          data: { type: 'milestone', milestoneId: id },
+        }).catch(err => console.warn('Milestone push error:', err.message));
       }
     }
 
@@ -2233,6 +2362,14 @@ app.post('/api/sos/trigger', async (req, res) => {
     tx();
     await pushToCloud().catch(err => console.warn('Push cloud after SOS alert:', err.message));
 
+    sendPushToMembers({
+      excludeMemberId: memberId,
+      title: '🚨 ด่วนที่สุด! สัญญาณเตือนภัย SOS',
+      body: `${memberName} กดขอความช่วยเหลือฉุกเฉิน! ${address ? 'พิกัด: ' + address : ''}`,
+      data: { type: 'sos', alertId },
+      sound: 'emergency_channel',
+    }).catch(err => console.warn('SOS push notification error:', err.message));
+
     const created = db.prepare('SELECT * FROM family_sos_alerts WHERE id = ?').get(alertId);
     res.json({ success: true, alert: created });
   } catch (err) {
@@ -2299,6 +2436,13 @@ app.post('/api/sos/:id/resolve', async (req, res) => {
 
     tx();
     await pushToCloud().catch(err => console.warn('Push cloud after resolve SOS:', err.message));
+
+    sendPushToMembers({
+      excludeMemberId: resolvedBy,
+      title: '🟢 ปลอดภัยแล้ว: เหตุฉุกเฉินคลี่คลาย',
+      body: `${resolverName} ได้ยืนยันความปลอดภัยเรียบร้อยแล้ว`,
+      data: { type: 'sos_resolved', alertId: id },
+    }).catch(err => console.warn('SOS resolved push error:', err.message));
 
     res.json({ success: true });
   } catch (err) {

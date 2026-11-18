@@ -43,6 +43,7 @@ export function exportDbToJson() {
       ledger_books: db.prepare('SELECT * FROM ledger_books').all(),
       ledger_transactions: db.prepare('SELECT * FROM ledger_transactions').all(),
       ledger_reminders: db.prepare('SELECT * FROM ledger_reminders').all(),
+      device_tokens: db.prepare('SELECT * FROM device_tokens').all(),
     };
   } catch (err) {
     console.error('[CloudSync] exportDbToJson error:', err.message);
@@ -384,6 +385,19 @@ export function importJsonToDb(data) {
         `);
         for (const a of data.family_sos_alerts) {
           stmt.run(a.id, a.familyId || 'family-main', a.memberId, a.memberName, a.memberAvatar || null, a.memberPhone || null, a.latitude || null, a.longitude || null, a.mapsUrl || null, a.address || null, a.note || null, a.status || 'active', a.resolvedBy || null, a.resolvedAt || null, a.timestamp || Date.now());
+        }
+      }
+
+      // 19. Device Tokens (Push Notifications)
+      if (Array.isArray(data.device_tokens)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO device_tokens (token, memberId, familyId, platform, updatedAt)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        for (const t of data.device_tokens) {
+          if (t.token && t.memberId) {
+            stmt.run(t.token, t.memberId, t.familyId || 'family-main', t.platform || 'android', t.updatedAt || Date.now());
+          }
         }
       }
     });

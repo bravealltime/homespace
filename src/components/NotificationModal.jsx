@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   X,
   Bell,
@@ -6,9 +6,11 @@ import {
   ChatCircle,
   CheckCircle,
   Sparkle,
+  DeviceMobile,
 } from '@phosphor-icons/react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { sendTestPush } from '../services/api';
 
 function timeAgo(timestamp) {
   if (!timestamp) return 'เมื่อสักครู่';
@@ -43,6 +45,31 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
   const handleMarkAllRead = () => {
     if (currentUser?.id) {
       markNotificationsRead(currentUser.id);
+    }
+  };
+
+  const [testingPush, setTestingPush] = useState(false);
+  const [testPushStatus, setTestPushStatus] = useState(null);
+
+  const handleTestPush = async () => {
+    setTestingPush(true);
+    setTestPushStatus(null);
+    try {
+      const res = await sendTestPush(currentUser?.id);
+      if (res.success && res.delivered > 0) {
+        setTestPushStatus({ type: 'success', text: `ส่งแจ้งเตือนเข้า ${res.delivered} อุปกรณ์สำเร็จ! 📱` });
+      } else if (res.reason === 'Firebase not configured') {
+        setTestPushStatus({ type: 'info', text: 'ระบบพร้อมแล้ว (รอวางไฟล์ตั้งค่า Firebase) ⚙️' });
+      } else if (res.reason === 'No registered device tokens') {
+        setTestPushStatus({ type: 'warning', text: 'ยังไม่มีอุปกรณ์เปิดรับแจ้งเตือน (ต้องเปิดผ่านแอปมือถือ)' });
+      } else {
+        setTestPushStatus({ type: 'info', text: res.reason || 'ส่งคำขอแล้ว' });
+      }
+    } catch (err) {
+      setTestPushStatus({ type: 'error', text: err.message });
+    } finally {
+      setTestingPush(false);
+      setTimeout(() => setTestPushStatus(null), 5000);
     }
   };
 
@@ -177,29 +204,58 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
         </div>
 
         {/* Bottom Actions */}
-        {userNotifications.length > 0 && (
-          <div className="p-3 bg-[#FAF8F5] border-t border-[#ECE7DF] flex items-center justify-between gap-2">
+        <div className="p-3 bg-[#FAF8F5] border-t border-[#ECE7DF] space-y-2">
+          {testPushStatus && (
+            <div
+              className={`text-[11px] px-2.5 py-1.5 rounded-xl font-medium flex items-center justify-between ${
+                testPushStatus.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : testPushStatus.type === 'error'
+                  ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                  : 'bg-amber-50 text-amber-800 border border-amber-200'
+              }`}
+            >
+              <span>{testPushStatus.text}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
-                onClick={handleMarkAllRead}
-                disabled={unreadCount === 0}
-                className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                onClick={handleTestPush}
+                disabled={testingPush}
+                className="text-xs font-bold text-[#5F8D75] hover:text-[#476E5B] hover:bg-[#5F8D75]/10 px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shrink-0"
               >
-                อ่านทั้งหมดแล้ว ✓
+                <DeviceMobile size={14} weight="bold" />
+                {testingPush ? 'กำลังยิง...' : 'ทดสอบแจ้งเตือน'}
               </button>
-              <span className="text-[#D6CFC7] text-xs">|</span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentUser?.id) {
-                    clearNotifications(currentUser.id);
-                  }
-                }}
-                className="text-xs font-medium text-[#746C65] hover:text-[#C84B31] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                ล้างทั้งหมด
-              </button>
+
+              {userNotifications.length > 0 && (
+                <>
+                  <span className="text-[#D6CFC7] text-xs">|</span>
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    disabled={unreadCount === 0}
+                    className="text-xs font-medium text-[#746C65] hover:text-[#2D2825] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    อ่านหมดแล้ว ✓
+                  </button>
+                  <span className="text-[#D6CFC7] text-xs">|</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentUser?.id) {
+                        clearNotifications(currentUser.id);
+                      }
+                    }}
+                    className="text-xs font-medium text-[#746C65] hover:text-[#C84B31] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    ล้าง
+                  </button>
+                </>
+              )}
             </div>
             <button
               type="button"
@@ -209,10 +265,10 @@ export default function NotificationModal({ isOpen, onClose, onNavigateToMyFeed 
               }}
               className="text-xs font-bold text-[#2D2825] hover:underline cursor-pointer whitespace-nowrap shrink-0"
             >
-              ไปที่ฟีดของฉัน →
+              ฟีดของฉัน →
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

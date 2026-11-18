@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "734363181563",
+    "project_id": "homespace-family",
+    "storage_bucket": "homespace-family.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734363181563:android:fb6202491ab125d295eb5e",
+        "android_client_info": {
+          "package_name": "com.homespace.family"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDa7GEtqC3_DocedsJMX8Zw9KbUaVQwCTc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

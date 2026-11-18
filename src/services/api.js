@@ -437,3 +437,34 @@ export async function resolveSos(alertId, resolvedBy, note) {
     body: JSON.stringify({ resolvedBy, note }),
   });
 }
+
+// 13. Mobile Push Notifications
+export async function registerPushToken(token, memberId, familyId) {
+  return request('/push/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      token,
+      memberId,
+      familyId,
+      platform: Capacitor.getPlatform(),
+    }),
+  });
+}
+
+export async function unregisterPushToken(token) {
+  return request('/push/unregister', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function sendTestPush(memberId) {
+  return request('/push/test', {
+    method: 'POST',
+    body: JSON.stringify({ memberId }),
+  });
+}
+
+export async function getPushStatus() {
+  return request('/push/status');
+}

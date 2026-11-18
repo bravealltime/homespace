@@ -36,5 +36,9 @@ server/uploads/*
 .env.*
 !.env.example
 
+# Firebase Private Keys
+server/firebase-service-account.json
+*firebase-service-account*.json
+
 .vercel
 .env*

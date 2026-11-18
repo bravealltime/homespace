@@ -46,6 +46,7 @@ import { FamilyGardenModal } from './components/FamilyTreeGarden';
 import EmergencySosModal, { EmergencySosBanner } from './components/EmergencySosModal';
 import QuickHouseMenu from './components/QuickHouseMenu';
 import FamilyLedgerModal from './components/FamilyLedgerModal';
+import { initPushNotifications } from './services/pushNotifications';
 
 const TABS = [
   { id: 'home', label: 'หน้าหลัก', icon: House, subtitle: 'โหลคะแนน & งานบ้าน' },
@@ -224,6 +225,28 @@ function AppContent() {
     viewingMember,
     activeTab,
   ]);
+
+  // Initialize Native Push Notifications on Mobile (Android / Capacitor)
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    initPushNotifications(currentUser, (data) => {
+      if (!data) return;
+      if (data.type === 'sos') {
+        setSosModalOpen(true);
+        setSosInitialCountdown(false);
+      } else if (data.type === 'note') {
+        setActiveTab('fridge');
+      } else if (data.type === 'milestone') {
+        setActiveTab('calendar');
+      } else if (data.type === 'like' || data.type === 'comment') {
+        setActiveTab('my-feed');
+      } else if (data.type === 'chore') {
+        setActiveTab('home');
+      } else if (data.type === 'join_request') {
+        setFamilyAdminOpen(true);
+      }
+    });
+  }, [currentUser]);
 
   // Check if any modal or fullscreen content is open
   const isAnyModalOpen = Boolean(

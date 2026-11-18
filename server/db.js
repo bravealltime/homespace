@@ -130,6 +130,17 @@ export function initDb() {
       FOREIGN KEY (senderId) REFERENCES members(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS device_tokens (
+      token TEXT PRIMARY KEY,
+      memberId TEXT NOT NULL,
+      familyId TEXT,
+      platform TEXT DEFAULT 'android',
+      updatedAt INTEGER NOT NULL,
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_device_tokens_member ON device_tokens(memberId);
+    CREATE INDEX IF NOT EXISTS idx_device_tokens_family ON device_tokens(familyId);
+
     CREATE TABLE IF NOT EXISTS chore_history (
       id TEXT PRIMARY KEY,
       memberId TEXT NOT NULL,
